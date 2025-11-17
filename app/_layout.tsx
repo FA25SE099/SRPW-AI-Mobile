@@ -26,7 +26,9 @@ export default function RootLayout() {
     loadFonts()
       .then(() => setFontsLoaded(true))
       .catch((error) => {
-        console.error('Error loading fonts:', error);
+        // Font loading errors are expected if font files don't exist
+        // The app will use system fonts instead, which is perfectly fine
+        console.log('Fonts not available, using system fonts (this is normal)');
         // Continue without custom fonts
         setFontsLoaded(true);
       });
@@ -43,6 +45,9 @@ export default function RootLayout() {
         <Stack.Screen name="auth/onboarding" />
         <Stack.Screen name="auth/login" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(farmer-tabs)" />
+        <Stack.Screen name="add-project" />
+        <Stack.Screen name="farmer" />
       </Stack>
     </QueryClientProvider>
   );

@@ -22,6 +22,7 @@ export type UserRole =
   | 'Admin'
   | 'ClusterManager'
   | 'Supervisor'
+  | 'Farmer'
   | 'AgronomyExpert'
   | 'UavVendor';
 
@@ -353,4 +354,123 @@ export type DownloadStandardPlansRequest = {
   inputDate: string;
   categoryId?: string;
   isActive?: boolean;
+};
+
+// Task and Project Types for Farmer UI
+export type TaskStatus = 'To-do' | 'In Progress' | 'Completed' | 'Done';
+
+export type Task = Entity<{
+  title: string;
+  projectName: string;
+  projectId: string;
+  status: TaskStatus;
+  scheduledTime?: string; // Time in HH:mm format
+  scheduledDate: string; // Date in ISO format
+  description?: string;
+  priority?: 'Low' | 'Medium' | 'High';
+  category?: string;
+  progress?: number; // 0-100
+}>;
+
+export type TaskGroup = {
+  id: string;
+  name: string;
+  icon?: string;
+  color?: string;
+};
+
+export type Project = Entity<{
+  name: string;
+  description?: string;
+  taskGroupId: string;
+  taskGroupName: string;
+  startDate: string; // ISO date string
+  endDate: string; // ISO date string
+  logo?: string;
+  brandColor?: string;
+  totalTasks: number;
+  completedTasks: number;
+  progress: number; // 0-100
+}>;
+
+export type CreateProjectRequest = {
+  name: string;
+  description?: string;
+  taskGroupId: string;
+  startDate: string; // ISO date string
+  endDate: string; // ISO date string
+  logo?: string;
+  brandColor?: string;
+};
+
+// Farmer-specific Types
+export type Field = Entity<{
+  name: string;
+  area: number; // in hectares
+  cropVarietyId: string;
+  cropVarietyName: string;
+  plantingDate: string; // ISO date string
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
+  polygon?: Array<{ latitude: number; longitude: number }>; // For GIS map
+}>;
+
+export type FarmActivity = Entity<{
+  fieldId: string;
+  fieldName: string;
+  activityType: 'planting' | 'fertilizing' | 'spraying' | 'irrigation' | 'harvesting';
+  date: string; // ISO date string
+  materialId?: string;
+  materialName?: string;
+  quantity: number;
+  unit: string;
+  cost: number; // Calculated from material price
+  notes?: string;
+  photos?: string[]; // Photo URLs
+}>;
+
+export type Alert = Entity<{
+  type: 'pest' | 'weather' | 'recommendation';
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  title: string;
+  message: string;
+  fieldId?: string;
+  fieldName?: string;
+  pestType?: string;
+  recommendedTreatment?: string;
+  approved: boolean;
+  createdAt: string;
+}>;
+
+export type FarmerTask = Entity<{
+  title: string;
+  description?: string;
+  taskType: 'spraying' | 'fertilizing' | 'harvesting' | 'irrigation' | 'other';
+  fieldId: string;
+  fieldName: string;
+  scheduledDate: string; // ISO date string
+  scheduledTime?: string; // HH:mm format
+  status: 'pending' | 'in-progress' | 'completed';
+  completedDate?: string;
+  completionPhotos?: string[];
+  planId?: string;
+}>;
+
+export type EconomicPerformance = {
+  seasonId: string;
+  seasonName: string;
+  totalCost: number;
+  totalRevenue: number;
+  profit: number;
+  profitPerHectare: number;
+  fields: Array<{
+    fieldId: string;
+    fieldName: string;
+    area: number;
+    cost: number;
+    revenue: number;
+    profit: number;
+  }>;
 };

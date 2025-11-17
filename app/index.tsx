@@ -15,7 +15,12 @@ export default function Index() {
   useEffect(() => {
     if (!isLoading) {
       if (user) {
-        router.replace('/(tabs)/home');
+        // Redirect farmers to farmer tabs, others to regular tabs
+        if (user.role === 'Farmer') {
+          router.replace('/(farmer-tabs)/home');
+        } else {
+          router.replace('/(tabs)/home');
+        }
       } else {
         router.replace('/auth/onboarding');
       }

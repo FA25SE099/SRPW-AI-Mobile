@@ -1,6 +1,6 @@
 /**
- * Tabs Layout
- * Bottom tab navigation
+ * Farmer Tabs Layout
+ * Bottom tab navigation for farmers
  */
 
 import React from 'react';
@@ -8,7 +8,7 @@ import { Text } from 'react-native';
 import { Tabs } from 'expo-router';
 import { colors } from '../../theme';
 
-export default function TabsLayout() {
+export default function FarmerTabsLayout() {
   return (
     <Tabs
       screenOptions={{
@@ -33,17 +33,24 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="calendar"
+        name="fields"
         options={{
-          title: 'Calendar',
-          tabBarIcon: () => <Text>📅</Text>,
+          title: 'Fields',
+          tabBarIcon: () => <Text>🌾</Text>,
         }}
       />
       <Tabs.Screen
         name="tasks"
         options={{
-          title: 'Tasks',
+          title: 'Tasks', 
           tabBarIcon: () => <Text>📋</Text>,
+        }}
+      />
+      <Tabs.Screen
+        name="alerts"
+        options={{
+          title: 'Alerts',
+          tabBarIcon: () => <Text>🔔</Text>,
         }}
       />
       <Tabs.Screen

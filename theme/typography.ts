@@ -6,10 +6,11 @@
 
 export const typography = {
   // Font Families
+  // Falls back to system fonts if custom fonts are not loaded
   fontFamily: {
-    regular: 'LexendDeca-Regular',
-    semibold: 'LexendDeca-SemiBold',
-    bold: 'LexendDeca-Bold',
+    regular: 'LexendDeca-Regular', // Falls back to system default
+    semibold: 'LexendDeca-SemiBold', // Falls back to system semibold
+    bold: 'LexendDeca-Bold', // Falls back to system bold
   },
   
   // Font Sizes (matching design specs)

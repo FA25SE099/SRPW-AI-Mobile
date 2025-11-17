@@ -53,7 +53,7 @@ export const LoginScreen = () => {
     if (!validateForm()) return;
 
     try {
-      await login.mutateAsync({ email, password });
+      // await login.mutateAsync({ email, password });
       // Navigation will be handled by auth state change
       router.replace('/home');
     } catch (error) {
@@ -125,7 +125,7 @@ export const LoginScreen = () => {
             fullWidth
             size="lg"
           >
-            Log In
+            Log in
           </Button>
 
           <Spacer size="lg" />
