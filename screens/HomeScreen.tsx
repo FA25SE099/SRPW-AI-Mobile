@@ -6,6 +6,7 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
+import Svg, { Circle, G } from 'react-native-svg';
 import { colors, spacing, borderRadius, shadows } from '../theme';
 import {
   Container,
@@ -21,13 +22,11 @@ import {
   Spacer,
   Button,
 } from '../components/ui';
+import { useUser } from '../libs/auth';
+import { FarmerHomeScreen } from './FarmerHomeScreen';
 
-// Mock data
-const user = {
-  name: 'Livia Vaccaro',
-  avatar: undefined,
-  todayProgress: 85,
-};
+// Mock data for non-farmer users
+const mockTodayProgress = 85;
 
 const inProgressTasks = [
   {
@@ -83,6 +82,29 @@ const taskGroups = [
 
 export const HomeScreen = () => {
   const router = useRouter();
+  const { data: user } = useUser();
+  let userData = {
+    firstName: 'Livia',
+    lastName: 'Vaccaro',
+    email: 'livia@vaccaro.com',
+    role: 'Farmer',
+    teamId: '1',
+    bio: 'I am a farmer',
+  };
+  
+
+  // Show farmer-specific home screen if user is a farmer
+  if (userData?.role === 'Farmer') {
+    return <FarmerHomeScreen />;
+  }
+
+  // Get user display name
+  const userName = user
+    ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User'
+    : 'User';
+  const userInitials = user
+    ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || 'U'
+    : 'U';
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -91,7 +113,7 @@ export const HomeScreen = () => {
         <View style={styles.header}>
           <View>
             <BodySmall color={colors.textSecondary}>Hello!</BodySmall>
-            <H3>{user.name}</H3>
+            <H3>{userName}</H3>
           </View>
           <View style={styles.headerRight}>
             <TouchableOpacity style={styles.notificationButton}>
@@ -99,7 +121,7 @@ export const HomeScreen = () => {
               <Body>🔔</Body>
             </TouchableOpacity>
             <Avatar
-              initials="LV"
+              initials={userInitials}
               size="md"
               backgroundColor={colors.primary}
             />
@@ -117,7 +139,7 @@ export const HomeScreen = () => {
               </Body>
               <Spacer size="md" />
               <Button
-                onPress={() => router.push('/tasks')}
+                onPress={() => router.push('/(tabs)/tasks')}
                 variant="ghost"
                 style={styles.viewTaskButton}
                 textStyle={styles.viewTaskText}
@@ -125,12 +147,9 @@ export const HomeScreen = () => {
                 View Task
               </Button>
             </View>
-            
+
             <View style={styles.progressCircle}>
-              <CircularProgress progress={user.todayProgress} />
-              <TouchableOpacity style={styles.moreButton}>
-                <Body color={colors.white}>⋯</Body>
-              </TouchableOpacity>
+              <CircularProgress progress={mockTodayProgress} />
             </View>
           </View>
         </Card>
@@ -216,27 +235,6 @@ export const HomeScreen = () => {
         <Spacer size="3xl" />
       </Container>
 
-      {/* Floating Action Button */}
-      <TouchableOpacity style={styles.fab}>
-        <Body color={colors.white} style={styles.fabText}>+</Body>
-      </TouchableOpacity>
-
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity style={[styles.navItem, styles.navItemActive]}>
-          <Body>🏠</Body>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Body>📅</Body>
-        </TouchableOpacity>
-        <View style={styles.navItemPlaceholder} />
-        <TouchableOpacity style={styles.navItem}>
-          <Body>📋</Body>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Body>👥</Body>
-        </TouchableOpacity>
-      </View>
     </ScrollView>
   );
 };
@@ -251,11 +249,53 @@ const CircularProgress = ({
   size?: number;
   color?: string;
 }) => {
+  const strokeWidth = 8;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const progressOffset = circumference - (progress / 100) * circumference;
+  const center = size / 2;
+  
+  // Determine background color based on progress color
+  const bgColor = color === colors.white 
+    ? 'rgba(255, 255, 255, 0.3)' 
+    : color + '30';
+
   return (
-    <View style={[styles.circularProgress, { width: size, height: size }]}>
-      <Body color={color} style={styles.progressText}>
-        {progress}%
-      </Body>
+    <View style={[styles.circularProgressContainer, { width: size, height: size }]}>
+      <Svg width={size} height={size} style={styles.circularProgressSvg}>
+        {/* Background circle */}
+        <Circle
+          cx={center}
+          cy={center}
+          r={radius}
+          stroke={bgColor}
+          strokeWidth={strokeWidth}
+          fill="transparent"
+        />
+        {/* Progress circle */}
+        {progress > 0 && (
+          <G rotation="-90" originX={center} originY={center}>
+            <Circle
+              cx={center}
+              cy={center}
+              r={radius}
+              stroke={color}
+              strokeWidth={strokeWidth}
+              fill="transparent"
+              strokeDasharray={circumference}
+              strokeDashoffset={progressOffset}
+              strokeLinecap="round"
+            />
+          </G>
+        )}
+      </Svg>
+      
+      {/* Progress text */}
+      <View style={styles.circularProgressTextContainer}>
+        <Body color={color} style={[styles.progressText, { fontSize: size * 0.24 }]}>
+          {progress}%
+        </Body>
+      </View>
     </View>
   );
 };
@@ -316,17 +356,26 @@ const styles = StyleSheet.create({
   progressCircle: {
     position: 'relative',
   },
-  circularProgress: {
-    borderRadius: 100,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  circularProgressContainer: {
+    position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 8,
-    borderColor: 'rgba(255, 255, 255, 0.9)',
+  },
+  circularProgressSvg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+  },
+  circularProgressTextContainer: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    height: '100%',
   },
   progressText: {
-    fontSize: 24,
     fontWeight: '700',
+    textAlign: 'center',
   },
   moreButton: {
     position: 'absolute',
@@ -412,30 +461,6 @@ const styles = StyleSheet.create({
   },
   fabText: {
     fontSize: 32,
-  },
-  bottomNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    backgroundColor: colors.white,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderTopLeftRadius: borderRadius.xl,
-    borderTopRightRadius: borderRadius.xl,
-    ...shadows.lg,
-  },
-  navItem: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  navItemActive: {
-    backgroundColor: colors.primaryLighter,
-  },
-  navItemPlaceholder: {
-    width: 64,
   },
 });
 
