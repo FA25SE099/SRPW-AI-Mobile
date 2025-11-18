@@ -34,7 +34,7 @@
       "expo-router"
     ],
     "extra": {
-      "apiUrl": "http://192.168.88.156:5100/api"
+      "apiUrl": "https://riceproduction-hef0e2b3gbc5akay.southeastasia-01.azurewebsites.net/api"
     }
   }
 }

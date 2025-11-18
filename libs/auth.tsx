@@ -22,7 +22,7 @@ const getUser = async (): Promise<User | null> => {
   try {
     // The api client will automatically attach the Authorization header
     // and unwrap the Result<User> response
-    const user: User = await api.get('/auth/me');
+    const user: User = await api.get('/Auth/me');
     return user;
   } catch (error) {
     // If the token is invalid or expired, clear it and return null
@@ -35,7 +35,7 @@ const getUser = async (): Promise<User | null> => {
 const logout = async (): Promise<void> => {
   try {
     // Call backend logout endpoint (optional, if it exists)
-    await api.post('/auth/logout');
+    await api.post('/Auth/logout');
   } catch (error) {
     // If logout endpoint fails, still clear local tokens
     console.error('Logout API call failed:', error);
@@ -56,7 +56,7 @@ const loginWithEmailAndPassword = async (
   data: LoginInput,
 ): Promise<LoginResponse> => {
   // Add rememberMe: true as per requirements
-  const response: LoginResponse = await api.post('/auth/login', {
+  const response: LoginResponse = await api.post('/Auth/login', {
     ...data,
     rememberMe: true,
   });
@@ -98,7 +98,7 @@ const registerWithEmailAndPassword = async (
   data: RegisterInput,
 ): Promise<LoginResponse> => {
   // Registration also returns tokens and user
-  const response: LoginResponse = await api.post('/auth/register', data);
+  const response: LoginResponse = await api.post('/Auth/register', data);
 
   // Store tokens in AsyncStorage
   await tokenStorage.setTokens(
@@ -154,6 +154,7 @@ export const useLogout = () => {
     onSuccess: () => {
       // Clear the user cache
       queryClient.setQueryData(userQueryKey, null);
+      queryClient.clear();
     },
   });
 };

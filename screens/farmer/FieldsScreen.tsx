@@ -3,15 +3,17 @@
  * View and manage field information with GIS maps
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 import { colors, spacing, borderRadius, shadows } from '../../theme';
 import {
   Container,
@@ -21,57 +23,35 @@ import {
   BodySmall,
   BodySemibold,
   Card,
-  Badge,
   Spacer,
   Button,
+  Spinner,
 } from '../../components/ui';
-import { Field } from '../../types/api';
-
-// Mock data
-const mockFields: Field[] = [
-  {
-    id: '1',
-    createdAt: Date.now(),
-    name: 'Field A',
-    area: 2.5,
-    cropVarietyId: '1',
-    cropVarietyName: 'Jasmine Rice',
-    plantingDate: '2024-01-10',
-    coordinates: { latitude: 10.762622, longitude: 106.660172 },
-  },
-  {
-    id: '2',
-    createdAt: Date.now(),
-    name: 'Field B',
-    area: 1.8,
-    cropVarietyId: '2',
-    cropVarietyName: 'Sticky Rice',
-    plantingDate: '2024-01-15',
-    coordinates: { latitude: 10.765000, longitude: 106.665000 },
-  },
-  {
-    id: '3',
-    createdAt: Date.now(),
-    name: 'Field C',
-    area: 3.2,
-    cropVarietyId: '1',
-    cropVarietyName: 'Jasmine Rice',
-    plantingDate: '2024-01-20',
-    coordinates: { latitude: 10.760000, longitude: 106.670000 },
-  },
-];
+import { FarmerPlot } from '../../types/api';
+import { getCurrentFarmerPlots } from '../../libs/farmer';
+import { useUser } from '../../libs/auth';
 
 export const FieldsScreen = () => {
   const router = useRouter();
-  const [selectedField, setSelectedField] = useState<Field | null>(null);
+  const { data: user } = useUser();
+  const {
+    data: plots,
+    isLoading,
+    isError,
+    refetch,
+    isRefetching,
+  } = useQuery({
+    queryKey: ['farmer-plots', user?.id, { page: 1, size: 10 }],
+    queryFn: () =>
+      getCurrentFarmerPlots({
+        currentPage: 1,
+        pageSize: 10,
+      }),
+  });
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
+  if (isLoading) {
+    return <Spinner fullScreen />;
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -107,14 +87,43 @@ export const FieldsScreen = () => {
         <Spacer size="xl" />
 
         {/* Fields List */}
-        <H4>All Fields ({mockFields.length})</H4>
+        <H4>All Fields {plots ? `(${plots.length})` : ''}</H4>
         <Spacer size="md" />
 
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {mockFields.map((field) => (
+        {isError && (
+          <Card variant="elevated" style={styles.errorCard}>
+            <BodySemibold>Unable to load plots</BodySemibold>
+            <Spacer size="xs" />
+            <BodySmall color={colors.textSecondary}>
+              Please check your connection and try again.
+            </BodySmall>
+            <Spacer size="md" />
+            <Button onPress={() => refetch()} size="sm">
+              Try Again
+            </Button>
+          </Card>
+        )}
+
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+          }
+        >
+          {plots && plots.length === 0 && (
+            <Card variant="flat" style={styles.emptyState}>
+              <BodySemibold>No plots found</BodySemibold>
+              <Spacer size="xs" />
+              <BodySmall color={colors.textSecondary}>
+                Once your plots are assigned, they will appear here.
+              </BodySmall>
+            </Card>
+          )}
+
+          {plots?.map((field: FarmerPlot) => (
             <TouchableOpacity
-              key={field.id}
-              onPress={() => router.push(`/farmer/fields/${field.id}` as any)}
+              key={field.plotId}
+              onPress={() => router.push(`/farmer/fields/${field.plotId}` as any)}
             >
               <Card variant="elevated" style={styles.fieldCard}>
                 <View style={styles.fieldCardHeader}>
@@ -122,16 +131,13 @@ export const FieldsScreen = () => {
                     <Body>🌾</Body>
                   </View>
                   <View style={styles.fieldInfo}>
-                    <BodySemibold>{field.name}</BodySemibold>
+                    <BodySemibold>{field.groupName}</BodySemibold>
                     <BodySmall color={colors.textSecondary}>
-                      {field.cropVarietyName}
+                      Plot #{field.soThua} • Sheet #{field.soTo}
                     </BodySmall>
                   </View>
                   <TouchableOpacity
-                    onPress={() => {
-                      // Open map with field location
-                      setSelectedField(field);
-                    }}
+                    onPress={() => router.push(`/farmer/fields/${field.plotId}` as any)}
                   >
                     <Body color={colors.primary}>📍</Body>
                   </TouchableOpacity>
@@ -143,25 +149,30 @@ export const FieldsScreen = () => {
                     <BodySemibold>{field.area} ha</BodySemibold>
                   </View>
                   <View style={styles.fieldDetailItem}>
-                    <BodySmall color={colors.textSecondary}>Planting Date</BodySmall>
-                    <BodySemibold>{formatDate(field.plantingDate)}</BodySemibold>
+                    <BodySmall color={colors.textSecondary}>Status</BodySmall>
+                    <BodySemibold>{field.status}</BodySemibold>
                   </View>
                   <View style={styles.fieldDetailItem}>
-                    <BodySmall color={colors.textSecondary}>Coordinates</BodySmall>
-                    <BodySemibold style={styles.coordinatesText}>
-                      {field.coordinates?.latitude.toFixed(4)}, {field.coordinates?.longitude.toFixed(4)}
-                    </BodySemibold>
+                    <BodySmall color={colors.textSecondary}>Active Alerts</BodySmall>
+                    <BodySemibold>{field.activeAlerts}</BodySemibold>
                   </View>
                 </View>
                 <Spacer size="md" />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onPress={() => router.push(`/farmer/fields/${field.id}/edit` as any)}
-                  style={styles.editButton}
-                >
-                  Edit Field
-                </Button>
+                <View style={styles.buttonRow}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onPress={() =>
+                      router.push({
+                        pathname: '/farmer/fields/[plotId]/plans',
+                        params: { plotId: field.plotId, plotName: field.groupName },
+                      } as any)
+                    }
+                    style={styles.editButton}
+                  >
+                    View Plans
+                  </Button>
+                </View>
               </Card>
               <Spacer size="md" />
             </TouchableOpacity>
@@ -242,11 +253,21 @@ const styles = StyleSheet.create({
   fieldDetailItem: {
     minWidth: '30%',
   },
-  coordinatesText: {
-    fontSize: 11,
-  },
   editButton: {
     alignSelf: 'flex-start',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  errorCard: {
+    padding: spacing.lg,
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+  },
+  emptyState: {
+    padding: spacing.lg,
+    alignItems: 'flex-start',
   },
 });
 

@@ -5,6 +5,8 @@
 
 export { FarmerHomeScreen } from '../FarmerHomeScreen';
 export { FieldsScreen } from './FieldsScreen';
+export { PlotPlansScreen } from './PlotPlansScreen';
+export { PlanDetailScreen } from './PlanDetailScreen';
 export { FarmLogScreen } from './FarmLogScreen';
 export { AlertsScreen } from './AlertsScreen';
 export { FarmerTasksScreen } from './TasksScreen';

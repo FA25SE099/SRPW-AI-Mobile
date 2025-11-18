@@ -91,8 +91,8 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
       // Don't retry for login/refresh endpoints
       if (
-        originalRequest.url?.includes('/auth/login') ||
-        originalRequest.url?.includes('/auth/refresh')
+        originalRequest.url?.includes('/Auth/login') ||
+        originalRequest.url?.includes('/Auth/refresh')
       ) {
         const message = (error.response?.data as any)?.message || error.message;
         Alert.alert('Authentication Error', message);
@@ -129,7 +129,7 @@ api.interceptors.response.use(
       try {
         // Try to refresh the token
         const response = await Axios.post<Result<TokenData>>(
-          `${env.API_URL}/auth/refresh`,
+          `${env.API_URL}/Auth/refresh`,
           { refreshToken },
           { headers: { Accept: 'application/json' } },
         );
