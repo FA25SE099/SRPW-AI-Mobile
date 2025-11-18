@@ -417,6 +417,70 @@ export type Field = Entity<{
   polygon?: Array<{ latitude: number; longitude: number }>; // For GIS map
 }>;
 
+export type FarmerPlot = {
+  plotId: string;
+  area: number;
+  soThua: number;
+  soTo: number;
+  status: string;
+  groupId: string;
+  groupName: string;
+  activeCultivations: number;
+  activeAlerts: number;
+};
+
+export type PlotCultivationPlan = {
+  plotCultivationId: string;
+  seasonId: string;
+  seasonName: string;
+  riceVarietyId: string;
+  riceVarietyName: string;
+  plantingDate: string;
+  area: number | null;
+  status: string;
+  actualYield?: number | null;
+  productionPlanName: string;
+};
+
+export type FarmerMaterialComparison = {
+  materialId: string;
+  materialName: string;
+  materialUnit: string;
+  plannedQuantityPerHa: number;
+  plannedEstimatedAmount: number;
+  actualQuantity: number;
+  actualCost: number;
+};
+
+export type PlotPlanTask = {
+  id: string;
+  taskName: string;
+  description?: string | null;
+  taskType: string;
+  scheduledDate: string;
+  status: string;
+  priority: string;
+  isContingency: boolean;
+  actualMaterialCost?: number | null;
+  materials: FarmerMaterialComparison[];
+};
+
+export type PlotPlanStage = {
+  stageName: string;
+  sequenceOrder: number;
+  tasks: PlotPlanTask[];
+};
+
+export type PlotPlanView = {
+  plotCultivationId: string;
+  productionPlanId: string;
+  planName: string;
+  basePlantingDate: string;
+  planStatus: string;
+  plotArea: number;
+  stages: PlotPlanStage[];
+};
+
 export type FarmActivity = Entity<{
   fieldId: string;
   fieldName: string;

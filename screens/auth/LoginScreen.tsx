@@ -53,12 +53,12 @@ export const LoginScreen = () => {
     if (!validateForm()) return;
 
     try {
-      // await login.mutateAsync({ email, password });
+      await login.mutateAsync({ email, password });
       // Navigation will be handled by auth state change
       router.replace('/home');
     } catch (error) {
       setErrors({
-        email: '',
+        email: 'Invalid email or password',
         password: 'Invalid email or password',
       });
     }

@@ -83,18 +83,10 @@ const taskGroups = [
 export const HomeScreen = () => {
   const router = useRouter();
   const { data: user } = useUser();
-  let userData = {
-    firstName: 'Livia',
-    lastName: 'Vaccaro',
-    email: 'livia@vaccaro.com',
-    role: 'Farmer',
-    teamId: '1',
-    bio: 'I am a farmer',
-  };
   
 
   // Show farmer-specific home screen if user is a farmer
-  if (userData?.role === 'Farmer') {
+  if (user?.role === 'Farmer') {
     return <FarmerHomeScreen />;
   }
 
