@@ -54,8 +54,9 @@ export const LoginScreen = () => {
 
     try {
       await login.mutateAsync({ email, password });
-      // Navigation will be handled by auth state change
-      router.replace('/home');
+      // Navigate to index, which will handle role-based routing
+      // The useLogin hook already updates the user cache, so index.tsx will detect the user
+      router.replace('/');
     } catch (error) {
       setErrors({
         email: 'Invalid email or password',
