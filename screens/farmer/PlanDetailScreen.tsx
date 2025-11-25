@@ -3,7 +3,7 @@
  * Shows cultivation plan stages and tasks for a specific plot cultivation ID
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -34,6 +34,7 @@ import {
   PlotPlanTask,
   FarmerMaterialComparison,
 } from '../../types/api';
+import { TaskDetailModal } from './TaskDetailModal';
 
 export const PlanDetailScreen = () => {
   const router = useRouter();
@@ -41,6 +42,9 @@ export const PlanDetailScreen = () => {
     planCultivationId?: string;
     planName?: string;
   }>();
+
+  const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
+  const [isDetailVisible, setIsDetailVisible] = useState(false);
 
   const {
     data: plan,
@@ -206,6 +210,20 @@ export const PlanDetailScreen = () => {
                           )}
                         </View>
                       )}
+                      <Spacer size="sm" />
+                      <View style={styles.taskActions}>
+                        <TouchableOpacity
+                          style={styles.secondaryButton}
+                          onPress={() => {
+                            setDetailTaskId(task.id);
+                            setIsDetailVisible(true);
+                          }}
+                        >
+                          <BodySemibold style={styles.secondaryButtonText}>
+                            View Details
+                          </BodySemibold>
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   ))
                 )}
@@ -214,6 +232,11 @@ export const PlanDetailScreen = () => {
           )}
         </ScrollView>
       </Container>
+      <TaskDetailModal
+        visible={isDetailVisible}
+        taskId={detailTaskId}
+        onClose={() => setIsDetailVisible(false)}
+      />
     </SafeAreaView>
   );
 };
@@ -282,6 +305,21 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
     backgroundColor: colors.backgroundSecondary,
     gap: spacing.xs / 2,
+  },
+  taskActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  secondaryButton: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+  },
+  secondaryButtonText: {
+    color: colors.primary,
   },
 });
 

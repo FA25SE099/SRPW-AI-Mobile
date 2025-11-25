@@ -10,8 +10,11 @@ const getEnvVars = () => {
       ? 'http://localhost:5000/api' // Development fallback
       : 'https://your-production-api.com/api'); // Production fallback
 
+  const mapboxToken = extra?.mapboxAccessToken ?? '';
+
   return {
     API_URL: apiUrl,
+    MAPBOX_TOKEN: mapboxToken,
   };
 };
 

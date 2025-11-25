@@ -427,6 +427,8 @@ export type FarmerPlot = {
   groupName: string;
   activeCultivations: number;
   activeAlerts: number;
+  boundary: string | null;
+  coordinate: string; // "POINT (lat lng)" or "POINT (lng lat)" depending on backend
 };
 
 export type PlotCultivationPlan = {
@@ -537,4 +539,92 @@ export type EconomicPerformance = {
     revenue: number;
     profit: number;
   }>;
+};
+
+// Today's Tasks Types
+export type TodayTaskMaterialResponse = {
+  materialId: string;
+  materialName: string;
+  materialUnit: string;
+  plannedQuantityTotal: number;
+  estimatedAmount: number;
+};
+
+export type TodayTaskResponse = {
+  cultivationTaskId: string;
+  plotCultivationId: string;
+  taskName: string;
+  description?: string | null;
+  taskType: string;
+  status: string;
+  scheduledDate: string;
+  priority: string;
+  isOverdue: boolean;
+  plotSoThuaSoTo: string;
+  plotArea: number;
+  estimatedMaterialCost: number;
+  materials: TodayTaskMaterialResponse[];
+};
+
+export type TaskMaterialDetailResponse = {
+  materialId: string;
+  materialName: string;
+  materialUnit: string;
+  plannedQuantityPerHa: number;
+  plannedTotalEstimatedCost: number;
+  actualQuantityUsed: number;
+  actualCost: number;
+  logNotes?: string | null;
+};
+
+export type FarmLogSummaryResponse = {
+  farmLogId: string;
+  loggedDate: string;
+  completionPercentage: number;
+  actualAreaCovered?: number | null;
+  workDescription?: string | null;
+  photoUrls?: string[];
+  actualServiceCost?: number | null;
+};
+
+export type CultivationTaskDetailResponse = {
+  cultivationTaskId: string;
+  plotCultivationId: string;
+  taskName: string;
+  description?: string | null;
+  taskType: string;
+  status: string;
+  priority: string;
+  isContingency: boolean;
+  plannedScheduledDate: string;
+  actualStartDate?: string | null;
+  actualEndDate?: string | null;
+  estimatedMaterialCost: number;
+  actualMaterialCost: number;
+  actualServiceCost: number;
+  plotName: string;
+  plotArea: number;
+  materials: TaskMaterialDetailResponse[];
+  farmLogs: FarmLogSummaryResponse[];
+};
+
+// Farm Log Types
+export type FarmLogMaterialRequest = {
+  materialId: string;
+  actualQuantityUsed: number;
+  notes?: string | null;
+};
+
+export type CreateFarmLogRequest = {
+  cultivationTaskId: string;
+  plotCultivationId: string;
+  workDescription?: string | null;
+  actualAreaCovered?: number | null;
+  serviceCost?: number | null;
+  serviceNotes?: string | null;
+  weatherConditions?: string | null;
+  interruptionReason?: string | null;
+  proofImages?: string[]; // Array of image URIs (will be converted to FormData)
+  materials?: FarmLogMaterialRequest[];
+  farmerId?: string | null;
 };

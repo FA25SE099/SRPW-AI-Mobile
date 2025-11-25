@@ -24,6 +24,7 @@ import {
 } from '../components/ui';
 import { useUser } from '../libs/auth';
 import { FarmerHomeScreen } from './FarmerHomeScreen';
+import { UavHomeScreen } from './uav/UavHomeScreen';
 
 // Mock data for non-farmer users
 const mockTodayProgress = 85;
@@ -88,6 +89,9 @@ export const HomeScreen = () => {
   // Show farmer-specific home screen if user is a farmer
   if (user?.role === 'Farmer') {
     return <FarmerHomeScreen />;
+  }
+  if (user?.role === 'UavVendor') {
+    return <UavHomeScreen />;
   }
 
   // Get user display name
