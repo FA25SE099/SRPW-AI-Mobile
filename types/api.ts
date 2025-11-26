@@ -628,3 +628,52 @@ export type CreateFarmLogRequest = {
   materials?: FarmLogMaterialRequest[];
   farmerId?: string | null;
 };
+
+// Report/Alert Types
+export type AlertType = 'Pest' | 'Weather' | 'Disease' | 'Other';
+export type ReportSeverity = 'Low' | 'Medium' | 'High' | 'Critical';
+export type ReportStatus = 'Pending' | 'UnderReview' | 'Resolved' | 'Rejected';
+
+export type CreateReportRequest = {
+  plotCultivationId?: string | null;
+  groupId?: string | null;
+  clusterId?: string | null;
+  alertType: AlertType;
+  title: string;
+  description: string;
+  severity: ReportSeverity;
+  imageUrls?: string[];
+};
+
+export type ReportResponse = {
+  id: string;
+  plotId: string;
+  plotName: string;
+  plotArea: number;
+  cultivationPlanId: string;
+  cultivationPlanName: string;
+  reportType: AlertType;
+  severity: ReportSeverity;
+  title: string;
+  description: string;
+  reportedBy: string;
+  reportedByRole: string;
+  reportedAt: string;
+  status: ReportStatus;
+  images: string[];
+  coordinates: string;
+  resolvedBy: string | null;
+  resolvedAt: string | null;
+  resolutionNotes: string | null;
+  farmerName: string;
+  clusterName: string;
+};
+
+export type GetMyReportsParams = {
+  currentPage?: number;
+  pageSize?: number;
+  searchTerm?: string;
+  status?: ReportStatus;
+  severity?: ReportSeverity;
+  reportType?: AlertType;
+};

@@ -7,6 +7,9 @@ import {
   TodayTaskResponse,
   CreateFarmLogRequest,
   CultivationTaskDetailResponse,
+  CreateReportRequest,
+  ReportResponse,
+  GetMyReportsParams,
 } from '@/types/api';
 
 type GetFarmerPlotsParams = {
@@ -141,5 +144,38 @@ export const createFarmLog = async (
   const response = await api.post<string>('/Farmlog/farm-logs', formData);
 
   return response as unknown as string;
+};
+
+// Report/Alert APIs
+export const createReport = async (
+  request: CreateReportRequest,
+): Promise<string> => {
+  const response = await api.post<string>('/api/reports', request);
+  return response as unknown as string;
+};
+
+export const getMyReports = async ({
+  currentPage = 1,
+  pageSize = 10,
+  searchTerm,
+  status,
+  severity,
+  reportType,
+}: GetMyReportsParams = {}): Promise<PagedResult<ReportResponse[]>> => {
+  const response = await api.get<PagedResult<ReportResponse[]>>(
+    '/api/reports/my-reports',
+    {
+      params: {
+        currentPage,
+        pageSize,
+        searchTerm,
+        status,
+        severity,
+        reportType,
+      },
+    },
+  );
+
+  return response as unknown as PagedResult<ReportResponse[]>;
 };
 
