@@ -483,6 +483,28 @@ export type PlotPlanView = {
   stages: PlotPlanStage[];
 };
 
+// Farm Log detail per cultivation (for /Farmlog/farm-logs/by-cultivation)
+export type FarmLogMaterialRecord = {
+  materialName: string;
+  actualQuantityUsed: number;
+  actualCost: number;
+};
+
+export type FarmLogDetailResponse = {
+  farmLogId: string;
+  cultivationTaskName: string;
+  plotName: string;
+  loggedDate: string;
+  workDescription?: string | null;
+  completionPercentage: number;
+  actualAreaCovered?: number | null;
+  serviceCost?: number | null;
+  serviceNotes?: string | null;
+  photoUrls?: string[] | null;
+  weatherConditions?: string | null;
+  materialsUsed: FarmLogMaterialRecord[];
+};
+
 export type FarmActivity = Entity<{
   fieldId: string;
   fieldName: string;
@@ -564,6 +586,62 @@ export type TodayTaskResponse = {
   plotArea: number;
   estimatedMaterialCost: number;
   materials: TodayTaskMaterialResponse[];
+};
+
+export type UavServiceOrder = {
+  orderId: string;
+  orderName: string;
+  status: string;
+  priority: string;
+  scheduledDate: string;
+  scheduledTime?: string | null;
+  groupId: string;
+  groupName: string;
+  totalArea: number;
+  totalPlots: number;
+  estimatedCost: number;
+  actualCost: number;
+  completionPercentage: number;
+  creatorName?: string | null;
+};
+
+export type PlannedMaterialDto = {
+  materialId: string;
+  materialName: string;
+  materialUnit: string;
+  quantityPerHa: number;
+  totalQuantityRequired: number;
+  totalEstimatedCost: number;
+};
+
+export type UavOrderPlotAssignment = {
+  plotId: string;
+  plotName: string;
+  servicedArea: number;
+  status: string;
+  actualCost?: number | null;
+  completionDate?: string | null;
+  reportNotes?: string | null;
+  plotBoundaryGeoJson?: string | null;
+  proofUrls: string[];
+};
+
+export type UavOrderDetail = UavServiceOrder & {
+  vendorName?: string | null;
+  completedAt?: string | null;
+  startedAt?: string | null;
+  optimizedRouteJson?: string | null;
+  materials: PlannedMaterialDto[];
+  plotAssignments: UavOrderPlotAssignment[];
+};
+
+export type ReportServiceOrderCompletionRequest = {
+  orderId: string;
+  plotId: string;
+  vendorId?: string | null;
+  actualCost: number;
+  notes?: string | null;
+  actualAreaCovered: number;
 };
 
 export type TaskMaterialDetailResponse = {

@@ -4,10 +4,16 @@
  */
 
 import React from 'react';
-import { View, StyleSheet, Image } from 'react-native';
+import { View, StyleSheet, Image, SafeAreaView, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { colors, spacing } from '../../theme';
-import { Container, Button, H1, Body, Spacer } from '../../components/ui';
+import { colors, spacing, borderRadius } from '../../theme';
+import { Container, Button, H1, Body, BodySemibold, Spacer } from '../../components/ui';
+
+const farmerHighlights = [
+  'Check today’s field work at a glance',
+  'Coordinate UAV spraying visits',
+  'Capture proof photos and farm logs',
+];
 
 export const OnboardingScreen = () => {
   const router = useRouter();
@@ -17,125 +23,117 @@ export const OnboardingScreen = () => {
   };
 
   return (
-    <Container style={styles.container}>
-      {/* Illustration */}
-      <View style={styles.illustration}>
-        {/* You can add your 3D illustration image here */}
-        <View style={styles.illustrationPlaceholder}>
-          {/* Add decorative elements */}
-          <View style={[styles.dot, styles.dot1]} />
-          <View style={[styles.dot, styles.dot2]} />
-          <View style={[styles.dot, styles.dot3]} />
-          <View style={[styles.dot, styles.dot4]} />
-          <View style={[styles.dot, styles.dot5]} />
-        </View>
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <Container style={styles.container}>
+          <View style={styles.heroCard}>
+            <Image
+              source={require('../../assets/icons/splash-icon.png')}
+              style={styles.heroImage}
+              resizeMode="contain"
+            />
+            <Spacer size="lg" />
+            <BodySemibold color={colors.primary}>Rice Production Companion</BodySemibold>
+            <H1 style={styles.title}>Manage fields with confidence</H1>
+            <Spacer size="sm" />
+            <Body color={colors.textSecondary} style={styles.description}>
+              Stay on top of cultivation tasks, UAV spraying schedules, and farm logs in one simple
+              workspace made for growers.
+            </Body>
+          </View>
 
-      <Spacer size="3xl" />
+          <Spacer size="xl" />
 
-      {/* Content */}
-      <View style={styles.content}>
-        <H1 style={styles.title}>Task Management & To-Do List</H1>
-        
-        <Spacer size="lg" />
-        
-        <Body color={colors.textSecondary} style={styles.description}>
-          This productive tool is designed to help you better manage your task project-wise conveniently!
-        </Body>
-      </View>
+          <View style={styles.highlightList}>
+            {farmerHighlights.map((item) => (
+              <View key={item} style={styles.highlightItem}>
+                <View style={styles.checkDot} />
+                <Body>{item}</Body>
+              </View>
+            ))}
+          </View>
 
-      <Spacer size="2xl" />
+          <Spacer size="xl" />
 
-      {/* Get Started Button */}
-      <View style={styles.footer}>
-        <Button
-          onPress={handleGetStarted}
-          fullWidth
-          size="lg"
-          style={styles.button}
-        >
-          Let's Start →
-        </Button>
-      </View>
-    </Container>
+          <View style={styles.footer}>
+            <Button onPress={handleGetStarted} fullWidth size="lg" style={styles.button}>
+              Get started
+            </Button>
+            <Spacer size="sm" />
+            <Body color={colors.textSecondary}>Flexible for both farmers and UAV vendors.</Body>
+          </View>
+        </Container>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
   container: {
     flex: 1,
+    paddingTop: spacing['2xl'],
+    paddingBottom: spacing['2xl'],
+  },
+  heroCard: {
     backgroundColor: colors.white,
-    justifyContent: 'space-between',
-    paddingTop: spacing['3xl'],
-  },
-  illustration: {
-    flex: 1,
-    justifyContent: 'center',
+    borderRadius: borderRadius.xl,
+    padding: spacing.xl,
     alignItems: 'center',
-    paddingHorizontal: spacing.xl,
+    ...{
+      shadowColor: colors.dark,
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.08,
+      shadowRadius: 20,
+      elevation: 4,
+    },
   },
-  illustrationPlaceholder: {
-    width: 300,
-    height: 300,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  dot: {
-    position: 'absolute',
-    borderRadius: 100,
-  },
-  dot1: {
-    width: 12,
-    height: 12,
-    backgroundColor: colors.info,
-    top: 50,
-    right: 20,
-  },
-  dot2: {
-    width: 8,
-    height: 8,
-    backgroundColor: colors.primary,
-    top: 80,
-    left: 40,
-  },
-  dot3: {
-    width: 10,
-    height: 10,
-    backgroundColor: '#FFE066',
-    bottom: 80,
-    right: 60,
-  },
-  dot4: {
-    width: 8,
-    height: 8,
-    backgroundColor: '#FFB3BA',
-    bottom: 100,
-    left: 30,
-  },
-  dot5: {
-    width: 12,
-    height: 12,
-    backgroundColor: colors.success,
-    bottom: 60,
-    right: 100,
-  },
-  content: {
-    paddingHorizontal: spacing.lg,
-    alignItems: 'center',
+  heroImage: {
+    width: 180,
+    height: 180,
   },
   title: {
     textAlign: 'center',
-    paddingHorizontal: spacing.md,
   },
   description: {
     textAlign: 'center',
     lineHeight: 24,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
+  highlightList: {
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    gap: spacing.md,
+    ...{
+      shadowColor: colors.dark,
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.05,
+      shadowRadius: 12,
+      elevation: 2,
+    },
+  },
+  highlightItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  checkDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: colors.primary,
   },
   footer: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xl,
+    paddingBottom: spacing.lg,
+    alignItems: 'center',
   },
   button: {
     shadowColor: colors.primary,

@@ -47,6 +47,8 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="(farmer-tabs)" />
         <Stack.Screen name="(uav-tabs)" />
+        <Stack.Screen name="(supervisor-tabs)" />
+        <Stack.Screen name="supervisor" />
         <Stack.Screen name="add-project" />
       </Stack>
     </QueryClientProvider>

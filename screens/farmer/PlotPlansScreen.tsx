@@ -64,20 +64,29 @@ export const PlotPlansScreen = () => {
 
   if (isError || !plotId) {
     return (
-      <Container padding="lg">
-        <Spacer size="3xl" />
-        <Card variant="elevated" style={styles.errorCard}>
-          <BodySemibold>Unable to load cultivation plans</BodySemibold>
-          <Spacer size="xs" />
-          <BodySmall color={colors.textSecondary}>
-            Please check your connection and try again.
-          </BodySmall>
-          <Spacer size="md" />
-          <Button onPress={() => refetch()} size="sm">
-            Try Again
-          </Button>
-        </Card>
-      </Container>
+      <SafeAreaView style={styles.container}>
+        <Container padding="lg">
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Body>←</Body>
+            </TouchableOpacity>
+            <H3 style={styles.headerTitle}>Cultivation Plans</H3>
+            <View style={styles.headerRight} />
+          </View>
+          <Spacer size="3xl" />
+          <Card variant="elevated" style={styles.errorCard}>
+            <BodySemibold>Unable to load cultivation plans</BodySemibold>
+            <Spacer size="xs" />
+            <BodySmall color={colors.textSecondary}>
+              Please check your connection and try again.
+            </BodySmall>
+            <Spacer size="md" />
+            <Button onPress={() => refetch()} size="sm">
+              Try Again
+            </Button>
+          </Card>
+        </Container>
+      </SafeAreaView>
     );
   }
 

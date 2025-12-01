@@ -7,6 +7,7 @@ import {
   TodayTaskResponse,
   CreateFarmLogRequest,
   CultivationTaskDetailResponse,
+  FarmLogDetailResponse,
 } from '@/types/api';
 
 type GetFarmerPlotsParams = {
@@ -79,6 +80,31 @@ export const getCultivationTaskDetail = async (
   );
 
   return response as unknown as CultivationTaskDetailResponse;
+};
+
+type GetFarmLogsByCultivationParams = {
+  plotCultivationId: string;
+  currentPage?: number;
+  pageSize?: number;
+};
+
+export const getFarmLogsByCultivation = async ({
+  plotCultivationId,
+  currentPage = 1,
+  pageSize = 10,
+}: GetFarmLogsByCultivationParams): Promise<PagedResult<FarmLogDetailResponse[]>> => {
+  const response = await api.get<PagedResult<FarmLogDetailResponse[]>>(
+    '/Farmlog/farm-logs/by-cultivation',
+    {
+      params: {
+        PlotCultivationId: plotCultivationId,
+        CurrentPage: currentPage,
+        PageSize: pageSize,
+      },
+    },
+  );
+
+  return response as unknown as PagedResult<FarmLogDetailResponse[]>;
 };
 
 export const createFarmLog = async (

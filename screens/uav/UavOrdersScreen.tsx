@@ -10,10 +10,12 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import dayjs from 'dayjs';
+import { useQuery } from '@tanstack/react-query';
 import { colors, spacing, borderRadius, shadows } from '../../theme';
 import {
   Container,
@@ -27,95 +29,8 @@ import {
   Spacer,
   Button,
 } from '../../components/ui';
-
-// Mock data - in real app, this would come from API
-const mockOrders = [
-  {
-    id: '1',
-    orderNumber: 'ORD-2024-001',
-    plotName: 'DongThap1 - Plot 16',
-    plotId: 'plot-1',
-    scheduledDate: '2024-01-17T08:00:00Z',
-    status: 'Pending',
-    priority: 'High',
-    area: 12.5,
-    materials: [
-      { name: 'Herbicide A', dosage: '2L/ha', quantity: 25 },
-      { name: 'Fungicide B', dosage: '1.5L/ha', quantity: 18.75 },
-    ],
-    estimatedDuration: '2.5 hours',
-    zoneCoordinates: [
-      { latitude: 11.21129, longitude: 106.425131 },
-      { latitude: 11.212688, longitude: 106.427436 },
-      { latitude: 11.215, longitude: 106.43 },
-      { latitude: 11.21129, longitude: 106.425131 },
-    ],
-  },
-  {
-    id: '2',
-    orderNumber: 'ORD-2024-002',
-    plotName: 'AnGiang2 - Plot 18',
-    plotId: 'plot-2',
-    scheduledDate: '2024-01-16T14:00:00Z',
-    status: 'In Progress',
-    priority: 'Normal',
-    area: 8.3,
-    materials: [
-      { name: 'Pesticide C', dosage: '1L/ha', quantity: 8.3 },
-    ],
-    estimatedDuration: '1.5 hours',
-    zoneCoordinates: [
-      { latitude: 11.213, longitude: 106.428 },
-      { latitude: 11.218, longitude: 106.428 },
-      { latitude: 11.218, longitude: 106.438 },
-      { latitude: 11.213, longitude: 106.438 },
-      { latitude: 11.213, longitude: 106.428 },
-    ],
-  },
-  {
-    id: '3',
-    orderNumber: 'ORD-2024-003',
-    plotName: 'DongThap1 - Plot 20',
-    plotId: 'plot-3',
-    scheduledDate: '2024-01-18T10:00:00Z',
-    status: 'Pending',
-    priority: 'Normal',
-    area: 15.2,
-    materials: [
-      { name: 'Fertilizer D', dosage: '3kg/ha', quantity: 45.6 },
-      { name: 'Herbicide A', dosage: '2L/ha', quantity: 30.4 },
-    ],
-    estimatedDuration: '3 hours',
-    zoneCoordinates: [
-      { latitude: 11.216, longitude: 106.43 },
-      { latitude: 11.221, longitude: 106.43 },
-      { latitude: 11.221, longitude: 106.44 },
-      { latitude: 11.216, longitude: 106.44 },
-      { latitude: 11.216, longitude: 106.43 },
-    ],
-  },
-  {
-    id: '4',
-    orderNumber: 'ORD-2024-004',
-    plotName: 'DongThap1 - Plot 21',
-    plotId: 'plot-4',
-    scheduledDate: '2024-01-19T09:00:00Z',
-    status: 'Pending',
-    priority: 'Low',
-    area: 6.8,
-    materials: [
-      { name: 'Pesticide C', dosage: '1L/ha', quantity: 6.8 },
-    ],
-    estimatedDuration: '1 hour',
-    zoneCoordinates: [
-      { latitude: 11.217, longitude: 106.432 },
-      { latitude: 11.22, longitude: 106.432 },
-      { latitude: 11.22, longitude: 106.435 },
-      { latitude: 11.217, longitude: 106.435 },
-      { latitude: 11.217, longitude: 106.432 },
-    ],
-  },
-];
+import { getUavServiceOrders } from '../../libs/uav';
+import { UavServiceOrder } from '../../types/api';
 
 export const UavOrdersScreen = () => {
   const router = useRouter();
@@ -123,7 +38,14 @@ export const UavOrdersScreen = () => {
   const [selectedFilter, setSelectedFilter] = useState<string>(
     (params.filter as string) || 'all',
   );
-  const [refreshing, setRefreshing] = useState(false);
+  const pageSize = 20;
+
+  const { data, isLoading, isError, refetch, isFetching } = useQuery({
+    queryKey: ['uav-orders', { page: 1, size: pageSize }],
+    queryFn: () => getUavServiceOrders({ currentPage: 1, pageSize }),
+  });
+
+  const orders: UavServiceOrder[] = data?.data ?? [];
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -151,143 +73,127 @@ export const UavOrdersScreen = () => {
     }
   };
 
-  // Calculate filter counts
+  const normalizeStatus = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'completed':
+        return 'completed';
+      default:
+        return 'in-progress';
+    }
+  };
+
   const filterCounts = useMemo(() => {
-    return {
-      all: mockOrders.length,
-      pending: mockOrders.filter((o) => o.status === 'Pending').length,
-      'in-progress': mockOrders.filter((o) => o.status === 'In Progress').length,
-      completed: mockOrders.filter((o) => o.status === 'Completed').length,
+    const counts: Record<'all' | 'in-progress' | 'completed', number> = {
+      all: orders.length,
+      'in-progress': 0,
+      completed: 0,
     };
-  }, []);
+    orders.forEach((order) => {
+      const slug = normalizeStatus(order.status);
+      counts[slug as keyof typeof counts] += 1;
+    });
+    return counts;
+  }, [orders]);
 
   const filteredOrders = useMemo(() => {
-    if (selectedFilter === 'all') return mockOrders;
-    if (selectedFilter === 'pending') {
-      return mockOrders.filter((o) => o.status === 'Pending');
-    }
-    if (selectedFilter === 'in-progress') {
-      return mockOrders.filter((o) => o.status === 'In Progress');
-    }
-    if (selectedFilter === 'completed') {
-      return mockOrders.filter((o) => o.status === 'Completed');
-    }
-    return mockOrders;
-  }, [selectedFilter]);
+    if (selectedFilter === 'all') return orders;
+    return orders.filter((order) => normalizeStatus(order.status) === selectedFilter);
+  }, [orders, selectedFilter]);
 
   const onRefresh = () => {
-    setRefreshing(true);
-    // Simulate API call
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
+    refetch();
   };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Container padding="lg">
+          <View style={styles.loadingContainer}>
+            <Body>Loading orders...</Body>
+          </View>
+        </Container>
+      </SafeAreaView>
+    );
+  }
+
+  if (isError) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Container padding="lg">
+          <View style={styles.loadingContainer}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Body>←</Body>
+            </TouchableOpacity>
+            <Spacer size="lg" />
+            <Body color={colors.error}>Failed to load orders</Body>
+            <Spacer size="sm" />
+            <Button size="sm" onPress={() => refetch()}>
+              Retry
+            </Button>
+          </View>
+        </Container>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <Container padding="lg">
-        {/* Header */}
         <View style={styles.header}>
-          <H3 style={styles.headerTitle}>Spraying Orders</H3>
+          <View>
+            <BodySmall color={colors.textSecondary}>Service Orders</BodySmall>
+            <H3 style={styles.headerTitle}>Spraying Operations</H3>
+          </View>
+          <Badge variant="info">
+            <BodySmall>Total {filterCounts.all}</BodySmall>
+          </Badge>
         </View>
 
         <Spacer size="lg" />
 
-        {/* Filter Buttons */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterContainer}
-        >
-          <TouchableOpacity
-            onPress={() => setSelectedFilter('all')}
-            disabled={filterCounts.all === 0}
-            style={[
-              styles.filterButton,
-              selectedFilter === 'all' && styles.filterButtonActive,
-              filterCounts.all === 0 && styles.filterButtonDisabled,
-            ]}
-          >
-            <BodySmall
-              color={
-                filterCounts.all === 0
-                  ? colors.textSecondary
-                  : selectedFilter === 'all'
-                    ? colors.white
-                    : colors.textSecondary
-              }
-              style={styles.filterButtonText}
+        <View style={styles.summaryRow}>
+          <View style={styles.summaryCard}>
+            <BodySmall style={styles.summaryLabel}>In Progress</BodySmall>
+            <BodySemibold style={styles.summaryValue}>{filterCounts['in-progress']}</BodySemibold>
+          </View>
+          <View style={styles.summaryCard}>
+            <BodySmall style={styles.summaryLabel}>Completed</BodySmall>
+            <BodySemibold style={styles.summaryValue}>{filterCounts.completed}</BodySemibold>
+          </View>
+        </View>
+
+        <Spacer size="lg" />
+
+        <View style={styles.segmentedContainer}>
+          {[
+            { label: 'All', value: 'all' },
+            { label: 'In Progress', value: 'in-progress' },
+            { label: 'Completed', value: 'completed' },
+          ].map((chip) => (
+            <TouchableOpacity
+              key={chip.value}
+              onPress={() => setSelectedFilter(chip.value as typeof selectedFilter)}
+              style={[
+                styles.segment,
+                selectedFilter === chip.value && styles.segmentActive,
+              ]}
             >
-              All {filterCounts.all > 0 && `(${filterCounts.all})`}
-            </BodySmall>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setSelectedFilter('pending')}
-            disabled={filterCounts.pending === 0}
-            style={[
-              styles.filterButton,
-              selectedFilter === 'pending' && styles.filterButtonActive,
-              filterCounts.pending === 0 && styles.filterButtonDisabled,
-            ]}
-          >
-            <BodySmall
-              color={
-                filterCounts.pending === 0
-                  ? colors.textSecondary
-                  : selectedFilter === 'pending'
-                    ? colors.white
-                    : colors.textSecondary
-              }
-              style={styles.filterButtonText}
-            >
-              Pending {filterCounts.pending > 0 && `(${filterCounts.pending})`}
-            </BodySmall>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setSelectedFilter('in-progress')}
-            disabled={filterCounts['in-progress'] === 0}
-            style={[
-              styles.filterButton,
-              selectedFilter === 'in-progress' && styles.filterButtonActive,
-              filterCounts['in-progress'] === 0 && styles.filterButtonDisabled,
-            ]}
-          >
-            <BodySmall
-              color={
-                filterCounts['in-progress'] === 0
-                  ? colors.textSecondary
-                  : selectedFilter === 'in-progress'
-                    ? colors.white
-                    : colors.textSecondary
-              }
-              style={styles.filterButtonText}
-            >
-              In Progress {filterCounts['in-progress'] > 0 && `(${filterCounts['in-progress']})`}
-            </BodySmall>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setSelectedFilter('completed')}
-            disabled={filterCounts.completed === 0}
-            style={[
-              styles.filterButton,
-              selectedFilter === 'completed' && styles.filterButtonActive,
-              filterCounts.completed === 0 && styles.filterButtonDisabled,
-            ]}
-          >
-            <BodySmall
-              color={
-                filterCounts.completed === 0
-                  ? colors.textSecondary
-                  : selectedFilter === 'completed'
-                    ? colors.white
-                    : colors.textSecondary
-              }
-              style={styles.filterButtonText}
-            >
-              Completed {filterCounts.completed > 0 && `(${filterCounts.completed})`}
-            </BodySmall>
-          </TouchableOpacity>
-        </ScrollView>
+              <BodySmall
+                style={[
+                  styles.segmentText,
+                  selectedFilter === chip.value && styles.segmentTextActive,
+                ]}
+              >
+                {chip.label}{' '}
+                {chip.value === 'all'
+                  ? `(${filterCounts.all})`
+                  : chip.value === 'in-progress'
+                    ? `(${filterCounts['in-progress']})`
+                    : `(${filterCounts.completed})`}
+              </BodySmall>
+            </TouchableOpacity>
+          ))}
+        </View>
 
         <Spacer size="xl" />
 
@@ -299,15 +205,15 @@ export const UavOrdersScreen = () => {
         ) : (
           <ScrollView
             showsVerticalScrollIndicator={false}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            refreshControl={<RefreshControl refreshing={isFetching} onRefresh={onRefresh} />}
           >
             {filteredOrders.map((order) => (
               <TouchableOpacity
-                key={order.id}
+                key={order.orderId}
                 onPress={() =>
                   router.push({
                     pathname: '/uav/orders/[orderId]',
-                    params: { orderId: order.id },
+                    params: { orderId: order.orderId },
                   } as any)
                 }
               >
@@ -315,56 +221,56 @@ export const UavOrdersScreen = () => {
                   <View style={styles.orderHeader}>
                     <View style={styles.orderInfo}>
                       <View style={styles.orderTitleRow}>
-                        <BodySemibold style={styles.orderTitle}>{order.orderNumber}</BodySemibold>
+                        <BodySemibold style={styles.orderTitle}>{order.orderName}</BodySemibold>
                         <Badge
-                          variant="outline"
-                          style={[
-                            styles.priorityBadge,
-                            { borderColor: getPriorityColor(order.priority) },
-                          ]}
+                          variant="neutral"
+                          style={getPriorityBadgeStyle(getPriorityColor(order.priority))}
                         >
                           <BodySmall style={{ color: getPriorityColor(order.priority) }}>
                             {order.priority}
                           </BodySmall>
                         </Badge>
                       </View>
-                      <BodySmall color={colors.textSecondary}>{order.plotName}</BodySmall>
+                      <BodySmall color={colors.textSecondary}>{order.groupName}</BodySmall>
                     </View>
                     <Badge
-                      variant="outline"
-                      style={[
-                        styles.statusBadge,
-                        { borderColor: getStatusColor(order.status) },
-                      ]}
+                      variant="neutral"
+                      style={getStatusBadgeStyle(getStatusColor(order.status))}
                     >
                       <BodySmall style={{ color: getStatusColor(order.status) }}>
-                        {order.status}
+                        {order.status.replace(/([A-Z])/g, ' $1').trim()}
                       </BodySmall>
                     </Badge>
                   </View>
                   <Spacer size="md" />
                   <View style={styles.orderDetails}>
                     <View style={styles.orderDetailItem}>
-                      <BodySmall color={colors.textSecondary}>Scheduled:</BodySmall>
+                      <BodySmall color={colors.textSecondary}>Scheduled</BodySmall>
                       <BodySemibold>
-                        {dayjs(order.scheduledDate).format('MMM D, YYYY h:mm A')}
+                        {dayjs(order.scheduledDate).format('MMM D, YYYY')}
+                        {order.scheduledTime ? ` • ${order.scheduledTime}` : ''}
                       </BodySemibold>
                     </View>
                     <View style={styles.orderDetailItem}>
-                      <BodySmall color={colors.textSecondary}>Area:</BodySmall>
-                      <BodySemibold>{order.area} ha</BodySemibold>
+                      <BodySmall color={colors.textSecondary}>Area</BodySmall>
+                      <BodySemibold>{order.totalArea.toFixed(2)} ha</BodySemibold>
                     </View>
                     <View style={styles.orderDetailItem}>
-                      <BodySmall color={colors.textSecondary}>Duration:</BodySmall>
-                      <BodySemibold>{order.estimatedDuration}</BodySemibold>
+                      <BodySmall color={colors.textSecondary}>Plots</BodySmall>
+                      <BodySemibold>{order.totalPlots}</BodySemibold>
                     </View>
-                  </View>
-                  <Spacer size="sm" />
-                  <View style={styles.materialsPreview}>
-                    <BodySmall color={colors.textSecondary}>Materials:</BodySmall>
-                    <BodySmall>
-                      {order.materials.map((m) => m.name).join(', ')}
-                    </BodySmall>
+                    <View style={styles.progressWrapper}>
+                      <BodySmall color={colors.textSecondary}>Completion</BodySmall>
+                      <View style={styles.progressBar}>
+                        <View
+                          style={[
+                            styles.progressFill,
+                            { width: `${order.completionPercentage}%` },
+                          ]}
+                        />
+                      </View>
+                      <BodySemibold>{order.completionPercentage}%</BodySemibold>
+                    </View>
                   </View>
                 </Card>
                 <Spacer size="md" />
@@ -389,31 +295,62 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
   },
   headerTitle: {
+    fontSize: 24,
+  },
+  loadingContainer: {
     flex: 1,
-    textAlign: 'center',
-  },
-  filterContainer: {
-    gap: spacing.sm,
-    paddingRight: spacing.lg,
-    paddingLeft: spacing.xs,
-  },
-  filterButton: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + 2,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.white,
-    minHeight: 36,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: spacing['2xl'],
   },
-  filterButtonActive: {
-    backgroundColor: colors.primary,
+  backButton: {
+    alignSelf: 'flex-start',
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
   },
-  filterButtonDisabled: {
-    opacity: 0.5,
+  summaryRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
   },
-  filterButtonText: {
+  summaryCard: {
+    flex: 1,
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    ...shadows.xs,
+  },
+  summaryValue: {
+    fontSize: 22,
+    paddingTop: 12,
+    marginTop: spacing.xs / 2,
+  },
+  summaryLabel: {
+    color: colors.textPrimary,
+    fontSize: 13,
     fontWeight: '500',
+  },
+  segmentedContainer: {
+    flexDirection: 'row',
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.backgroundSecondary,
+    padding: 4,
+  },
+  segment: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
+    alignItems: 'center',
+  },
+  segmentActive: {
+    backgroundColor: colors.white,
+    ...shadows.xs,
+  },
+  segmentText: {
+    fontWeight: '500',
+    color: colors.textSecondary,
+  },
+  segmentTextActive: {
+    color: colors.primary,
   },
   orderCard: {
     padding: spacing.md,
@@ -434,6 +371,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   orderTitle: {
+    paddingTop: 3,
     fontSize: 16,
   },
   statusBadge: {
@@ -452,8 +390,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  materialsPreview: {
-    gap: spacing.xs,
+  progressWrapper: {
+    marginTop: spacing.sm,
+    gap: spacing.xs / 2,
+  },
+  progressBar: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.backgroundSecondary,
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 3,
+    backgroundColor: colors.primary,
   },
   emptyContainer: {
     flex: 1,
@@ -462,4 +411,18 @@ const styles = StyleSheet.create({
     paddingVertical: spacing['2xl'],
   },
 });
+
+const flattenStyle = (style: ViewStyle | number) =>
+  (StyleSheet.flatten(style as any) as ViewStyle) || {};
+
+const getPriorityBadgeStyle = (color: string): ViewStyle => ({
+  ...flattenStyle(styles.priorityBadge),
+  borderColor: color,
+});
+
+const getStatusBadgeStyle = (color: string): ViewStyle => ({
+  ...flattenStyle(styles.statusBadge),
+  borderColor: color,
+});
+
 
