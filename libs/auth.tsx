@@ -2,6 +2,7 @@ import React from 'react';
 import { useQuery, useMutation, useQueryClient, UseQueryResult } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
 import { z } from 'zod';
+import { AxiosError } from 'axios';
 
 import { LoginResponse, User } from '@/types/api';
 
@@ -25,8 +26,12 @@ const getUser = async (): Promise<User | null> => {
     const user: User = await api.get('/Auth/me');
     return user;
   } catch (error) {
-    // If the token is invalid or expired, clear it and return null
-    console.error('Failed to fetch user:', error);
+    // If the token is invalid/expired or the endpoint is missing, clear tokens quietly
+    if (error instanceof AxiosError && error.response?.status === 404) {
+      console.warn('User profile endpoint returned 404. Clearing stale credentials.');
+    } else {
+      console.error('Failed to fetch user:', error);
+    }
     await tokenStorage.clearTokens();
     return null;
   }

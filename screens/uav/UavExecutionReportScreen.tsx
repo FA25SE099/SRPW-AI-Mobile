@@ -1,9 +1,9 @@
 /**
  * UAV Execution Report Screen
- * Mark task completion, enter actual material usage, attach photos/videos
+ * Submit completion details and proof for a specific plot assignment
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -11,12 +11,12 @@ import {
   TouchableOpacity,
   Image,
   Alert,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import dayjs from 'dayjs';
 import { colors, spacing, borderRadius } from '../../theme';
@@ -31,218 +31,195 @@ import {
   Button,
   Input,
 } from '../../components/ui';
+import { getUavOrderDetail, reportUavOrderCompletion } from '../../libs/uav';
+import { useUser } from '../../libs/auth';
 
-// Mock order data - in real app, this would come from API
-const mockOrderData = {
-  '1': {
-    id: '1',
-    orderNumber: 'ORD-2024-001',
-    plotName: 'DongThap1 - Plot 16',
-    area: 12.5,
-    materials: [
-      {
-        id: 'mat-1',
-        name: 'Herbicide A',
-        dosage: '2L/ha',
-        plannedQuantity: 25,
-        unit: 'L',
-      },
-      {
-        id: 'mat-2',
-        name: 'Fungicide B',
-        dosage: '1.5L/ha',
-        plannedQuantity: 18.75,
-        unit: 'L',
-      },
-    ],
-  },
-  '2': {
-    id: '2',
-    orderNumber: 'ORD-2024-002',
-    plotName: 'AnGiang2 - Plot 18',
-    area: 8.3,
-    materials: [
-      {
-        id: 'mat-3',
-        name: 'Pesticide C',
-        dosage: '1L/ha',
-        plannedQuantity: 8.3,
-        unit: 'L',
-      },
-    ],
-  },
-};
-
-type MediaItem = {
+type ProofImage = {
   uri: string;
-  type: 'image' | 'video';
+  type: string;
   name: string;
 };
 
 export const UavExecutionReportScreen = () => {
   const router = useRouter();
-  const params = useLocalSearchParams();
-  const orderId = params.orderId as string;
+  const params = useLocalSearchParams<{
+    orderId?: string | string[];
+    plotId?: string | string[];
+    plotName?: string | string[];
+    servicedArea?: string | string[];
+  }>();
 
-  const order = mockOrderData[orderId as keyof typeof mockOrderData];
+  const orderId = Array.isArray(params.orderId) ? params.orderId[0] : params.orderId;
+  const plotId = Array.isArray(params.plotId) ? params.plotId[0] : params.plotId;
+  const plotNameParam = Array.isArray(params.plotName) ? params.plotName[0] : params.plotName;
+  const servicedAreaParam = Array.isArray(params.servicedArea)
+    ? params.servicedArea[0]
+    : params.servicedArea;
 
-  const [formData, setFormData] = useState({
-    completionDate: dayjs().format('YYYY-MM-DD'),
-    completionTime: dayjs().format('HH:mm'),
-    actualAreaSprayed: order?.area?.toString() || '',
-    weatherConditions: '',
-    windSpeed: '',
+  const { data: user } = useUser();
+
+  const [formState, setFormState] = useState({
+    actualCost: '',
+    actualArea: servicedAreaParam || '',
     notes: '',
   });
+  const [proofImages, setProofImages] = useState<ProofImage[]>([]);
 
-  const [materialQuantities, setMaterialQuantities] = useState<{
-    [key: string]: { quantity: string; notes: string };
-  }>({});
+  const missingIdentifiers = !orderId || !plotId;
 
-  const [media, setMedia] = useState<MediaItem[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const {
+    data: order,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ['uav-order-detail', orderId],
+    queryFn: () => getUavOrderDetail(orderId || ''),
+    enabled: Boolean(orderId),
+  });
 
-  if (!order) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <Container padding="lg">
-          <ActivityIndicator size="large" color={colors.primary} />
-        </Container>
-      </SafeAreaView>
-    );
-  }
+  const assignment = useMemo(
+    () => order?.plotAssignments.find((plot) => plot.plotId === plotId),
+    [order, plotId],
+  );
+
+  useEffect(() => {
+    if (!formState.actualArea && assignment?.servicedArea) {
+      setFormState((prev) => ({
+        ...prev,
+        actualArea: assignment.servicedArea.toString(),
+      }));
+    }
+  }, [assignment]);
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Please grant camera roll permissions to upload images.');
+      Alert.alert('Permission needed', 'Please grant gallery access to upload proofs.');
       return;
     }
-
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: 'images',
       allowsMultipleSelection: true,
       quality: 0.8,
     });
-
     if (!result.canceled && result.assets) {
-      const newImages = result.assets.map((asset) => ({
+      const next = result.assets.map((asset) => ({
         uri: asset.uri,
-        type: 'image' as const,
-        name: asset.fileName || `image_${Date.now()}.jpg`,
+        type: asset.type || 'image/jpeg',
+        name: asset.fileName || `proof_${Date.now()}.jpg`,
       }));
-      setMedia([...media, ...newImages]);
+      setProofImages((prev) => [...prev, ...next]);
     }
   };
 
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Please grant camera permissions to take photos.');
+      Alert.alert('Permission needed', 'Please grant camera permissions to capture proofs.');
       return;
     }
-
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: 'images',
       quality: 0.8,
       allowsEditing: true,
     });
-
     if (!result.canceled && result.assets && result.assets.length > 0) {
       const asset = result.assets[0];
-      setMedia([
-        ...media,
+      setProofImages((prev) => [
+        ...prev,
         {
           uri: asset.uri,
-          type: 'image',
-          name: asset.fileName || `photo_${Date.now()}.jpg`,
+          type: asset.type || 'image/jpeg',
+          name: asset.fileName || `proof_${Date.now()}.jpg`,
         },
       ]);
     }
   };
 
-  const pickVideo = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Please grant camera roll permissions to upload videos.');
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'videos',
-      allowsMultipleSelection: true,
-      quality: 0.8,
-    });
-
-    if (!result.canceled && result.assets) {
-      const newVideos = result.assets.map((asset) => ({
-        uri: asset.uri,
-        type: 'video' as const,
-        name: asset.fileName || `video_${Date.now()}.mp4`,
-      }));
-      setMedia([...media, ...newVideos]);
-    }
+  const removeImage = (index: number) => {
+    setProofImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const takeVideo = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Please grant camera permissions to record videos.');
-      return;
-    }
+  const reportMutation = useMutation({
+    mutationFn: async () => {
+      if (!orderId || !plotId) {
+        throw new Error('Missing order or plot information.');
+      }
+      const actualCostValue = Number(formState.actualCost);
+      if (Number.isNaN(actualCostValue) || actualCostValue < 0) {
+        throw new Error('Actual cost must be greater than zero.');
+      }
+      const actualAreaValue = Number(formState.actualArea || '0');
+      if (Number.isNaN(actualAreaValue) || actualAreaValue <= 0) {
+        throw new Error('Actual area must be greater than zero.');
+      }
 
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: 'videos',
-      quality: 0.8,
-    });
-
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      const asset = result.assets[0];
-      setMedia([
-        ...media,
-        {
-          uri: asset.uri,
-          type: 'video',
-          name: asset.fileName || `video_${Date.now()}.mp4`,
+      return reportUavOrderCompletion({
+        request: {
+          orderId,
+          plotId,
+          vendorId: user?.id,
+          actualCost: actualCostValue,
+          actualAreaCovered: actualAreaValue,
+          notes: formState.notes || undefined,
         },
-      ]);
-    }
-  };
-
-  const removeMedia = (index: number) => {
-    setMedia(media.filter((_, i) => i !== index));
-  };
-
-  const handleSubmit = async () => {
-    // Validate required fields
-    if (!formData.actualAreaSprayed || parseFloat(formData.actualAreaSprayed) <= 0) {
-      Alert.alert('Validation Error', 'Please enter the actual area sprayed.');
-      return;
-    }
-
-    // Validate material quantities
-    const hasMaterialData = order.materials.some(
-      (mat) => materialQuantities[mat.id]?.quantity && parseFloat(materialQuantities[mat.id].quantity) > 0,
-    );
-
-    if (!hasMaterialData) {
-      Alert.alert('Validation Error', 'Please enter actual material usage for at least one material.');
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
-      Alert.alert('Success', 'Execution report submitted successfully.', [
+        proofFiles: proofImages,
+      });
+    },
+    onSuccess: () => {
+      Alert.alert('Success', 'Report submitted successfully.', [
         {
           text: 'OK',
           onPress: () => router.back(),
         },
       ]);
-    }, 2000);
-  };
+    },
+    onError: (error: any) => {
+      Alert.alert('Error', error?.message || 'Failed to submit report.');
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Container padding="lg">
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Body>←</Body>
+          </TouchableOpacity>
+          <Spacer size="lg" />
+          <Body>Loading assignment...</Body>
+        </Container>
+      </SafeAreaView>
+    );
+  }
+
+  if (missingIdentifiers || isError || !order || !assignment) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Container padding="lg">
+          <Card variant="elevated" style={styles.card}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Body>←</Body>
+            </TouchableOpacity>
+            <Spacer size="md" />
+            <BodySemibold>Unable to load report data</BodySemibold>
+            <Spacer size="sm" />
+            <BodySmall color={colors.textSecondary}>
+              Please check your connection or try again later.
+            </BodySmall>
+            <Spacer size="md" />
+            <Button size="sm" variant="outline" onPress={() => refetch()}>
+              Retry
+            </Button>
+          </Card>
+        </Container>
+      </SafeAreaView>
+    );
+  }
+
+  const resolvedPlotName = plotNameParam || assignment.plotName;
+  const resolvedArea = assignment.servicedArea || Number(servicedAreaParam || 0);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -251,7 +228,6 @@ export const UavExecutionReportScreen = () => {
         style={styles.keyboardView}
       >
         <Container padding="lg">
-          {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
               <Body>←</Body>
@@ -263,166 +239,91 @@ export const UavExecutionReportScreen = () => {
           <Spacer size="lg" />
 
           <ScrollView showsVerticalScrollIndicator={false}>
-            {/* Order Info */}
             <Card variant="elevated" style={styles.card}>
-              <BodySemibold style={styles.orderNumber}>{order.orderNumber}</BodySemibold>
-              <BodySmall color={colors.textSecondary}>{order.plotName}</BodySmall>
+              <BodySemibold style={styles.orderNumber}>{order.orderName}</BodySemibold>
+              <BodySmall color={colors.textSecondary}>{order.groupName}</BodySmall>
               <Spacer size="sm" />
-              <BodySmall color={colors.textSecondary}>Planned Area: {order.area} ha</BodySmall>
+              <BodySmall color={colors.textSecondary}>
+                Scheduled: {dayjs(order.scheduledDate).format('MMM D, YYYY')}
+                {order.scheduledTime ? ` • ${order.scheduledTime}` : ''}
+              </BodySmall>
             </Card>
 
             <Spacer size="md" />
 
-            {/* Completion Date & Time */}
             <Card variant="elevated" style={styles.card}>
-              <H3 style={styles.sectionTitle}>Completion Details</H3>
+              <BodySemibold>{resolvedPlotName}</BodySemibold>
+              <BodySmall color={colors.textSecondary}>
+                Planned Area: {resolvedArea.toFixed(2)} ha
+              </BodySmall>
+              <BodySmall color={colors.textSecondary}>
+                Status: {assignment.status.replace(/([A-Z])/g, ' $1').trim()}
+              </BodySmall>
+            </Card>
+
+            <Spacer size="md" />
+
+            <Card variant="elevated" style={styles.card}>
+              <H3 style={styles.sectionTitle}>Report Details</H3>
               <Spacer size="md" />
-              <View style={styles.row}>
-                <View style={styles.halfWidth}>
-                  <BodySmall color={colors.textSecondary}>Date</BodySmall>
-                  <Spacer size="xs" />
-                  <Input
-                    value={formData.completionDate}
-                    onChangeText={(text) => setFormData({ ...formData, completionDate: text })}
-                    placeholder="YYYY-MM-DD"
-                  />
-                </View>
-                <Spacer size="md" horizontal />
-                <View style={styles.halfWidth}>
-                  <BodySmall color={colors.textSecondary}>Time</BodySmall>
-                  <Spacer size="xs" />
-                  <Input
-                    value={formData.completionTime}
-                    onChangeText={(text) => setFormData({ ...formData, completionTime: text })}
-                    placeholder="HH:mm"
-                  />
-                </View>
-              </View>
-              <Spacer size="md" />
-              <BodySmall color={colors.textSecondary}>Actual Area Sprayed (ha)</BodySmall>
+              <BodySmall color={colors.textSecondary}>
+                Actual Cost (₫) <BodySmall color={colors.error}>*</BodySmall>
+              </BodySmall>
               <Spacer size="xs" />
               <Input
-                value={formData.actualAreaSprayed}
-                onChangeText={(text) => setFormData({ ...formData, actualAreaSprayed: text })}
-                placeholder="Enter area in hectares"
+                value={formState.actualCost}
+                onChangeText={(text) => setFormState((prev) => ({ ...prev, actualCost: text }))}
                 keyboardType="decimal-pad"
-              />
-            </Card>
-
-            <Spacer size="md" />
-
-            {/* Material Usage */}
-            <Card variant="elevated" style={styles.card}>
-              <H3 style={styles.sectionTitle}>Material Usage</H3>
-              <Spacer size="md" />
-              {order.materials.map((material) => (
-                <View key={material.id} style={styles.materialCard}>
-                  <BodySemibold>{material.name}</BodySemibold>
-                  <BodySmall color={colors.textSecondary}>
-                    Planned: {material.plannedQuantity} {material.unit} ({material.dosage})
-                  </BodySmall>
-                  <Spacer size="sm" />
-                  <BodySmall color={colors.textSecondary}>Actual Quantity Used ({material.unit})</BodySmall>
-                  <Spacer size="xs" />
-                  <Input
-                    value={materialQuantities[material.id]?.quantity || ''}
-                    onChangeText={(text) =>
-                      setMaterialQuantities({
-                        ...materialQuantities,
-                        [material.id]: {
-                          ...materialQuantities[material.id],
-                          quantity: text,
-                        },
-                      })
-                    }
-                    placeholder={`Enter actual quantity`}
-                    keyboardType="decimal-pad"
-                  />
-                  <Spacer size="sm" />
-                  <BodySmall color={colors.textSecondary}>Notes (optional)</BodySmall>
-                  <Spacer size="xs" />
-                  <Input
-                    value={materialQuantities[material.id]?.notes || ''}
-                    onChangeText={(text) =>
-                      setMaterialQuantities({
-                        ...materialQuantities,
-                        [material.id]: {
-                          ...materialQuantities[material.id],
-                          notes: text,
-                        },
-                      })
-                    }
-                    placeholder="Add notes about this material"
-                    multiline
-                    numberOfLines={2}
-                  />
-                </View>
-              ))}
-            </Card>
-
-            <Spacer size="md" />
-
-            {/* Weather Conditions */}
-            <Card variant="elevated" style={styles.card}>
-              <H3 style={styles.sectionTitle}>Weather Conditions</H3>
-              <Spacer size="md" />
-              <BodySmall color={colors.textSecondary}>Conditions</BodySmall>
-              <Spacer size="xs" />
-              <Input
-                value={formData.weatherConditions}
-                onChangeText={(text) => setFormData({ ...formData, weatherConditions: text })}
-                placeholder="e.g., Sunny, Cloudy, Rainy"
+                placeholder="Enter actual service cost"
               />
               <Spacer size="md" />
-              <BodySmall color={colors.textSecondary}>Wind Speed (km/h)</BodySmall>
+              <BodySmall color={colors.textSecondary}>
+                Actual Area Covered (ha) <BodySmall color={colors.error}>*</BodySmall>
+              </BodySmall>
               <Spacer size="xs" />
               <Input
-                value={formData.windSpeed}
-                onChangeText={(text) => setFormData({ ...formData, windSpeed: text })}
-                placeholder="Enter wind speed"
+                value={formState.actualArea}
+                onChangeText={(text) => setFormState((prev) => ({ ...prev, actualArea: text }))}
                 keyboardType="decimal-pad"
+                placeholder="Enter actual covered area"
+              />
+              <Spacer size="md" />
+              <BodySmall color={colors.textSecondary}>Notes</BodySmall>
+              <Spacer size="xs" />
+              <Input
+                value={formState.notes}
+                onChangeText={(text) => setFormState((prev) => ({ ...prev, notes: text }))}
+                placeholder="Add any observations..."
+                multiline
+                numberOfLines={4}
               />
             </Card>
 
             <Spacer size="md" />
 
-            {/* Photos & Videos */}
             <Card variant="elevated" style={styles.card}>
-              <H3 style={styles.sectionTitle}>Photos & Videos</H3>
+              <H3 style={styles.sectionTitle}>Proof Images</H3>
               <Spacer size="md" />
               <View style={styles.mediaButtons}>
-                <Button variant="outline" size="sm" onPress={pickImage} style={styles.mediaButton}>
-                  📷 Gallery
-                </Button>
                 <Button variant="outline" size="sm" onPress={takePhoto} style={styles.mediaButton}>
                   📸 Camera
                 </Button>
-                <Button variant="outline" size="sm" onPress={pickVideo} style={styles.mediaButton}>
-                  🎥 Video
-                </Button>
-                <Button variant="outline" size="sm" onPress={takeVideo} style={styles.mediaButton}>
-                  🎬 Record
+                <Button variant="outline" size="sm" onPress={pickImage} style={styles.mediaButton}>
+                  🖼️ Gallery
                 </Button>
               </View>
-              {media.length > 0 && (
+              {proofImages.length > 0 && (
                 <>
                   <Spacer size="md" />
                   <View style={styles.mediaGrid}>
-                    {media.map((item, index) => (
-                      <View key={index} style={styles.mediaItem}>
-                        {item.type === 'image' ? (
-                          <Image source={{ uri: item.uri }} style={styles.mediaPreview} />
-                        ) : (
-                          <View style={[styles.mediaPreview, styles.videoPreview]}>
-                            <Body>🎥</Body>
-                            <BodySmall>{item.name}</BodySmall>
-                          </View>
-                        )}
+                    {proofImages.map((image, index) => (
+                      <View key={image.uri} style={styles.mediaItem}>
+                        <Image source={{ uri: image.uri }} style={styles.mediaPreview} />
                         <TouchableOpacity
                           style={styles.removeButton}
-                          onPress={() => removeMedia(index)}
+                          onPress={() => removeImage(index)}
                         >
-                          <Body color={colors.white}>×</Body>
+                          <Body style={{ color: colors.white }}>×</Body>
                         </TouchableOpacity>
                       </View>
                     ))}
@@ -431,34 +332,14 @@ export const UavExecutionReportScreen = () => {
               )}
             </Card>
 
-            <Spacer size="md" />
-
-            {/* Notes */}
-            <Card variant="elevated" style={styles.card}>
-              <H3 style={styles.sectionTitle}>Additional Notes</H3>
-              <Spacer size="md" />
-              <Input
-                value={formData.notes}
-                onChangeText={(text) => setFormData({ ...formData, notes: text })}
-                placeholder="Add any additional notes about the execution..."
-                multiline
-                numberOfLines={4}
-              />
-            </Card>
-
             <Spacer size="xl" />
 
-            {/* Submit Button */}
             <Button
-              onPress={handleSubmit}
-              disabled={isSubmitting}
+              onPress={() => reportMutation.mutate()}
+              disabled={reportMutation.isPending}
               style={styles.submitButton}
             >
-              {isSubmitting ? (
-                <ActivityIndicator color={colors.white} />
-              ) : (
-                'Submit Report'
-              )}
+              {reportMutation.isPending ? 'Submitting...' : 'Submit Report'}
             </Button>
 
             <Spacer size="xl" />
@@ -500,31 +381,19 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   orderNumber: {
+    paddingTop: 5,
+    paddingBottom: 3,
     fontSize: 18,
   },
   sectionTitle: {
     fontSize: 18,
   },
-  row: {
-    flexDirection: 'row',
-  },
-  halfWidth: {
-    flex: 1,
-  },
-  materialCard: {
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-  },
   mediaButtons: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: spacing.sm,
   },
   mediaButton: {
     flex: 1,
-    minWidth: '45%',
   },
   mediaGrid: {
     flexDirection: 'row',
@@ -541,11 +410,6 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: borderRadius.md,
     backgroundColor: colors.backgroundSecondary,
-  },
-  videoPreview: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: spacing.xs,
   },
   removeButton: {
     position: 'absolute',

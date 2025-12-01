@@ -28,11 +28,12 @@ import {
   Button,
 } from '../../components/ui';
 import { colors, spacing, borderRadius } from '../../theme';
-import { getPlotPlanView } from '../../libs/farmer';
+import { getPlotPlanView, getFarmLogsByCultivation } from '../../libs/farmer';
 import {
   PlotPlanStage,
   PlotPlanTask,
   FarmerMaterialComparison,
+  FarmLogDetailResponse,
 } from '../../types/api';
 import { TaskDetailModal } from './TaskDetailModal';
 
@@ -63,26 +64,55 @@ export const PlanDetailScreen = () => {
     enabled: Boolean(planCultivationId),
   });
 
+  const {
+    data: farmLogsPage,
+    isLoading: farmLogsLoading,
+    isError: farmLogsError,
+    refetch: refetchFarmLogs,
+  } = useQuery({
+    queryKey: ['farm-logs-by-cultivation', planCultivationId],
+    queryFn: () => {
+      if (!planCultivationId) {
+        throw new Error('Plan cultivation ID is required');
+      }
+      return getFarmLogsByCultivation({
+        plotCultivationId: planCultivationId,
+        currentPage: 1,
+        pageSize: 10,
+      });
+    },
+    enabled: Boolean(planCultivationId),
+  });
+
   if (isLoading) {
     return <Spinner fullScreen />;
   }
 
   if (isError || !plan) {
     return (
-      <Container padding="lg">
-        <Spacer size="3xl" />
-        <Card variant="elevated" style={styles.errorCard}>
-          <BodySemibold>Unable to load plan details</BodySemibold>
-          <Spacer size="xs" />
-          <BodySmall color={colors.textSecondary}>
-            Please check your connection and try again.
-          </BodySmall>
-          <Spacer size="md" />
-          <Button onPress={() => refetch()} size="sm">
-            Try Again
-          </Button>
-        </Card>
-      </Container>
+      <SafeAreaView style={styles.container}>
+        <Container padding="lg">
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Body>←</Body>
+            </TouchableOpacity>
+            <H3 style={styles.headerTitle}>{planName || 'Plan Detail'}</H3>
+            <View style={styles.headerRight} />
+          </View>
+          <Spacer size="3xl" />
+          <Card variant="elevated" style={styles.errorCard}>
+            <BodySemibold>Unable to load plan details</BodySemibold>
+            <Spacer size="xs" />
+            <BodySmall color={colors.textSecondary}>
+              Please check your connection and try again.
+            </BodySmall>
+            <Spacer size="md" />
+            <Button onPress={() => refetch()} size="sm">
+              Try Again
+            </Button>
+          </Card>
+        </Container>
+      </SafeAreaView>
     );
   }
 
@@ -230,6 +260,107 @@ export const PlanDetailScreen = () => {
               </Card>
             ))
           )}
+
+          <Spacer size="xl" />
+
+          {/* Farm Logs for this cultivation plan */}
+          <H3>Farm Logs</H3>
+          <Spacer size="sm" />
+
+          {farmLogsLoading && (
+            <Card variant="flat" style={styles.emptyState}>
+              <BodySmall color={colors.textSecondary}>Loading farm logs...</BodySmall>
+            </Card>
+          )}
+
+          {farmLogsError && (
+            <Card variant="elevated" style={styles.errorCard}>
+              <BodySemibold>Unable to load farm logs</BodySemibold>
+              <Spacer size="xs" />
+              <BodySmall color={colors.textSecondary}>
+                Please check your connection and try again.
+              </BodySmall>
+              <Spacer size="md" />
+              <Button onPress={() => refetchFarmLogs()} size="sm">
+                Retry
+              </Button>
+            </Card>
+          )}
+
+          {!farmLogsLoading && !farmLogsError && (
+            <>
+              {(!farmLogsPage || farmLogsPage.data.length === 0) ? (
+                <Card variant="flat" style={styles.emptyState}>
+                  <BodySemibold>No farm logs yet</BodySemibold>
+                  <Spacer size="xs" />
+                  <BodySmall color={colors.textSecondary}>
+                    When you record activities for this plan, they will appear here.
+                  </BodySmall>
+                </Card>
+              ) : (
+                farmLogsPage.data.map((log: FarmLogDetailResponse) => (
+                  <Card key={log.farmLogId} variant="elevated" style={styles.logCard}>
+                    <View style={styles.logHeader}>
+                      <View style={{ flex: 1 }}>
+                        <BodySemibold>{log.cultivationTaskName}</BodySemibold>
+                        <BodySmall color={colors.textSecondary}>{log.plotName}</BodySmall>
+                      </View>
+                      <BodySmall color={colors.textSecondary}>
+                        {dayjs(log.loggedDate).format('MMM D, YYYY')}
+                      </BodySmall>
+                    </View>
+                    <Spacer size="xs" />
+                    <BodySmall color={colors.textSecondary}>
+                      Completion: {log.completionPercentage}%
+                    </BodySmall>
+                    {typeof log.actualAreaCovered === 'number' && (
+                      <BodySmall color={colors.textSecondary}>
+                        Area: {log.actualAreaCovered.toLocaleString()} ha
+                      </BodySmall>
+                    )}
+                    {typeof log.serviceCost === 'number' && (
+                      <BodySmall color={colors.textSecondary}>
+                        Service cost:{' '}
+                        {new Intl.NumberFormat('vi-VN', {
+                          style: 'currency',
+                          currency: 'VND',
+                        }).format(log.serviceCost)}
+                      </BodySmall>
+                    )}
+                    {log.workDescription && (
+                      <>
+                        <Spacer size="xs" />
+                        <BodySmall color={colors.textSecondary}>
+                          {log.workDescription}
+                        </BodySmall>
+                      </>
+                    )}
+                    {log.weatherConditions && (
+                      <BodySmall color={colors.textSecondary}>
+                        Weather: {log.weatherConditions}
+                      </BodySmall>
+                    )}
+                    {log.materialsUsed && log.materialsUsed.length > 0 && (
+                      <>
+                        <Spacer size="sm" />
+                        <BodySemibold>Materials used</BodySemibold>
+                        <Spacer size="xs" />
+                        {log.materialsUsed.map((mat, index) => (
+                          <View key={index} style={styles.logMaterialRow}>
+                            <BodySmall>{mat.materialName}</BodySmall>
+                            <BodySmall color={colors.textSecondary}>
+                              {mat.actualQuantityUsed.toLocaleString()} •{' '}
+                              {mat.actualCost.toLocaleString()}₫
+                            </BodySmall>
+                          </View>
+                        ))}
+                      </>
+                    )}
+                  </Card>
+                ))
+              )}
+            </>
+          )}
         </ScrollView>
       </Container>
       <TaskDetailModal
@@ -320,6 +451,21 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: {
     color: colors.primary,
+  },
+  logCard: {
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderRadius: borderRadius.md,
+  },
+  logHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  logMaterialRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: spacing.xs,
   },
 });
 

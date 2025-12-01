@@ -26,6 +26,8 @@ export default function Index() {
           router.replace('/(farmer-tabs)/home');
         } else if (role === ROLES.UavVendor || role === 'UavVendor') {
           router.replace('/(uav-tabs)/home');
+        } else if (role === ROLES.Supervisor || role === 'Supervisor') {
+          router.replace('/(supervisor-tabs)/home');
         } else {
           // Default to regular tabs for other roles
           console.log('Unknown role, redirecting to default tabs:', role);

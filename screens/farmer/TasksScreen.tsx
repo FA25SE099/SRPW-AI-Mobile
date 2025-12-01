@@ -194,6 +194,14 @@ export const FarmerTasksScreen = () => {
     return (
       <SafeAreaView style={styles.container}>
         <Container padding="lg">
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Body>←</Body>
+            </TouchableOpacity>
+            <H3 style={styles.headerTitle}>My Tasks</H3>
+            <View style={styles.headerRight} />
+          </View>
+          <Spacer size="xl" />
           <View style={styles.errorContainer}>
             <Body color={colors.error}>Failed to load tasks</Body>
             <Spacer size="md" />

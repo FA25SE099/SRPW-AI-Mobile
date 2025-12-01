@@ -49,7 +49,11 @@ export const TaskDetailModal = ({ visible, taskId, onClose }: Props) => {
           <Body color={colors.error}>Unable to load task detail</Body>
           <Spacer size="sm" />
           <Button size="sm" onPress={() => refetch()}>
-            Try again
+            Retry
+          </Button>
+          <Spacer size="sm" />
+          <Button variant="outline" size="sm" onPress={onClose}>
+            Close
           </Button>
         </View>
       );

@@ -11,10 +11,12 @@ import {
   Platform,
   ScrollView,
   TouchableOpacity,
+  SafeAreaView,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { colors, spacing, textStyles } from '../../theme';
-import { Container, Input, Button, H1, Body, Spacer } from '../../components/ui';
+import { colors, spacing, textStyles, borderRadius } from '../../theme';
+import { Container, Input, Button, H1, Body, BodySemibold, Spacer, Card } from '../../components/ui';
 import { useLogin } from '../../libs/auth';
 
 export const LoginScreen = () => {
@@ -66,100 +68,129 @@ export const LoginScreen = () => {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
       >
-        <Container padding="lg">
-          <Spacer size="3xl" />
-          
-          {/* Header */}
-          <View style={styles.header}>
-            <H1 style={styles.title}>Welcome Back!</H1>
-            <Spacer size="sm" />
-            <Body color={colors.textSecondary} style={styles.subtitle}>
-              Sign in to continue managing your tasks
-            </Body>
-          </View>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <Container padding="lg">
+            <View style={styles.heroRow}>
+              <View style={styles.heroText}>
+                <BodySemibold color={colors.primary}>Welcome back</BodySemibold>
+                <H1 style={styles.title}>Sign in to your farm hub</H1>
+                <Body color={colors.textSecondary} style={styles.subtitle}>
+                  Keep today’s plots, weather notes, and UAV spraying tasks in sync.
+                </Body>
+              </View>
+              <Image
+                source={require('../../assets/icons/splash-icon.png')}
+                style={styles.heroImage}
+                resizeMode="contain"
+              />
+            </View>
 
-          <Spacer size="2xl" />
+            <Spacer size="xl" />
 
-          {/* Form */}
-          <View style={styles.form}>
-            <Input
-              label="Email"
-              placeholder="Enter your email"
-              value={email}
-              onChangeText={setEmail}
-              error={errors.email}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-            />
+            <Card variant="elevated" style={styles.formCard}>
+              <View style={styles.form}>
+                <Input
+                  label="Email"
+                  placeholder="farmer@example.com"
+                  value={email}
+                  onChangeText={setEmail}
+                  error={errors.email}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                />
 
-            <Input
-              label="Password"
-              placeholder="Enter your password"
-              value={password}
-              onChangeText={setPassword}
-              error={errors.password}
-              secureTextEntry
-              autoCapitalize="none"
-              autoComplete="password"
-            />
+                <Input
+                  label="Password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChangeText={setPassword}
+                  error={errors.password}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoComplete="password"
+                />
 
-            <TouchableOpacity style={styles.forgotPassword}>
-              <Body color={colors.primary}>Forgot Password?</Body>
-            </TouchableOpacity>
-          </View>
+                <TouchableOpacity style={styles.forgotPassword}>
+                  <Body color={colors.primary}>Forgot Password?</Body>
+                </TouchableOpacity>
+              </View>
 
-          <Spacer size="xl" />
+              <Spacer size="lg" />
 
-          {/* Login Button */}
-          <Button
-            onPress={handleLogin}
-            loading={login.isPending}
-            fullWidth
-            size="lg"
-          >
-            Log in
-          </Button>
+              <Button onPress={handleLogin} loading={login.isPending} fullWidth size="lg">
+                Log in
+              </Button>
+            </Card>
 
-          <Spacer size="lg" />
+            <Spacer size="lg" />
 
-          {/* Sign Up Link */}
-          <View style={styles.footer}>
-            <Body color={colors.textSecondary}>Don't have an account? </Body>
-            <TouchableOpacity onPress={() => router.push('/auth/register')}>
-              <Body color={colors.primary} style={styles.signUpText}>Sign Up</Body>
-            </TouchableOpacity>
-          </View>
-        </Container>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            <View style={styles.footer}>
+              <Body color={colors.textSecondary}>Need an account? </Body>
+              <TouchableOpacity onPress={() => router.push('/auth/register')}>
+                <Body color={colors.primary} style={styles.signUpText}>
+                  Contact support
+                </Body>
+              </TouchableOpacity>
+            </View>
+          </Container>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  container: {
+    flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
   },
-  header: {
+  heroRow: {
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.lg,
+    ...{
+      shadowColor: colors.dark,
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
+      elevation: 3,
+    },
+  },
+  heroText: {
+    flex: 1,
   },
   title: {
-    textAlign: 'center',
+    paddingTop: spacing.xs,
   },
   subtitle: {
-    textAlign: 'center',
+    paddingTop: spacing.xs,
+    lineHeight: 22,
+  },
+  heroImage: {
+    width: 100,
+    height: 100,
+  },
+  formCard: {
+    padding: spacing.lg,
+    borderRadius: borderRadius.xl,
   },
   form: {
     width: '100%',

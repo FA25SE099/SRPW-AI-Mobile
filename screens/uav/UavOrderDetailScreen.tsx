@@ -3,7 +3,7 @@
  * View spraying zone maps, materials, dosage, and timing
  */
 
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -11,10 +11,14 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Modal,
+  Linking,
+  ViewStyle,
+  Image,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import MapView, { Marker, Polygon as MapPolygon, Region } from 'react-native-maps';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import MapView, { Marker, Polygon as MapPolygon, Polyline, Region } from 'react-native-maps';
 import dayjs from 'dayjs';
+import { useQuery } from '@tanstack/react-query';
 import { colors, spacing, borderRadius, shadows } from '../../theme';
 import {
   Container,
@@ -29,77 +33,8 @@ import {
   Button,
   Spinner,
 } from '../../components/ui';
-
-// Mock data - in real app, this would come from API based on orderId
-const mockOrderData = {
-  '1': {
-    id: '1',
-    orderNumber: 'ORD-2024-001',
-    plotName: 'DongThap1 - Plot 16',
-    plotId: 'plot-1',
-    scheduledDate: '2024-01-17T08:00:00Z',
-    status: 'Pending',
-    priority: 'High',
-    area: 12.5,
-    materials: [
-      {
-        id: 'mat-1',
-        name: 'Herbicide A',
-        dosage: '2L/ha',
-        quantity: 25,
-        unit: 'L',
-        notes: 'Apply in early morning',
-      },
-      {
-        id: 'mat-2',
-        name: 'Fungicide B',
-        dosage: '1.5L/ha',
-        quantity: 18.75,
-        unit: 'L',
-        notes: 'Mix with water before application',
-      },
-    ],
-    estimatedDuration: '2.5 hours',
-    zoneCoordinates: [
-      { latitude: 11.21129, longitude: 106.425131 },
-      { latitude: 11.212688, longitude: 106.427436 },
-      { latitude: 11.215, longitude: 106.43 },
-      { latitude: 11.21129, longitude: 106.425131 },
-    ],
-    centerCoordinate: { latitude: 11.213, longitude: 106.428 },
-    instructions: 'Apply herbicide in the morning when wind speed is below 10 km/h. Avoid application during rain.',
-  },
-  '2': {
-    id: '2',
-    orderNumber: 'ORD-2024-002',
-    plotName: 'AnGiang2 - Plot 18',
-    plotId: 'plot-2',
-    scheduledDate: '2024-01-16T14:00:00Z',
-    status: 'In Progress',
-    priority: 'Normal',
-    area: 8.3,
-    materials: [
-      {
-        id: 'mat-3',
-        name: 'Pesticide C',
-        dosage: '1L/ha',
-        quantity: 8.3,
-        unit: 'L',
-        notes: 'Apply evenly across the field',
-      },
-    ],
-    estimatedDuration: '1.5 hours',
-    zoneCoordinates: [
-      { latitude: 11.213, longitude: 106.428 },
-      { latitude: 11.218, longitude: 106.428 },
-      { latitude: 11.218, longitude: 106.438 },
-      { latitude: 11.213, longitude: 106.438 },
-      { latitude: 11.213, longitude: 106.428 },
-    ],
-    centerCoordinate: { latitude: 11.215, longitude: 106.433 },
-    instructions: 'Standard pesticide application. Monitor weather conditions.',
-  },
-};
+import { getUavOrderDetail } from '../../libs/uav';
+import { UavOrderDetail } from '../../types/api';
 
 const DEFAULT_CENTER = {
   latitude: 11.2,
@@ -115,10 +50,53 @@ export const UavOrderDetailScreen = () => {
   const mapRef = useRef<MapView | null>(null);
   const fullscreenMapRef = useRef<MapView | null>(null);
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
+  const [expandedProofs, setExpandedProofs] = useState<Record<string, boolean>>({});
+  const [focusedPlotId, setFocusedPlotId] = useState<string | null>(null);
 
-  const order = mockOrderData[orderId as keyof typeof mockOrderData];
+  const { data, isLoading, isError, refetch, isFetching } = useQuery({
+    queryKey: ['uav-order-detail', orderId],
+    queryFn: () => getUavOrderDetail(orderId),
+    enabled: Boolean(orderId),
+  });
 
-  if (!order) {
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch]),
+  );
+
+  const order: UavOrderDetail | undefined = data;
+
+  const assignmentPolygons = useMemo(() => {
+    if (!order) return [];
+    return order.plotAssignments
+      .map((assignment) => ({
+        plotId: assignment.plotId,
+        plotName: assignment.plotName,
+        status: assignment.status,
+        coordinates: parseWktPolygon(assignment.plotBoundaryGeoJson),
+      }))
+      .filter((item) => item.coordinates.length > 0);
+  }, [order]);
+
+  const routeCoordinates = useMemo(() => {
+    if (!order) return [];
+    return parseWktLineString(order.optimizedRouteJson);
+  }, [order]);
+
+  const mapRegion = useMemo(() => {
+    const activePolygons =
+      focusedPlotId != null
+        ? assignmentPolygons.filter((poly) => poly.plotId === focusedPlotId)
+        : assignmentPolygons;
+    const points = activePolygons.flatMap((poly) => poly.coordinates);
+    if (points.length === 0) {
+      return DEFAULT_CENTER;
+    }
+    return getRegionFromPoints(points);
+  }, [assignmentPolygons]);
+
+  if (isLoading || !order) {
     return (
       <SafeAreaView style={styles.container}>
         <Container padding="lg">
@@ -128,23 +106,32 @@ export const UavOrderDetailScreen = () => {
     );
   }
 
-  const mapRegion = useMemo(() => {
-    if (order.centerCoordinate) {
-      return {
-        latitude: order.centerCoordinate.latitude,
-        longitude: order.centerCoordinate.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      };
-    }
-    return DEFAULT_CENTER;
-  }, [order]);
+  if (isError) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Container padding="lg">
+          <View style={styles.errorContainer}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Body>←</Body>
+            </TouchableOpacity>
+            <Spacer size="lg" />
+            <Body color={colors.error}>Unable to load order detail</Body>
+            <Spacer size="sm" />
+            <Button size="sm" onPress={() => refetch()}>
+              Retry
+            </Button>
+          </View>
+        </Container>
+      </SafeAreaView>
+    );
+  }
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'completed':
         return colors.success;
       case 'in progress':
+      case 'inprogress':
         return '#FF9500';
       case 'pending':
         return colors.info;
@@ -166,7 +153,23 @@ export const UavOrderDetailScreen = () => {
     }
   };
 
-  const canStartExecution = order.status === 'Pending' || order.status === 'In Progress';
+  const canStartExecution =
+    order.status === 'Pending' || order.status === 'InProgress' || order.status === 'In Progress';
+
+  const focusPlotOnMap = (plotId: string) => {
+    setFocusedPlotId(plotId);
+    const polygon = assignmentPolygons.find((p) => p.plotId === plotId);
+    if (!polygon || polygon.coordinates.length === 0) {
+      return;
+    }
+    const region = getRegionFromPoints(polygon.coordinates);
+    if (mapRef.current) {
+      mapRef.current.animateToRegion(region, 500);
+    }
+    if (fullscreenMapRef.current) {
+      fullscreenMapRef.current.animateToRegion(region, 500);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -183,31 +186,52 @@ export const UavOrderDetailScreen = () => {
         <Spacer size="lg" />
 
         <ScrollView showsVerticalScrollIndicator={false}>
-          {/* Order Info Card */}
+          {/* Order Header */}
           <Card variant="elevated" style={styles.card}>
             <View style={styles.orderHeader}>
               <View style={styles.orderInfo}>
-                <BodySemibold style={styles.orderNumber}>{order.orderNumber}</BodySemibold>
-                <BodySmall color={colors.textSecondary}>{order.plotName}</BodySmall>
+                <BodySmall color={colors.textSecondary}>Order</BodySmall>
+                <BodySemibold style={styles.orderNumber}>{order.orderName}</BodySemibold>
+                <BodySmall color={colors.textSecondary}>{order.groupName}</BodySmall>
+                {order.vendorName && (
+                  <BodySmall color={colors.textSecondary}>Vendor: {order.vendorName}</BodySmall>
+                )}
               </View>
               <View style={styles.badges}>
                 <Badge
-                  variant="outline"
-                  style={[styles.statusBadge, { borderColor: getStatusColor(order.status) }]}
+                  variant="neutral"
+                  style={getStatusBadgeStyle(getStatusColor(order.status))}
                 >
                   <BodySmall style={{ color: getStatusColor(order.status) }}>
-                    {order.status}
+                    {order.status.replace(/([A-Z])/g, ' $1').trim()}
                   </BodySmall>
                 </Badge>
                 <Spacer size="xs" />
                 <Badge
-                  variant="outline"
-                  style={[styles.priorityBadge, { borderColor: getPriorityColor(order.priority) }]}
+                  variant="neutral"
+                  style={getPriorityBadgeStyle(getPriorityColor(order.priority))}
                 >
                   <BodySmall style={{ color: getPriorityColor(order.priority) }}>
                     {order.priority}
                   </BodySmall>
                 </Badge>
+              </View>
+            </View>
+            <Spacer size="lg" />
+            <View style={styles.statRow}>
+              <View style={styles.statCard}>
+                <BodySmall color={colors.textSecondary}>Area</BodySmall>
+                <BodySemibold style={styles.statValue}>{order.totalArea.toFixed(2)} ha</BodySemibold>
+              </View>
+              <View style={styles.statCard}>
+                <BodySmall color={colors.textSecondary}>Plots</BodySmall>
+                <BodySemibold style={styles.statValue}>{order.totalPlots}</BodySemibold>
+              </View>
+              <View style={styles.statCard}>
+                <BodySmall color={colors.textSecondary}>Completion</BodySmall>
+                <BodySemibold style={styles.statValue}>
+                  {order.completionPercentage}%
+                </BodySemibold>
               </View>
             </View>
           </Card>
@@ -232,19 +256,34 @@ export const UavOrderDetailScreen = () => {
               showsCompass={true}
               showsScale={true}
             >
-              {order.zoneCoordinates.length > 0 && (
+              {assignmentPolygons.map((polygon) => (
                 <MapPolygon
-                  coordinates={order.zoneCoordinates}
-                  strokeColor="#FF6B6B"
-                  fillColor="rgba(255, 107, 107, 0.25)"
+                  key={polygon.plotId}
+                  coordinates={polygon.coordinates}
+                  strokeColor={
+                    focusedPlotId && focusedPlotId === polygon.plotId
+                      ? colors.primary
+                      : getStatusColor(polygon.status)
+                  }
+                  fillColor={
+                    focusedPlotId && focusedPlotId === polygon.plotId
+                      ? `${colors.primary}40`
+                      : `${getStatusColor(polygon.status)}30`
+                  }
+                  strokeWidth={focusedPlotId && focusedPlotId === polygon.plotId ? 3 : 2}
+                />
+              ))}
+              {routeCoordinates.length > 0 && (
+                <Polyline
+                  coordinates={routeCoordinates}
+                  strokeColor={colors.primary}
                   strokeWidth={3}
                 />
               )}
-              {order.centerCoordinate && (
+              {assignmentPolygons.length > 0 && (
                 <Marker
-                  coordinate={order.centerCoordinate}
-                  title={order.plotName}
-                  description="Spraying Zone"
+                  coordinate={assignmentPolygons[0].coordinates[0]}
+                  title={assignmentPolygons[0].plotName}
                 />
               )}
             </MapView>
@@ -252,25 +291,46 @@ export const UavOrderDetailScreen = () => {
 
           <Spacer size="md" />
 
-          {/* Timing Information */}
+          {/* Schedule */}
           <Card variant="elevated" style={styles.card}>
-            <H4>Timing</H4>
+            <H4>Schedule</H4>
             <Spacer size="md" />
             <View style={styles.infoRow}>
-              <BodySmall color={colors.textSecondary}>Scheduled Date:</BodySmall>
+              <BodySmall color={colors.textSecondary}>Scheduled:</BodySmall>
               <BodySemibold>
-                {dayjs(order.scheduledDate).format('MMM D, YYYY h:mm A')}
+                {dayjs(order.scheduledDate).format('MMM D, YYYY')}
+                {order.scheduledTime ? ` • ${order.scheduledTime}` : ''}
               </BodySemibold>
             </View>
+            {order.startedAt && (
+              <>
+                <Spacer size="sm" />
+                <View style={styles.infoRow}>
+                  <BodySmall color={colors.textSecondary}>Started:</BodySmall>
+                  <BodySemibold>{dayjs(order.startedAt).format('MMM D, YYYY h:mm A')}</BodySemibold>
+                </View>
+              </>
+            )}
+            {order.completedAt && (
+              <>
+                <Spacer size="sm" />
+                <View style={styles.infoRow}>
+                  <BodySmall color={colors.textSecondary}>Completed:</BodySmall>
+                  <BodySemibold>
+                    {dayjs(order.completedAt).format('MMM D, YYYY h:mm A')}
+                  </BodySemibold>
+                </View>
+              </>
+            )}
             <Spacer size="sm" />
             <View style={styles.infoRow}>
-              <BodySmall color={colors.textSecondary}>Estimated Duration:</BodySmall>
-              <BodySemibold>{order.estimatedDuration}</BodySemibold>
+              <BodySmall color={colors.textSecondary}>Estimated Cost:</BodySmall>
+              <BodySemibold>{order.estimatedCost?.toLocaleString() ?? 0}₫</BodySemibold>
             </View>
             <Spacer size="sm" />
             <View style={styles.infoRow}>
-              <BodySmall color={colors.textSecondary}>Area:</BodySmall>
-              <BodySemibold>{order.area} hectares</BodySemibold>
+              <BodySmall color={colors.textSecondary}>Actual Cost:</BodySmall>
+              <BodySemibold>{order.actualCost?.toLocaleString() ?? 0}₫</BodySemibold>
             </View>
           </Card>
 
@@ -280,64 +340,151 @@ export const UavOrderDetailScreen = () => {
           <Card variant="elevated" style={styles.card}>
             <H4>Materials & Dosage</H4>
             <Spacer size="md" />
+            {order.materials.length === 0 && (
+              <BodySmall color={colors.textSecondary}>No materials assigned.</BodySmall>
+            )}
             {order.materials.map((material) => (
-              <View key={material.id} style={styles.materialCard}>
+              <View key={material.materialId} style={styles.materialCard}>
                 <View style={styles.materialHeader}>
-                  <BodySemibold>{material.name}</BodySemibold>
-                  <Badge variant="outline" style={styles.dosageBadge}>
-                    <BodySmall>{material.dosage}</BodySmall>
+                  <BodySemibold>{material.materialName}</BodySemibold>
+                  <Badge variant="neutral" style={styles.dosageBadge}>
+                    <BodySmall>{material.quantityPerHa} {material.materialUnit}/ha</BodySmall>
                   </Badge>
                 </View>
                 <Spacer size="sm" />
                 <View style={styles.materialDetails}>
                   <View style={styles.materialDetailItem}>
-                    <BodySmall color={colors.textSecondary}>Quantity:</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Total Quantity:</BodySmall>
                     <BodySemibold>
-                      {material.quantity} {material.unit}
+                      {material.totalQuantityRequired} {material.materialUnit}
+                    </BodySemibold>
+                  </View>
+                  <View style={styles.materialDetailItem}>
+                    <BodySmall color={colors.textSecondary}>Est. Cost:</BodySmall>
+                    <BodySemibold>
+                      {material.totalEstimatedCost.toLocaleString()}₫
                     </BodySemibold>
                   </View>
                 </View>
-                {material.notes && (
-                  <>
-                    <Spacer size="sm" />
-                    <View style={styles.notesContainer}>
-                      <BodySmall color={colors.textSecondary}>Notes:</BodySmall>
-                      <BodySmall>{material.notes}</BodySmall>
-                    </View>
-                  </>
-                )}
               </View>
             ))}
           </Card>
 
           <Spacer size="md" />
 
-          {/* Instructions */}
-          {order.instructions && (
-            <>
-              <Card variant="elevated" style={styles.card}>
-                <H4>Instructions</H4>
-                <Spacer size="md" />
-                <BodySmall>{order.instructions}</BodySmall>
-              </Card>
-              <Spacer size="md" />
-            </>
-          )}
-
-          {/* Action Button */}
-          {canStartExecution && (
-            <Button
-              onPress={() =>
-                router.push({
-                  pathname: '/uav/orders/[orderId]/report',
-                  params: { orderId: order.id },
-                } as any)
-              }
-              style={styles.actionButton}
-            >
-              {order.status === 'Pending' ? 'Start Execution' : 'Report Execution'}
-            </Button>
-          )}
+          {/* Plot Assignments */}
+          <Card variant="elevated" style={styles.card}>
+            <H4>Plot Assignments</H4>
+            <Spacer size="md" />
+            {order.plotAssignments.map((assignment) => (
+              <TouchableOpacity
+                key={assignment.plotId}
+                style={styles.assignmentCard}
+                activeOpacity={0.9}
+                onPress={() => focusPlotOnMap(assignment.plotId)}
+              >
+                <View style={styles.assignmentHeader}>
+                  <View>
+                    <BodySemibold>{assignment.plotName}</BodySemibold>
+                    <BodySmall color={colors.textSecondary}>
+                      Area: {assignment.servicedArea} ha
+                    </BodySmall>
+                  </View>
+                  <Badge
+                    variant="neutral"
+                    style={getStatusBadgeStyle(getStatusColor(assignment.status))}
+                  >
+                    <BodySmall style={{ color: getStatusColor(assignment.status) }}>
+                      {assignment.status.replace(/([A-Z])/g, ' $1').trim()}
+                    </BodySmall>
+                  </Badge>
+                </View>
+                <Spacer size="sm" />
+                <View style={styles.assignmentMeta}>
+                  <BodySmall color={colors.textSecondary}>Actual Cost:</BodySmall>
+                  <BodySemibold>
+                    {assignment.actualCost ? `${assignment.actualCost.toLocaleString()}₫` : '—'}
+                  </BodySemibold>
+                </View>
+                {assignment.completionDate && (
+                  <View style={styles.assignmentMeta}>
+                    <BodySmall color={colors.textSecondary}>Completed:</BodySmall>
+                    <BodySemibold>
+                      {dayjs(assignment.completionDate).format('MMM D, YYYY h:mm A')}
+                    </BodySemibold>
+                  </View>
+                )}
+                {assignment.reportNotes && (
+                  <>
+                    <Spacer size="xs" />
+                    <BodySmall color={colors.textSecondary}>{assignment.reportNotes}</BodySmall>
+                  </>
+                )}
+                {assignment.proofUrls.length > 0 && (
+                  <>
+                    <Spacer size="xs" />
+                    <TouchableOpacity
+                      style={styles.proofToggle}
+                      onPress={() =>
+                        setExpandedProofs((prev) => ({
+                          ...prev,
+                          [assignment.plotId]: !prev[assignment.plotId],
+                        }))
+                      }
+                    >
+                      <BodySmall color={colors.textSecondary}>
+                        Proofs ({assignment.proofUrls.length})
+                      </BodySmall>
+                      <Body style={{ color: colors.primary }}>
+                        {expandedProofs[assignment.plotId] ? '▲' : '▼'}
+                      </Body>
+                    </TouchableOpacity>
+                    {expandedProofs[assignment.plotId] && (
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={styles.proofGallery}
+                      >
+                        {assignment.proofUrls.map((url) => (
+                          <TouchableOpacity
+                            key={url}
+                            onPress={() => Linking.openURL(url)}
+                            style={styles.proofPreviewCard}
+                          >
+                            <Image source={{ uri: url }} style={styles.proofImage} />
+                            <BodySmall numberOfLines={1} style={styles.proofCaption}>
+                              {url.replace(/^https?:\/\//, '')}
+                            </BodySmall>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    )}
+                  </>
+                )}
+                {assignment.status !== 'Completed' && (
+                  <>
+                    <Spacer size="sm" />
+                    <TouchableOpacity
+                      style={styles.reportButton}
+                      onPress={() =>
+                        router.push({
+                          pathname: '/uav/orders/[orderId]/report',
+                          params: {
+                            orderId: order.orderId,
+                            plotId: assignment.plotId,
+                            plotName: assignment.plotName,
+                            servicedArea: assignment.servicedArea.toString(),
+                          },
+                        } as any)
+                      }
+                    >
+                      <BodySemibold style={styles.reportButtonText}>Report Completion</BodySemibold>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </TouchableOpacity>
+            ))}
+          </Card>
 
           <Spacer size="xl" />
         </ScrollView>
@@ -374,19 +521,28 @@ export const UavOrderDetailScreen = () => {
               showsCompass={true}
               showsScale={true}
             >
-              {order.zoneCoordinates.length > 0 && (
+              {assignmentPolygons.map((polygon) => (
                 <MapPolygon
-                  coordinates={order.zoneCoordinates}
-                  strokeColor="#FF6B6B"
-                  fillColor="rgba(255, 107, 107, 0.25)"
-                  strokeWidth={3}
+                  key={`full-${polygon.plotId}`}
+                  coordinates={polygon.coordinates}
+                  strokeColor={
+                    focusedPlotId && focusedPlotId === polygon.plotId
+                      ? colors.primary
+                      : getStatusColor(polygon.status)
+                  }
+                  fillColor={
+                    focusedPlotId && focusedPlotId === polygon.plotId
+                      ? `${colors.primary}40`
+                      : `${getStatusColor(polygon.status)}30`
+                  }
+                  strokeWidth={focusedPlotId && focusedPlotId === polygon.plotId ? 3 : 2}
                 />
-              )}
-              {order.centerCoordinate && (
-                <Marker
-                  coordinate={order.centerCoordinate}
-                  title={order.plotName}
-                  description="Spraying Zone"
+              ))}
+              {routeCoordinates.length > 0 && (
+                <Polyline
+                  coordinates={routeCoordinates}
+                  strokeColor={colors.primary}
+                  strokeWidth={3}
                 />
               )}
             </MapView>
@@ -402,6 +558,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: spacing['2xl'],
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -409,6 +571,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
   },
   backButton: {
+    alignSelf: 'flex-start',
     width: 40,
     height: 40,
     justifyContent: 'center',
@@ -434,19 +597,39 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   orderNumber: {
+    paddingTop: 5,
+    fontSize: 18,
+  },
+  statRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  statCard: {
+    flex: 1,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.backgroundSecondary,
+    alignItems: 'flex-start',
+  },
+  statValue: {
     fontSize: 18,
   },
   badges: {
     alignItems: 'flex-end',
+    marginTop: 18,
     gap: spacing.xs,
   },
   statusBadge: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   priorityBadge: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   mapCard: {
     height: 250,
@@ -490,6 +673,63 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  assignmentCard: {
+    padding: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.sm,
+  },
+  assignmentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  assignmentMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: spacing.xs,
+  },
+  reportButton: {
+    marginTop: spacing.xs,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    alignItems: 'center',
+  },
+  reportButtonText: {
+    color: colors.primary,
+  },
+  proofLink: {
+    paddingVertical: spacing.xs / 2,
+  },
+  proofToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.xs,
+  },
+  proofGallery: {
+    marginTop: spacing.xs,
+  },
+  proofPreviewCard: {
+    width: 120,
+    marginRight: spacing.sm,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.backgroundSecondary,
+    padding: spacing.xs,
+  },
+  proofImage: {
+    width: '100%',
+    height: 80,
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.background,
+  },
+  proofCaption: {
+    marginTop: spacing.xs / 2,
+    fontSize: 10,
+  },
   materialCard: {
     backgroundColor: colors.backgroundSecondary,
     borderRadius: borderRadius.md,
@@ -523,4 +763,75 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
 });
+
+type LatLng = { latitude: number; longitude: number };
+
+const parseWktPolygon = (wkt?: string | null): LatLng[] => {
+  if (!wkt) return [];
+  const match = wkt.match(/\(\((.+)\)\)/);
+  if (!match) return [];
+  return match[1]
+    .split(',')
+    .map((pair) => pair.trim())
+    .map((pair) => {
+      const [lng, lat] = pair.split(' ').map((value) => Number(value));
+      return { latitude: lat, longitude: lng };
+    });
+};
+
+const parseWktLineString = (wkt?: string | null): LatLng[] => {
+  if (!wkt) return [];
+  const match = wkt.match(/\((.+)\)/);
+  if (!match) return [];
+  return match[1]
+    .split(',')
+    .map((pair) => pair.trim())
+    .map((pair) => {
+      const [lng, lat] = pair.split(' ').map((value) => Number(value));
+      return { latitude: lat, longitude: lng };
+    });
+};
+
+const getRegionFromPoints = (points: LatLng[]): Region => {
+  if (points.length === 0) {
+    return DEFAULT_CENTER;
+  }
+  let minLat = points[0].latitude;
+  let maxLat = points[0].latitude;
+  let minLng = points[0].longitude;
+  let maxLng = points[0].longitude;
+
+  points.forEach((point) => {
+    minLat = Math.min(minLat, point.latitude);
+    maxLat = Math.max(maxLat, point.latitude);
+    minLng = Math.min(minLng, point.longitude);
+    maxLng = Math.max(maxLng, point.longitude);
+  });
+
+  const latitudeDelta = Math.max((maxLat - minLat) * 1.5, 0.01);
+  const longitudeDelta = Math.max((maxLng - minLng) * 1.5, 0.01);
+
+  return {
+    latitude: (minLat + maxLat) / 2,
+    longitude: (minLng + maxLng) / 2,
+    latitudeDelta,
+    longitudeDelta,
+  };
+};
+
+const getStatusBadgeStyle = (color: string): ViewStyle => {
+  const base = StyleSheet.flatten(styles.statusBadge) || {};
+  return {
+    ...(base as ViewStyle),
+    borderColor: color,
+  };
+};
+
+const getPriorityBadgeStyle = (color: string): ViewStyle => {
+  const base = StyleSheet.flatten(styles.priorityBadge) || {};
+  return {
+    ...(base as ViewStyle),
+    borderColor: color,
+  };
+};
 
