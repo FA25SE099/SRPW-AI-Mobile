@@ -23,20 +23,32 @@ export const LoginScreen = () => {
   const router = useRouter();
   const login = useLogin();
   
+  const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
   const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
-  const [errors, setErrors] = useState({ email: '', password: '' });
+  const [errors, setErrors] = useState({ credential: '', password: '' });
 
   const validateForm = () => {
     let valid = true;
-    const newErrors = { email: '', password: '' };
+    const newErrors = { credential: '', password: '' };
 
-    if (!email) {
-      newErrors.email = 'Email is required';
-      valid = false;
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Email is invalid';
-      valid = false;
+    if (loginMethod === 'email') {
+      if (!email) {
+        newErrors.credential = 'Email is required';
+        valid = false;
+      } else if (!/\S+@\S+\.\S+/.test(email)) {
+        newErrors.credential = 'Email is invalid';
+        valid = false;
+      }
+    } else {
+      if (!phoneNumber) {
+        newErrors.credential = 'Phone number is required';
+        valid = false;
+      } else if (!/^[+]?[\d\s-()]+$/.test(phoneNumber)) {
+        newErrors.credential = 'Phone number is invalid';
+        valid = false;
+      }
     }
 
     if (!password) {
@@ -55,14 +67,18 @@ export const LoginScreen = () => {
     if (!validateForm()) return;
 
     try {
-      await login.mutateAsync({ email, password });
+      await login.mutateAsync({
+        email: loginMethod === 'email' ? email : null,
+        phoneNumber: loginMethod === 'phone' ? phoneNumber : null,
+        password,
+        rememberMe: true,
+      });
       // Navigate to index, which will handle role-based routing
-      // The useLogin hook already updates the user cache, so index.tsx will detect the user
       router.replace('/');
-    } catch (error) {
+    } catch (error: any) {
       setErrors({
-        email: 'Invalid email or password',
-        password: 'Invalid email or password',
+        credential: error.message || 'Invalid credentials',
+        password: error.message || 'Invalid credentials',
       });
     }
   };
@@ -97,16 +113,68 @@ export const LoginScreen = () => {
 
             <Card variant="elevated" style={styles.formCard}>
               <View style={styles.form}>
-                <Input
-                  label="Email"
-                  placeholder="farmer@example.com"
-                  value={email}
-                  onChangeText={setEmail}
-                  error={errors.email}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoComplete="email"
-                />
+                {/* Login Method Toggle */}
+                <View style={styles.methodToggle}>
+                  <TouchableOpacity
+                    style={[
+                      styles.methodButton,
+                      loginMethod === 'email' && styles.methodButtonActive,
+                    ]}
+                    onPress={() => {
+                      setLoginMethod('email');
+                      setErrors({ credential: '', password: '' });
+                    }}
+                  >
+                    <Body
+                      color={loginMethod === 'email' ? colors.white : colors.textSecondary}
+                      style={styles.methodButtonText}
+                    >
+                      Email
+                    </Body>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.methodButton,
+                      loginMethod === 'phone' && styles.methodButtonActive,
+                    ]}
+                    onPress={() => {
+                      setLoginMethod('phone');
+                      setErrors({ credential: '', password: '' });
+                    }}
+                  >
+                    <Body
+                      color={loginMethod === 'phone' ? colors.white : colors.textSecondary}
+                      style={styles.methodButtonText}
+                    >
+                      Phone
+                    </Body>
+                  </TouchableOpacity>
+                </View>
+
+                <Spacer size="md" />
+
+                {loginMethod === 'email' ? (
+                  <Input
+                    label="Email"
+                    placeholder="farmer@example.com"
+                    value={email}
+                    onChangeText={setEmail}
+                    error={errors.credential}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoComplete="email"
+                  />
+                ) : (
+                  <Input
+                    label="Phone Number"
+                    placeholder="+84912345678"
+                    value={phoneNumber}
+                    onChangeText={setPhoneNumber}
+                    error={errors.credential}
+                    keyboardType="phone-pad"
+                    autoComplete="tel"
+                  />
+                )}
 
                 <Input
                   label="Password"
@@ -194,6 +262,25 @@ const styles = StyleSheet.create({
   },
   form: {
     width: '100%',
+  },
+  methodToggle: {
+    flexDirection: 'row',
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.full,
+    padding: spacing.xs / 2,
+  },
+  methodButton: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  methodButtonActive: {
+    backgroundColor: colors.primary,
+  },
+  methodButtonText: {
+    fontFamily: textStyles.bodySemibold.fontFamily,
   },
   forgotPassword: {
     alignSelf: 'flex-end',

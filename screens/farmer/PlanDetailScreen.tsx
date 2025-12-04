@@ -125,7 +125,17 @@ export const PlanDetailScreen = () => {
             <Body>←</Body>
           </TouchableOpacity>
           <H3 style={styles.headerTitle}>{plan.planName || planName}</H3>
-          <View style={styles.headerRight} />
+          <TouchableOpacity
+            onPress={() =>
+              router.push({
+                pathname: '/farmer/reports/create',
+                params: { plotCultivationId: planCultivationId },
+              } as any)
+            }
+            style={styles.reportButton}
+          >
+            <BodySmall color={colors.error}>Report</BodySmall>
+          </TouchableOpacity>
         </View>
 
         <BodySmall color={colors.textSecondary}>
@@ -393,8 +403,14 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
   },
-  headerRight: {
-    width: 40,
+  reportButton: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    borderColor: colors.error,
+    minWidth: 60,
+    alignItems: 'center',
   },
   errorCard: {
     padding: spacing.lg,

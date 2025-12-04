@@ -489,9 +489,22 @@ export const FieldsScreen = () => {
                         params: { plotId: field.plotId, plotName: field.groupName },
                       } as any)
                     }
-                    style={styles.editButton}
+                    style={styles.actionButton}
                   >
                     View Plans
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onPress={() =>
+                      router.push({
+                        pathname: '/farmer/reports/create',
+                        params: { plotId: field.plotId },
+                      } as any)
+                    }
+                    style={styles.actionButton}
+                  >
+                    Report Issue
                   </Button>
                 </View>
               </Card>
@@ -596,8 +609,8 @@ const styles = StyleSheet.create({
   fieldDetailItem: {
     minWidth: '30%',
   },
-  editButton: {
-    alignSelf: 'flex-start',
+  actionButton: {
+    flex: 1,
   },
   buttonRow: {
     flexDirection: 'row',
