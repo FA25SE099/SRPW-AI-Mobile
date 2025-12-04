@@ -50,13 +50,47 @@ export type TokenData = {
   expiresAt: string; // ISO date string
 };
 
-// Login response
-export type LoginResponse = {
+// User info returned in auth responses
+export type AuthUser = {
+  id: string;
+  userName: string;
+  email: string;
+  role: UserRole;
+};
+
+// Login response (wrapped in Result)
+export type LoginResponseData = {
   accessToken: string;
   refreshToken: string;
   expiresAt: string;
-  user: User;
+  user: AuthUser;
 };
+
+export type LoginResponse = Result<LoginResponseData>;
+
+// Login request
+export type LoginRequest = {
+  email?: string | null;
+  phoneNumber?: string | null;
+  password: string;
+  rememberMe?: boolean;
+};
+
+// Fast login query params
+export type FastLoginRole = 'Admin' | 'Supervisor' | 'Expert' | 'Uav' | 'ClusterManager';
+
+// Logout request
+export type LogoutRequest = {
+  refreshToken?: string;
+};
+
+// Refresh token request
+export type RefreshTokenRequest = {
+  accessToken: string;
+  refreshToken: string;
+};
+
+export type RefreshTokenResponse = Result<LoginResponseData>;
 
 // Legacy type for backward compatibility
 export type AuthResponse = {
@@ -705,4 +739,26 @@ export type CreateFarmLogRequest = {
   proofImages?: string[]; // Array of image URIs (will be converted to FormData)
   materials?: FarmLogMaterialRequest[];
   farmerId?: string | null;
+};
+
+// Emergency Report Types
+export type AlertType = 'Pest' | 'Weather' | 'Disease' | 'Other';
+export type Severity = 'Low' | 'Medium' | 'High' | 'Critical';
+
+export type CreateEmergencyReportRequest = {
+  plotCultivationId?: string | null;
+  groupId?: string | null;
+  clusterId?: string | null;
+  alertType: AlertType;
+  title: string;
+  description: string;
+  severity: Severity;
+  imageUrls?: string[] | null;
+};
+
+export type CreateEmergencyReportResponse = {
+  succeeded: boolean;
+  data: string; // The created report ID (GUID)
+  message: string | null;
+  errors: string[] | null;
 };

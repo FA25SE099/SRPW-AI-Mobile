@@ -641,8 +641,8 @@ const styles = StyleSheet.create({
   fieldDetailItem: {
     minWidth: '30%',
   },
-  editButton: {
-    alignSelf: 'flex-start',
+  actionButton: {
+    flex: 1,
   },
   buttonRow: {
     flexDirection: 'row',
@@ -656,6 +656,9 @@ const styles = StyleSheet.create({
   emptyState: {
     padding: spacing.lg,
     alignItems: 'flex-start',
+  },
+  editButton: {
+    borderColor: colors.primary,
   },
 });
 

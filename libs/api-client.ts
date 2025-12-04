@@ -3,7 +3,7 @@ import { Alert } from 'react-native';
 
 import { env } from '@/configs/env';
 import { tokenStorage } from './token-storage';
-import { Result, TokenData } from '@/types/api';
+import { Result, TokenData, LoginResponseData } from '@/types/api';
 
 let isRefreshing = false;
 let failedQueue: Array<{
@@ -128,26 +128,30 @@ api.interceptors.response.use(
 
       try {
         // Try to refresh the token
-        const response = await Axios.post<Result<TokenData>>(
-          `${env.API_URL}/Auth/refresh`,
-          { refreshToken },
+        const accessToken = await tokenStorage.getAccessToken();
+        const response = await Axios.post<Result<LoginResponseData>>(
+          `${env.API_URL}/api/auth/refresh-token`,
+          { 
+            accessToken,
+            refreshToken 
+          },
           { headers: { Accept: 'application/json' } },
         );
 
         const result = response.data;
 
         if (result.succeeded && result.data) {
-          const { accessToken, refreshToken: newRefreshToken, expiresAt } = result.data;
+          const { accessToken: newAccessToken, refreshToken: newRefreshToken, expiresAt } = result.data;
 
           // Store new tokens
-          await tokenStorage.setTokens(accessToken, newRefreshToken, expiresAt);
+          await tokenStorage.setTokens(newAccessToken, newRefreshToken, expiresAt);
 
           // Update the Authorization header for the original request
           if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+            originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
           }
 
-          processQueue(null, accessToken);
+          processQueue(null, newAccessToken);
           isRefreshing = false;
 
           // Retry the original request

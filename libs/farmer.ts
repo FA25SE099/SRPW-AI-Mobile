@@ -8,6 +8,7 @@ import {
   CreateFarmLogRequest,
   CultivationTaskDetailResponse,
   FarmLogDetailResponse,
+  CreateEmergencyReportRequest,
 } from '@/types/api';
 
 type GetFarmerPlotsParams = {
@@ -165,6 +166,44 @@ export const createFarmLog = async (
 
   // Axios will automatically set Content-Type with boundary for FormData
   const response = await api.post<string>('/Farmlog/farm-logs', formData);
+
+  return response as unknown as string;
+};
+
+export const createEmergencyReport = async (
+  request: CreateEmergencyReportRequest,
+  images: { uri: string; type: string; name: string }[],
+): Promise<string> => {
+  const formData = new FormData();
+
+  // Add optional entity IDs
+  if (request.plotCultivationId) {
+    formData.append('PlotCultivationId', request.plotCultivationId);
+  }
+  if (request.groupId) {
+    formData.append('GroupId', request.groupId);
+  }
+  if (request.clusterId) {
+    formData.append('ClusterId', request.clusterId);
+  }
+
+  // Add required fields
+  formData.append('AlertType', request.alertType);
+  formData.append('Title', request.title);
+  formData.append('Description', request.description);
+  // ASP.NET enum binder accepts the enum name (e.g. "Low", "Medium")
+  formData.append('Severity', request.severity);
+
+  // Add images
+  images.forEach((image) => {
+    formData.append('Images', {
+      uri: image.uri,
+      type: image.type,
+      name: image.name,
+    } as any);
+  });
+
+  const response = await api.post<string>('/Farmer/create-report', formData);
 
   return response as unknown as string;
 };
