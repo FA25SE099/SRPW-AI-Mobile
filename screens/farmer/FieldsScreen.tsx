@@ -123,6 +123,62 @@ const reverseGeocode = async (
   }
 };
 
+type FieldCardProps = {
+  field: FarmerPlot;
+  onPressCard: () => void;
+  onFocusOnMap: () => void;
+};
+
+const FieldCard = ({ field, onPressCard, onFocusOnMap }: FieldCardProps) => {
+  return (
+    <TouchableOpacity onPress={onPressCard} activeOpacity={0.85}>
+      <Card variant="elevated" style={styles.fieldCard}>
+        <View style={styles.fieldCardHeader}>
+          <View style={styles.fieldIcon}>
+            <Body>🌾</Body>
+          </View>
+          <View style={styles.fieldInfo}>
+            <BodySemibold>{field.groupName}</BodySemibold>
+            <BodySmall color={colors.textSecondary}>
+              Plot #{field.soThua} • Sheet #{field.soTo}
+            </BodySmall>
+          </View>
+          <TouchableOpacity onPress={onFocusOnMap}>
+            <Body color={colors.primary}>📍</Body>
+          </TouchableOpacity>
+        </View>
+        <Spacer size="md" />
+        <View style={styles.fieldDetails}>
+          <View style={styles.fieldDetailItem}>
+            <BodySmall color={colors.textSecondary}>Area</BodySmall>
+            <BodySemibold>{field.area} ha</BodySemibold>
+          </View>
+          <View style={styles.fieldDetailItem}>
+            <BodySmall color={colors.textSecondary}>Status</BodySmall>
+            <BodySemibold>{field.status}</BodySemibold>
+          </View>
+          <View style={styles.fieldDetailItem}>
+            <BodySmall color={colors.textSecondary}>Active alerts</BodySmall>
+            <BodySemibold>{field.activeAlerts}</BodySemibold>
+          </View>
+        </View>
+        <Spacer size="md" />
+        <View style={styles.buttonRow}>
+          <Button
+            variant="outline"
+            size="sm"
+            onPress={onPressCard}
+            style={styles.editButton}
+          >
+            View plans
+          </Button>
+        </View>
+      </Card>
+      <Spacer size="md" />
+    </TouchableOpacity>
+  );
+};
+
 export const FieldsScreen = () => {
   const router = useRouter();
   const { data: user } = useUser();
@@ -258,6 +314,11 @@ export const FieldsScreen = () => {
     return DEFAULT_CENTER;
   }, [pointMarkers, polygonOverlays]);
 
+  const totalAreaHa = useMemo(() => {
+    if (!plots || plots.length === 0) return 0;
+    return plots.reduce((sum, plot) => sum + (plot.area || 0), 0);
+  }, [plots]);
+
   if (isLoading) {
     return <Spinner fullScreen />;
   }
@@ -304,6 +365,20 @@ export const FieldsScreen = () => {
           >
             <Body color={colors.primary}>+</Body>
           </TouchableOpacity>
+        </View>
+
+        <Spacer size="lg" />
+
+        {/* Summary */}
+        <View style={styles.summaryRow}>
+          <Card variant="flat" style={styles.summaryCard}>
+            <BodySmall color={colors.textSecondary}>Total fields</BodySmall>
+            <H4>{plots?.length ?? 0}</H4>
+          </Card>
+          <Card variant="flat" style={styles.summaryCard}>
+            <BodySmall color={colors.textSecondary}>Total area</BodySmall>
+            <H4>{totalAreaHa.toFixed(2)} ha</H4>
+          </Card>
         </View>
 
         <Spacer size="lg" />
@@ -443,60 +518,17 @@ export const FieldsScreen = () => {
           )}
 
           {plots?.map((field: FarmerPlot) => (
-            <TouchableOpacity
+            <FieldCard
               key={field.plotId}
-              onPress={() => focusOnPlot(field)}
-              activeOpacity={0.8}
-            >
-              <Card variant="elevated" style={styles.fieldCard}>
-                <View style={styles.fieldCardHeader}>
-                  <View style={styles.fieldIcon}>
-                    <Body>🌾</Body>
-                  </View>
-                  <View style={styles.fieldInfo}>
-                    <BodySemibold>{field.groupName}</BodySemibold>
-                    <BodySmall color={colors.textSecondary}>
-                      Plot #{field.soThua} • Sheet #{field.soTo}
-                    </BodySmall>
-                  </View>
-                  <TouchableOpacity onPress={() => focusOnPlot(field, true)}>
-                    <Body color={colors.primary}>📍</Body>
-                  </TouchableOpacity>
-                </View>
-                <Spacer size="md" />
-                <View style={styles.fieldDetails}>
-                  <View style={styles.fieldDetailItem}>
-                    <BodySmall color={colors.textSecondary}>Area</BodySmall>
-                    <BodySemibold>{field.area} ha</BodySemibold>
-                  </View>
-                  <View style={styles.fieldDetailItem}>
-                    <BodySmall color={colors.textSecondary}>Status</BodySmall>
-                    <BodySemibold>{field.status}</BodySemibold>
-                  </View>
-                  <View style={styles.fieldDetailItem}>
-                    <BodySmall color={colors.textSecondary}>Active Alerts</BodySmall>
-                    <BodySemibold>{field.activeAlerts}</BodySemibold>
-                  </View>
-                </View>
-                <Spacer size="md" />
-                <View style={styles.buttonRow}>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onPress={() =>
-                      router.push({
-                        pathname: '/farmer/fields/[plotId]/plans',
-                        params: { plotId: field.plotId, plotName: field.groupName },
-                      } as any)
-                    }
-                    style={styles.editButton}
-                  >
-                    View Plans
-                  </Button>
-                </View>
-              </Card>
-              <Spacer size="md" />
-            </TouchableOpacity>
+              field={field}
+              onPressCard={() =>
+                router.push({
+                  pathname: '/farmer/fields/[plotId]/plans',
+                  params: { plotId: field.plotId, plotName: field.groupName },
+                } as any)
+              }
+              onFocusOnMap={() => focusOnPlot(field, true)}
+            />
           ))}
         </ScrollView>
       </Container>
@@ -532,7 +564,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   mapCard: {
-    height: 200,
+    height: 220,
     padding: 0,
     overflow: 'hidden',
   },
@@ -568,8 +600,21 @@ const styles = StyleSheet.create({
   fullscreenMap: {
     flex: 1,
   },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  summaryCard: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.backgroundSecondary,
+  },
   fieldCard: {
     padding: spacing.md,
+    borderRadius: borderRadius.lg,
   },
   fieldCardHeader: {
     flexDirection: 'row',
