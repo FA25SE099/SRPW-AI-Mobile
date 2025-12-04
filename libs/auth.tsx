@@ -4,7 +4,16 @@ import { Redirect } from 'expo-router';
 import { z } from 'zod';
 import { AxiosError } from 'axios';
 
-import { LoginResponse, User } from '@/types/api';
+import { 
+  LoginResponse, 
+  LoginResponseData,
+  LoginRequest,
+  FastLoginRole,
+  LogoutRequest,
+  RefreshTokenRequest,
+  RefreshTokenResponse,
+  User 
+} from '@/types/api';
 
 import { api } from './api-client';
 import { tokenStorage } from './token-storage';
@@ -37,10 +46,11 @@ const getUser = async (): Promise<User | null> => {
   }
 };
 
-const logout = async (): Promise<void> => {
+const logout = async (refreshToken?: string): Promise<void> => {
   try {
-    // Call backend logout endpoint (optional, if it exists)
-    await api.post('/Auth/logout');
+    // Call backend logout endpoint with optional refresh token
+    const requestBody: LogoutRequest = refreshToken ? { refreshToken } : {};
+    await api.post('/Auth/logout', requestBody);
   } catch (error) {
     // If logout endpoint fails, still clear local tokens
     console.error('Logout API call failed:', error);
@@ -50,21 +60,62 @@ const logout = async (): Promise<void> => {
   }
 };
 
+// Login input schemas
 export const loginInputSchema = z.object({
-  email: z.string().min(1, 'Required').email('Invalid email'),
-  password: z.string().min(5, 'Required'),
-});
+  email: z.string().optional().nullable(),
+  phoneNumber: z.string().optional().nullable(),
+  password: z.string().min(5, 'Password must be at least 5 characters'),
+  rememberMe: z.boolean().optional(),
+}).refine(
+  (data) => data.email || data.phoneNumber,
+  {
+    message: 'Either email or phone number is required',
+    path: ['email'],
+  }
+);
 
 export type LoginInput = z.infer<typeof loginInputSchema>;
 
-const loginWithEmailAndPassword = async (
+const loginWithCredentials = async (
   data: LoginInput,
-): Promise<LoginResponse> => {
-  // Add rememberMe: true as per requirements
-  const response: LoginResponse = await api.post('/Auth/login', {
-    ...data,
-    rememberMe: true,
+): Promise<LoginResponseData> => {
+  const request: LoginRequest = {
+    email: data.email || null,
+    phoneNumber: data.phoneNumber || null,
+    password: data.password,
+    rememberMe: data.rememberMe ?? true,
+  };
+
+  // The api client interceptor unwraps Result<T> responses, so we get LoginResponseData directly
+  const response: LoginResponseData = await api.post('/Auth/login', request);
+
+  if (!response || !response.accessToken || !response.refreshToken) {
+    throw new Error('Login failed: Invalid response data');
+  }
+
+  // Store tokens in AsyncStorage
+  await tokenStorage.setTokens(
+    response.accessToken,
+    response.refreshToken,
+    response.expiresAt,
+  );
+
+  return response;
+};
+
+// Fast login for testing
+const loginFast = async (
+  role: FastLoginRole,
+  rememberMe: boolean = true,
+): Promise<LoginResponseData> => {
+  // The api client interceptor unwraps Result<T> responses, so we get LoginResponseData directly
+  const response: LoginResponseData = await api.get('/Auth/login-fast', {
+    params: { role, rememberMe },
   });
+
+  if (!response || !response.accessToken || !response.refreshToken) {
+    throw new Error('Fast login failed: Invalid response data');
+  }
 
   // Store tokens in AsyncStorage
   await tokenStorage.setTokens(
@@ -101,9 +152,14 @@ export type RegisterInput = z.infer<typeof registerInputSchema>;
 
 const registerWithEmailAndPassword = async (
   data: RegisterInput,
-): Promise<LoginResponse> => {
+): Promise<LoginResponseData> => {
   // Registration also returns tokens and user
-  const response: LoginResponse = await api.post('/Auth/register', data);
+  // The api client interceptor unwraps Result<T> responses, so we get LoginResponseData directly
+  const response: LoginResponseData = await api.post('/api/auth/register', data);
+
+  if (!response || !response.accessToken || !response.refreshToken) {
+    throw new Error('Registration failed: Invalid response data');
+  }
 
   // Store tokens in AsyncStorage
   await tokenStorage.setTokens(
@@ -131,10 +187,42 @@ export const useLogin = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: loginWithEmailAndPassword,
+    mutationFn: loginWithCredentials,
     onSuccess: (response) => {
       // Update the user cache with the logged-in user
-      queryClient.setQueryData(userQueryKey, response.user);
+      // Convert AuthUser to User format
+      queryClient.setQueryData(userQueryKey, {
+        id: response.user.id,
+        email: response.user.email,
+        role: response.user.role,
+        firstName: response.user.userName.split(' ')[0] || response.user.userName,
+        lastName: response.user.userName.split(' ')[1] || '',
+        teamId: '',
+        bio: '',
+        createdAt: Date.now(),
+      } as User);
+    },
+  });
+};
+
+export const useFastLogin = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ role, rememberMe }: { role: FastLoginRole; rememberMe?: boolean }) =>
+      loginFast(role, rememberMe),
+    onSuccess: (response) => {
+      // Update the user cache with the logged-in user
+      queryClient.setQueryData(userQueryKey, {
+        id: response.user.id,
+        email: response.user.email,
+        role: response.user.role,
+        firstName: response.user.userName.split(' ')[0] || response.user.userName,
+        lastName: response.user.userName.split(' ')[1] || '',
+        teamId: '',
+        bio: '',
+        createdAt: Date.now(),
+      } as User);
     },
   });
 };
@@ -146,7 +234,16 @@ export const useRegister = () => {
     mutationFn: registerWithEmailAndPassword,
     onSuccess: (response) => {
       // Update the user cache with the registered user
-      queryClient.setQueryData(userQueryKey, response.user);
+      queryClient.setQueryData(userQueryKey, {
+        id: response.user.id,
+        email: response.user.email,
+        role: response.user.role,
+        firstName: response.user.userName.split(' ')[0] || response.user.userName,
+        lastName: response.user.userName.split(' ')[1] || '',
+        teamId: '',
+        bio: '',
+        createdAt: Date.now(),
+      } as User);
     },
   });
 };
@@ -155,7 +252,7 @@ export const useLogout = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: logout,
+    mutationFn: async (refreshToken?: string) => logout(refreshToken),
     onSuccess: () => {
       // Clear the user cache
       queryClient.setQueryData(userQueryKey, null);
