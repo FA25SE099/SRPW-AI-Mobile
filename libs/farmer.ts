@@ -191,18 +191,19 @@ export const createEmergencyReport = async (
   formData.append('AlertType', request.alertType);
   formData.append('Title', request.title);
   formData.append('Description', request.description);
+  // ASP.NET enum binder accepts the enum name (e.g. "Low", "Medium")
   formData.append('Severity', request.severity);
 
   // Add images
   images.forEach((image) => {
-    formData.append('ImageUrls', {
+    formData.append('Images', {
       uri: image.uri,
       type: image.type,
       name: image.name,
     } as any);
   });
 
-  const response = await api.post<string>('/api/farmer/create-report', formData);
+  const response = await api.post<string>('/Farmer/create-report', formData);
 
   return response as unknown as string;
 };

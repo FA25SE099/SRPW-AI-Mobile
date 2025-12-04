@@ -50,7 +50,7 @@ const logout = async (refreshToken?: string): Promise<void> => {
   try {
     // Call backend logout endpoint with optional refresh token
     const requestBody: LogoutRequest = refreshToken ? { refreshToken } : {};
-    await api.post('/api/auth/logout', requestBody);
+    await api.post('/Auth/logout', requestBody);
   } catch (error) {
     // If logout endpoint fails, still clear local tokens
     console.error('Logout API call failed:', error);
@@ -86,20 +86,21 @@ const loginWithCredentials = async (
     rememberMe: data.rememberMe ?? true,
   };
 
-  const response: LoginResponse = await api.post('/api/auth/login', request);
+  // The api client interceptor unwraps Result<T> responses, so we get LoginResponseData directly
+  const response: LoginResponseData = await api.post('/Auth/login', request);
 
-  if (!response.succeeded || !response.data) {
-    throw new Error(response.errors?.[0] || 'Login failed');
+  if (!response || !response.accessToken || !response.refreshToken) {
+    throw new Error('Login failed: Invalid response data');
   }
 
   // Store tokens in AsyncStorage
   await tokenStorage.setTokens(
-    response.data.accessToken,
-    response.data.refreshToken,
-    response.data.expiresAt,
+    response.accessToken,
+    response.refreshToken,
+    response.expiresAt,
   );
 
-  return response.data;
+  return response;
 };
 
 // Fast login for testing
@@ -107,22 +108,23 @@ const loginFast = async (
   role: FastLoginRole,
   rememberMe: boolean = true,
 ): Promise<LoginResponseData> => {
-  const response: LoginResponse = await api.get('/api/auth/login-fast', {
+  // The api client interceptor unwraps Result<T> responses, so we get LoginResponseData directly
+  const response: LoginResponseData = await api.get('/Auth/login-fast', {
     params: { role, rememberMe },
   });
 
-  if (!response.succeeded || !response.data) {
-    throw new Error(response.errors?.[0] || 'Fast login failed');
+  if (!response || !response.accessToken || !response.refreshToken) {
+    throw new Error('Fast login failed: Invalid response data');
   }
 
   // Store tokens in AsyncStorage
   await tokenStorage.setTokens(
-    response.data.accessToken,
-    response.data.refreshToken,
-    response.data.expiresAt,
+    response.accessToken,
+    response.refreshToken,
+    response.expiresAt,
   );
 
-  return response.data;
+  return response;
 };
 
 export const registerInputSchema = z
@@ -152,20 +154,21 @@ const registerWithEmailAndPassword = async (
   data: RegisterInput,
 ): Promise<LoginResponseData> => {
   // Registration also returns tokens and user
-  const response: LoginResponse = await api.post('/api/auth/register', data);
+  // The api client interceptor unwraps Result<T> responses, so we get LoginResponseData directly
+  const response: LoginResponseData = await api.post('/api/auth/register', data);
 
-  if (!response.succeeded || !response.data) {
-    throw new Error(response.errors?.[0] || 'Registration failed');
+  if (!response || !response.accessToken || !response.refreshToken) {
+    throw new Error('Registration failed: Invalid response data');
   }
 
   // Store tokens in AsyncStorage
   await tokenStorage.setTokens(
-    response.data.accessToken,
-    response.data.refreshToken,
-    response.data.expiresAt,
+    response.accessToken,
+    response.refreshToken,
+    response.expiresAt,
   );
 
-  return response.data;
+  return response;
 };
 
 // Auth hooks using TanStack Query
