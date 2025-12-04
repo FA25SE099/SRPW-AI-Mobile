@@ -657,5 +657,8 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     alignItems: 'flex-start',
   },
+  editButton: {
+    borderColor: colors.primary,
+  },
 });
 
