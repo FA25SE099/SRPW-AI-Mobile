@@ -38,7 +38,7 @@ export const TaskDetailModal = ({ visible, taskId, onClose }: Props) => {
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Spacer size="sm" />
-          <BodySmall color={colors.textSecondary}>Loading task detail...</BodySmall>
+          <BodySmall color={colors.textSecondary}>Loading task details...</BodySmall>
         </View>
       );
     }
@@ -46,7 +46,7 @@ export const TaskDetailModal = ({ visible, taskId, onClose }: Props) => {
     if (isError || !data) {
       return (
         <View style={styles.centered}>
-          <Body color={colors.error}>Unable to load task detail</Body>
+          <Body color={colors.error}>Unable to load task details</Body>
           <Spacer size="sm" />
           <Button size="sm" onPress={() => refetch()}>
             Retry
@@ -62,7 +62,10 @@ export const TaskDetailModal = ({ visible, taskId, onClose }: Props) => {
     const detail: CultivationTaskDetailResponse = data;
 
     return (
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.contentContainer}
+      >
         <BodySmall color={colors.textSecondary}>{detail.plotName}</BodySmall>
         <H4 style={styles.title}>{detail.taskName}</H4>
 
@@ -230,6 +233,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  contentContainer: {
+    paddingBottom: spacing.lg,
   },
   centered: {
     alignItems: 'center',
