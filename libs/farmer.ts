@@ -9,6 +9,7 @@ import {
   CultivationTaskDetailResponse,
   FarmLogDetailResponse,
   CreateEmergencyReportRequest,
+  PestDetectionResponse,
 } from '@/types/api';
 
 type GetFarmerPlotsParams = {
@@ -194,6 +195,28 @@ export const createEmergencyReport = async (
   // ASP.NET enum binder accepts the enum name (e.g. "Low", "Medium")
   formData.append('Severity', request.severity);
 
+  // Add AI detection results if available
+  if (request.aiDetectionResult) {
+    // Convert to the backend's expected format (PascalCase properties)
+    const aiDetectionForBackend = {
+      HasPest: request.aiDetectionResult.hasPest,
+      TotalDetections: request.aiDetectionResult.totalDetections,
+      DetectedPests: request.aiDetectionResult.detectedPests.map(pest => ({
+        PestName: pest.pestName,
+        Confidence: pest.confidence,
+        ConfidenceLevel: pest.confidenceLevel,
+      })),
+      AverageConfidence: request.aiDetectionResult.averageConfidence,
+      ImageInfo: request.aiDetectionResult.imageInfo ? {
+        Width: request.aiDetectionResult.imageInfo.width,
+        Height: request.aiDetectionResult.imageInfo.height,
+      } : null,
+    };
+    
+    // Serialize as JSON for complex object in FormData
+    formData.append('AiDetectionResult', JSON.stringify(aiDetectionForBackend));
+  }
+
   // Add images
   images.forEach((image) => {
     formData.append('Images', {
@@ -206,5 +229,24 @@ export const createEmergencyReport = async (
   const response = await api.post<string>('/Farmer/create-report', formData);
 
   return response as unknown as string;
+};
+
+export const detectPestInImage = async (
+  imageFile: { uri: string; type: string; name: string },
+): Promise<PestDetectionResponse> => {
+  const formData = new FormData();
+
+  formData.append('file', {
+    uri: imageFile.uri,
+    type: imageFile.type,
+    name: imageFile.name,
+  } as any);
+
+  // AI image analysis can take 2+ minutes, so we need a longer timeout
+  const response = await api.post<PestDetectionResponse>('/rice/check-pest', formData, {
+    timeout: 240000, // 4 minutes timeout for AI processing
+  });
+
+  return response as unknown as PestDetectionResponse;
 };
 

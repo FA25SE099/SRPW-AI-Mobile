@@ -348,3 +348,43 @@ export const getPriorityColor = (priority: number | string | undefined): string 
   }
 };
 
+// Polygon Validation Types
+export type ValidatePolygonAreaInput = {
+  plotId: string;
+  polygonGeoJson: string;
+  tolerancePercent?: number;
+};
+
+export type ValidatePolygonAreaResponse = {
+  succeeded: boolean;
+  data: {
+    isValid: boolean;
+    drawnAreaHa: number;
+    plotAreaHa: number;
+    differencePercent: number;
+    tolerancePercent: number;
+    message: string;
+  } | null;
+  message: string | null;
+  errors: string[];
+};
+
+/**
+ * Validate polygon area against plot area
+ */
+export const validatePolygonArea = async ({
+  plotId,
+  polygonGeoJson,
+  tolerancePercent = 10,
+}: ValidatePolygonAreaInput): Promise<ValidatePolygonAreaResponse> => {
+  const response = await api.post<ValidatePolygonAreaResponse>(
+    '/Supervisor/polygon/validate-area',
+    {
+      plotId,
+      polygonGeoJson,
+      tolerancePercent,
+    }
+  );
+  return response;
+};
+

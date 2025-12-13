@@ -14,7 +14,7 @@ import {
   Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueries } from '@tanstack/react-query';
 import MapView, { Marker, Polygon as MapPolygon, Region} from 'react-native-maps';
 import { colors, spacing, borderRadius, shadows } from '../../theme';
 import {
@@ -30,7 +30,7 @@ import {
   Spinner,
 } from '../../components/ui';
 import { FarmerPlot } from '../../types/api';
-import { getCurrentFarmerPlots } from '../../libs/farmer';
+import { getCurrentFarmerPlots, getPlotCultivationPlans } from '../../libs/farmer';
 import { useUser } from '../../libs/auth';
 const DEFAULT_CENTER = {
   latitude: 11.2,
@@ -127,12 +127,14 @@ type FieldCardProps = {
   field: FarmerPlot;
   onPressCard: () => void;
   onFocusOnMap: () => void;
+  hasCultivationPlans: boolean;
+  onReportIssue: () => void;
 };
 
-const FieldCard = ({ field, onPressCard, onFocusOnMap }: FieldCardProps) => {
+const FieldCard = ({ field, onPressCard, onFocusOnMap, hasCultivationPlans, onReportIssue }: FieldCardProps) => {
   return (
-    <TouchableOpacity onPress={onPressCard} activeOpacity={0.85}>
-      <Card variant="elevated" style={styles.fieldCard}>
+    <Card variant="elevated" style={styles.fieldCard}>
+      <TouchableOpacity onPress={onPressCard} activeOpacity={0.85}>
         <View style={styles.fieldCardHeader}>
           <View style={styles.fieldIcon}>
             <Body>🌾</Body>
@@ -162,20 +164,30 @@ const FieldCard = ({ field, onPressCard, onFocusOnMap }: FieldCardProps) => {
             <BodySemibold>{field.activeAlerts}</BodySemibold>
           </View>
         </View>
-        <Spacer size="md" />
-        <View style={styles.buttonRow}>
+      </TouchableOpacity>
+      <Spacer size="md" />
+      <View style={styles.buttonRow}>
+        <Button
+          variant="outline"
+          size="sm"
+          onPress={onPressCard}
+          style={styles.actionButton}
+        >
+          View plans
+        </Button>
+        {hasCultivationPlans && (
           <Button
             variant="outline"
             size="sm"
-            onPress={onPressCard}
-            style={styles.editButton}
+            onPress={onReportIssue}
+            style={styles.actionButton}
           >
-            View plans
+            Report Issue
           </Button>
-        </View>
-      </Card>
+        )}
+      </View>
       <Spacer size="md" />
-    </TouchableOpacity>
+    </Card>
   );
 };
 
@@ -318,6 +330,29 @@ export const FieldsScreen = () => {
     if (!plots || plots.length === 0) return 0;
     return plots.reduce((sum, plot) => sum + (plot.area || 0), 0);
   }, [plots]);
+
+  // Fetch cultivation plans for all plots to check if they exist
+  const cultivationPlansQueries = useQueries({
+    queries: (plots || []).map((plot) => ({
+      queryKey: ['plot-plans-check', plot.plotId],
+      queryFn: () => getPlotCultivationPlans(plot.plotId, { currentPage: 1, pageSize: 1 }),
+      enabled: !!plot.plotId,
+      retry: false, // Don't retry if it fails, just assume no plans
+    })),
+  });
+
+  // Create a map of plotId -> hasPlans
+  const hasCultivationPlansMap = useMemo(() => {
+    const map: { [plotId: string]: boolean } = {};
+    cultivationPlansQueries.forEach((query, index) => {
+      const plot = plots?.[index];
+      if (plot) {
+        // Check if query succeeded and has data
+        map[plot.plotId] = query.isSuccess && (query.data?.data?.length ?? 0) > 0;
+      }
+    });
+    return map;
+  }, [cultivationPlansQueries, plots]);
 
   if (isLoading) {
     return <Spinner fullScreen />;
@@ -528,6 +563,13 @@ export const FieldsScreen = () => {
                 } as any)
               }
               onFocusOnMap={() => focusOnPlot(field, true)}
+              hasCultivationPlans={hasCultivationPlansMap[field.plotId] ?? false}
+              onReportIssue={() =>
+                router.push({
+                  pathname: '/farmer/reports/create',
+                  params: { plotId: field.plotId },
+                } as any)
+              }
             />
           ))}
         </ScrollView>
@@ -656,9 +698,6 @@ const styles = StyleSheet.create({
   emptyState: {
     padding: spacing.lg,
     alignItems: 'flex-start',
-  },
-  editButton: {
-    borderColor: colors.primary,
   },
 });
 

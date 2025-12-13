@@ -32,20 +32,22 @@ import { TaskDetailModal } from './TaskDetailModal';
 
 export const FarmerTasksScreen = () => {
   const router = useRouter();
-  const [selectedFilter, setSelectedFilter] = useState<'in-progress' | 'completed'>(
+  const [selectedFilter, setSelectedFilter] = useState<'in-progress' | 'approved' | 'completed'>(
     'in-progress',
   );
   const [selectedPlotId, setSelectedPlotId] = useState<string>('all');
   const [isPlotPickerOpen, setIsPlotPickerOpen] = useState(false);
-  const [filterCounts, setFilterCounts] = useState<Record<'in-progress' | 'completed', number>>({
+  const [filterCounts, setFilterCounts] = useState<Record<'in-progress' | 'approved' | 'completed', number>>({
     'in-progress': 0,
+    approved: 0,
     completed: 0,
   });
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
   const [isDetailVisible, setIsDetailVisible] = useState(false);
 
-  const statusFilterMap: Record<'in-progress' | 'completed', string> = {
+  const statusFilterMap: Record<'in-progress' | 'approved' | 'completed', string> = {
     'in-progress': 'InProgress',
+    approved: 'Approved',
     completed: 'Completed',
   };
 
@@ -103,6 +105,8 @@ export const FarmerTasksScreen = () => {
       case 'completed':
       case 'done':
         return colors.success;
+      case 'approved':
+        return '#10B981'; // Green for approved
       case 'inprogress':
       case 'in-progress':
         return '#FF9500';
@@ -122,6 +126,8 @@ export const FarmerTasksScreen = () => {
         return 'completed';
       case 'todo':
         return 'pending';
+      case 'approved':
+        return 'approved';
       default:
         return status?.toLowerCase() || 'pending';
     }
@@ -273,35 +279,90 @@ export const FarmerTasksScreen = () => {
 
         <Spacer size="lg" />
 
-        {/* Filter Buttons */}
-        <View style={styles.filterRow}>
+        {/* Filter Tabs */}
+        <View style={styles.filterContainer}>
           <TouchableOpacity
             onPress={() => setSelectedFilter('in-progress')}
             style={[
-              styles.filterButton,
-              selectedFilter === 'in-progress' && styles.filterButtonActive,
+              styles.filterTab,
+              selectedFilter === 'in-progress' && styles.filterTabActive,
             ]}
           >
-            <BodySmall
-              color={selectedFilter === 'in-progress' ? colors.white : colors.textSecondary}
-              style={styles.filterButtonText}
+            <Body
+              color={selectedFilter === 'in-progress' ? colors.primary : colors.textSecondary}
+              style={styles.filterTabText}
             >
               In Progress
-            </BodySmall>
+            </Body>
+            {filterCounts['in-progress'] > 0 && (
+              <View style={[
+                styles.filterBadge,
+                selectedFilter === 'in-progress' && styles.filterBadgeActive
+              ]}>
+                <BodySmall style={[
+                  styles.filterBadgeText,
+                  selectedFilter === 'in-progress' && styles.filterBadgeTextActive
+                ]}>
+                  {filterCounts['in-progress']}
+                </BodySmall>
+              </View>
+            )}
           </TouchableOpacity>
+          
+          <TouchableOpacity
+            onPress={() => setSelectedFilter('approved')}
+            style={[
+              styles.filterTab,
+              selectedFilter === 'approved' && styles.filterTabActive,
+            ]}
+          >
+            <Body
+              color={selectedFilter === 'approved' ? colors.primary : colors.textSecondary}
+              style={styles.filterTabText}
+            >
+              Approved
+            </Body>
+            {filterCounts['approved'] > 0 && (
+              <View style={[
+                styles.filterBadge,
+                selectedFilter === 'approved' && styles.filterBadgeActive
+              ]}>
+                <BodySmall style={[
+                  styles.filterBadgeText,
+                  selectedFilter === 'approved' && styles.filterBadgeTextActive
+                ]}>
+                  {filterCounts['approved']}
+                </BodySmall>
+              </View>
+            )}
+          </TouchableOpacity>
+          
           <TouchableOpacity
             onPress={() => setSelectedFilter('completed')}
             style={[
-              styles.filterButton,
-              selectedFilter === 'completed' && styles.filterButtonActive,
+              styles.filterTab,
+              selectedFilter === 'completed' && styles.filterTabActive,
             ]}
           >
-            <BodySmall
-              color={selectedFilter === 'completed' ? colors.white : colors.textSecondary}
-              style={styles.filterButtonText}
+            <Body
+              color={selectedFilter === 'completed' ? colors.primary : colors.textSecondary}
+              style={styles.filterTabText}
             >
               Completed
-            </BodySmall>
+            </Body>
+            {filterCounts['completed'] > 0 && (
+              <View style={[
+                styles.filterBadge,
+                selectedFilter === 'completed' && styles.filterBadgeActive
+              ]}>
+                <BodySmall style={[
+                  styles.filterBadgeText,
+                  selectedFilter === 'completed' && styles.filterBadgeTextActive
+                ]}>
+                  {filterCounts['completed']}
+                </BodySmall>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -315,30 +376,14 @@ export const FarmerTasksScreen = () => {
         ) : (
           <ScrollView showsVerticalScrollIndicator={false}>
             {filteredTasks.map((task: TodayTaskResponse) => (
-              <TouchableOpacity key={task.cultivationTaskId}>
+              <TouchableOpacity 
+                key={task.cultivationTaskId}
+                onPress={() => handleViewDetail(task.cultivationTaskId)}
+                activeOpacity={0.7}
+              >
                 <Card variant="elevated" style={styles.taskCard}>
-                  <View style={styles.taskHeader}>
-                    <View style={styles.taskIcon}>
-                      <Body>{getTaskIcon(task.taskType)}</Body>
-                    </View>
-                    <View style={styles.taskHeaderInfo}>
-                      <View style={styles.taskTitleRow}>
-                        <BodySemibold style={styles.taskTitle}>{task.taskName}</BodySemibold>
-                        {task.isOverdue && (
-                          <View style={styles.overdueBadge}>
-                            <BodySmall style={styles.overdueText}>OVERDUE</BodySmall>
-                          </View>
-                        )}
-                      </View>
-                      <BodySmall color={colors.textSecondary}>
-                        📍 {task.plotSoThuaSoTo}
-                      </BodySmall>
-                      {task.plotArea > 0 && (
-                        <BodySmall color={colors.textSecondary}>
-                          Area: {task.plotArea.toFixed(2)} ha
-                        </BodySmall>
-                      )}
-                    </View>
+                  {/* Status and overdue badges at top */}
+                  <View style={styles.badgesRow}>
                     <View
                       style={[
                         styles.statusBadge,
@@ -349,35 +394,82 @@ export const FarmerTasksScreen = () => {
                         style={{ 
                           color: getStatusColor(task.status), 
                           fontSize: 10,
-                          fontWeight: '600',
+                          fontWeight: '700',
+                          letterSpacing: 0.5,
                         }}
                       >
                         {task.status.replace(/([A-Z])/g, ' $1').trim().toUpperCase()}
                       </BodySmall>
                     </View>
+                    {task.isOverdue && (
+                      <View style={styles.overdueBadge}>
+                        <BodySmall style={styles.overdueText}>⚠️ OVERDUE</BodySmall>
+                      </View>
+                    )}
                   </View>
-                  <Spacer size="md" />
-                  {task.description && (
-                    <BodySmall color={colors.textSecondary} style={styles.taskDescription}>
-                      {task.description}
-                    </BodySmall>
-                  )}
                   <Spacer size="sm" />
-                  <View style={styles.taskDetails}>
-                    <View style={styles.taskDetailItem}>
-                      <BodySmall color={colors.textSecondary}>Scheduled:</BodySmall>
-                      <BodySemibold>
+                  
+                  {/* Task header */}
+                  <View style={styles.taskHeader}>
+                    <View style={styles.taskIcon}>
+                      <Body style={{ fontSize: 24 }}>{getTaskIcon(task.taskType)}</Body>
+                    </View>
+                    <View style={styles.taskHeaderInfo}>
+                      <BodySemibold style={styles.taskTitle}>{task.taskName}</BodySemibold>
+                      <BodySmall color={colors.textSecondary} style={{ marginTop: 2 }}>
+                        {task.taskType}
+                      </BodySmall>
+                    </View>
+                  </View>
+                  <Spacer size="sm" />
+                  
+                  {/* Plot info */}
+                  <View style={styles.plotInfoCard}>
+                    <View style={styles.plotInfoRow}>
+                      <BodySmall color={colors.textSecondary}>📍 Plot:</BodySmall>
+                      <Body style={styles.plotInfoText}>{task.plotSoThuaSoTo}</Body>
+                    </View>
+                    {task.plotArea > 0 && (
+                      <View style={styles.plotInfoRow}>
+                        <BodySmall color={colors.textSecondary}>📏 Area:</BodySmall>
+                        <Body style={styles.plotInfoText}>{task.plotArea.toFixed(2)} ha</Body>
+                      </View>
+                    )}
+                  </View>
+                  
+                  {task.description && (
+                    <>
+                      <Spacer size="sm" />
+                      <BodySmall color={colors.textSecondary} style={styles.taskDescription}>
+                        {task.description}
+                      </BodySmall>
+                    </>
+                  )}
+                  
+                  <Spacer size="sm" />
+                  
+                  {/* Key details grid */}
+                  <View style={styles.detailsGrid}>
+                    <View style={styles.detailCard}>
+                      <BodySmall color={colors.textSecondary} style={styles.detailLabel}>
+                        📅 Scheduled
+                      </BodySmall>
+                      <BodySemibold style={styles.detailValue}>
                         {dayjs(task.scheduledDate).format('MMM D, YYYY')}
                       </BodySemibold>
                     </View>
-                    <View style={styles.taskDetailItem}>
-                      <BodySmall color={colors.textSecondary}>Priority:</BodySmall>
-                      <BodySemibold>{task.priority}</BodySemibold>
+                    <View style={styles.detailCard}>
+                      <BodySmall color={colors.textSecondary} style={styles.detailLabel}>
+                        🎯 Priority
+                      </BodySmall>
+                      <BodySemibold style={styles.detailValue}>{task.priority}</BodySemibold>
                     </View>
                     {task.estimatedMaterialCost > 0 && (
-                      <View style={styles.taskDetailItem}>
-                        <BodySmall color={colors.textSecondary}>Est. Cost:</BodySmall>
-                        <BodySemibold>
+                      <View style={styles.detailCard}>
+                        <BodySmall color={colors.textSecondary} style={styles.detailLabel}>
+                          💰 Est. Cost
+                        </BodySmall>
+                        <BodySemibold style={styles.detailValue}>
                           {task.estimatedMaterialCost.toLocaleString()}₫
                         </BodySemibold>
                       </View>
@@ -385,43 +477,68 @@ export const FarmerTasksScreen = () => {
                   </View>
                   {task.materials && task.materials.length > 0 && (
                     <>
-                      <Spacer size="sm" />
+                      <Spacer size="md" />
                       <View style={styles.materialsSection}>
-                        <BodySemibold style={styles.materialsHeader}>Materials:</BodySemibold>
-                        {task.materials.map((material) => (
-                          <View key={material.materialId} style={styles.materialItem}>
-                            <BodySmall>
-                              {material.materialName} ({material.materialUnit})
-                            </BodySmall>
-                            <BodySmall color={colors.textSecondary}>
-                              Quantity: {material.plannedQuantityTotal.toLocaleString()}
-                            </BodySmall>
-                            <BodySmall color={colors.textSecondary}>
-                              Est. Cost: {material.estimatedAmount.toLocaleString()}₫
+                        <View style={styles.materialsSectionHeader}>
+                          <BodySemibold style={styles.materialsTitle}>📦 Materials Required</BodySemibold>
+                          <View style={styles.materialsCountBadge}>
+                            <BodySmall style={styles.materialsCountText}>
+                              {task.materials.length}
                             </BodySmall>
                           </View>
+                        </View>
+                        <Spacer size="xs" />
+                        {task.materials.slice(0, 2).map((material) => (
+                          <View key={material.materialId} style={styles.materialItem}>
+                            <View style={styles.materialHeader}>
+                              <BodySemibold style={styles.materialName}>
+                                {material.materialName}
+                              </BodySemibold>
+                              <Body color={colors.textSecondary} style={styles.materialUnit}>
+                                ({material.materialUnit})
+                              </Body>
+                            </View>
+                            <View style={styles.materialDetails}>
+                              <BodySmall color={colors.textSecondary}>
+                                Qty: {material.plannedQuantityTotal.toLocaleString()} • 
+                                Cost: {material.estimatedAmount.toLocaleString()}₫
+                              </BodySmall>
+                            </View>
+                          </View>
                         ))}
+                        {task.materials.length > 2 && (
+                          <BodySmall color={colors.primary} style={styles.moreMaterials}>
+                            +{task.materials.length - 2} more materials
+                          </BodySmall>
+                        )}
                       </View>
                     </>
                   )}
                   <Spacer size="md" />
                   <View style={styles.actionRow}>
-                    <TouchableOpacity
-                      style={styles.secondaryButton}
-                      onPress={() => handleViewDetail(task.cultivationTaskId)}
-                    >
-                      <BodySemibold style={styles.secondaryButtonText}>View Details</BodySemibold>
-                    </TouchableOpacity>
-                    {normalizeStatus(task.status) !== 'completed' && (
-                      <Button
-                        size="sm"
-                        onPress={() => handleConfirmTask(task)}
-                        style={styles.confirmButton}
+                    {normalizeStatus(task.status) !== 'completed' && normalizeStatus(task.status) !== 'approved' && (
+                      <TouchableOpacity
+                        style={styles.primaryActionButton}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          handleConfirmTask(task);
+                        }}
                       >
-                        {normalizeStatus(task.status) === 'pending'
-                          ? 'Start Task'
-                          : 'Confirm Completion'}
-                      </Button>
+                        <View style={styles.primaryActionButtonContent}>
+                          <BodySemibold style={styles.primaryActionButtonText}>
+                            {normalizeStatus(task.status) === 'pending'
+                              ? 'Start Task'
+                              : 'Confirm Completion'}
+                          </BodySemibold>
+                        </View>
+                      </TouchableOpacity>
+                    )}
+                    {(normalizeStatus(task.status) === 'completed' || normalizeStatus(task.status) === 'approved') && (
+                      <View style={styles.completedBanner}>
+                        <Body style={styles.completedText}>
+                          ✓ {normalizeStatus(task.status) === 'approved' ? 'Approved' : 'Completed'}
+                        </Body>
+                      </View>
                     )}
                   </View>
                 </Card>
@@ -464,57 +581,86 @@ const styles = StyleSheet.create({
   headerRight: {
     width: 40,
   },
-  filterRow: {
+  filterContainer: {
     flexDirection: 'row',
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.lg,
+    padding: 4,
+    ...shadows.sm,
+  },
+  filterTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    borderRadius: borderRadius.md,
+    gap: spacing.xs,
+  },
+  filterTabActive: {
+    backgroundColor: colors.primaryLighter,
+  },
+  filterTabText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  filterBadge: {
+    backgroundColor: colors.textSecondary + '20',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: borderRadius.full,
+    minWidth: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterBadgeActive: {
+    backgroundColor: colors.primary,
+  },
+  filterBadgeText: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  filterBadgeTextActive: {
+    color: colors.white,
+  },
+  taskCard: {
+    padding: spacing.lg,
+    borderRadius: borderRadius.xl,
+  },
+  badgesRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    flexWrap: 'wrap',
+  },
+  statusBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: borderRadius.full,
+    alignItems: 'center',
+  },
+  taskHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.md,
   },
-  filterButton: {
-    flex: 1,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.white,
+  taskIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.primaryLighter,
     justifyContent: 'center',
     alignItems: 'center',
     ...shadows.xs,
   },
-  filterButtonActive: {
-    backgroundColor: colors.primary,
-    shadowOpacity: 0,
-  },
-  taskCard: {
-    padding: spacing.md,
-  },
-  taskHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.md,
-  },
-  taskIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.primaryLighter,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   taskHeaderInfo: {
     flex: 1,
-    gap: spacing.xs,
   },
   taskTitle: {
-    fontSize: 16,
-  },
-  statusBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: borderRadius.sm,
-    minWidth: 80,
-    alignItems: 'center',
-  },
-  filterButtonText: {
-    fontWeight: '600',
-    textAlign: 'center',
+    fontSize: 17,
+    fontWeight: '700',
+    color: colors.textPrimary,
   },
   dropdownSection: {
     backgroundColor: colors.white,
@@ -548,41 +694,79 @@ const styles = StyleSheet.create({
   dropdownError: {
     marginTop: spacing.xs,
   },
-  taskDescription: {
-    lineHeight: 18,
-  },
-  taskDetails: {
+  plotInfoCard: {
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.md,
+    padding: spacing.sm,
     gap: spacing.xs,
   },
-  taskDetailItem: {
+  plotInfoRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: spacing.sm,
   },
-  confirmButton: {
-    alignSelf: 'flex-start',
+  plotInfoText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  taskDescription: {
+    lineHeight: 20,
+    fontSize: 14,
+  },
+  detailsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  detailCard: {
+    flex: 1,
+    minWidth: '30%',
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.md,
+    padding: spacing.sm,
+  },
+  detailLabel: {
+    fontSize: 11,
+    marginBottom: 4,
+  },
+  detailValue: {
+    fontSize: 14,
+    color: colors.textPrimary,
   },
   actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
   },
-  secondaryButton: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
+  primaryActionButton: {
+    flex: 1,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
+    ...shadows.sm,
   },
-  secondaryButtonText: {
-    color: colors.primary,
-  },
-  completedInfo: {
-    padding: spacing.sm,
-    backgroundColor: colors.successLight,
-    borderRadius: borderRadius.sm,
+  primaryActionButtonContent: {
+    paddingVertical: spacing.md,
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryActionButtonText: {
+    color: colors.white,
+    fontSize: 15,
+  },
+  completedBanner: {
+    flex: 1,
+    backgroundColor: colors.success + '15',
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.success + '30',
+  },
+  completedText: {
+    color: colors.success,
+    fontWeight: '700',
+    fontSize: 15,
   },
   loadingContainer: {
     flex: 1,
@@ -603,18 +787,13 @@ const styles = StyleSheet.create({
     marginTop: 260,
     paddingVertical: spacing['4xl'],
   },
-  taskTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    flexWrap: 'wrap',
-  },
   overdueBadge: {
     backgroundColor: colors.error + '20',
     paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    borderRadius: borderRadius.sm,
-    marginLeft: spacing.xs,
+    paddingVertical: 4,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: colors.error + '40',
   },
   overdueText: {
     color: colors.error,
@@ -623,20 +802,61 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   materialsSection: {
-    marginTop: spacing.sm,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
   },
-  materialsHeader: {
-    marginBottom: spacing.xs,
+  materialsSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  materialsTitle: {
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+  materialsCountBadge: {
+    backgroundColor: colors.primary + '20',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: borderRadius.full,
+    minWidth: 24,
+    alignItems: 'center',
+  },
+  materialsCountText: {
+    color: colors.primary,
     fontSize: 12,
+    fontWeight: '700',
   },
   materialItem: {
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.sm,
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.md,
     padding: spacing.sm,
     marginBottom: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  materialHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: 4,
+  },
+  materialName: {
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+  materialUnit: {
+    fontSize: 13,
+  },
+  materialDetails: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  moreMaterials: {
+    textAlign: 'center',
+    fontWeight: '600',
+    fontSize: 13,
   },
 });
 
