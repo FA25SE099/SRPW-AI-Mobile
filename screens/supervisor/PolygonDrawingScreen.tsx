@@ -21,8 +21,10 @@ import {
   getPolygonTasks,
   getPlots,
   completePolygonTask,
+  validatePolygonArea,
   PolygonTask,
   PlotDTO,
+  ValidatePolygonAreaResponse,
 } from '../../libs/supervisor';
 import {
   getCoordinatesFromGeoJSON,
@@ -43,6 +45,8 @@ export const PolygonDrawingScreen = () => {
   const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null);
   const [focusedPlotId, setFocusedPlotId] = useState<string | null>(null);
   const [bottomSheetExpanded, setBottomSheetExpanded] = useState(false);
+  const [validationResult, setValidationResult] = useState<ValidatePolygonAreaResponse['data'] | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
 
   // Queries
   const { data: tasks = [], isLoading: tasksLoading, refetch: refetchTasks } = useQuery({
@@ -63,6 +67,8 @@ export const PolygonDrawingScreen = () => {
       setIsDrawing(false);
       setDrawnPolygon([]);
       setPolygonArea(0);
+      setValidationResult(null);
+      setIsValidating(false);
       await Promise.all([refetchPlots(), refetchTasks()]);
       queryClient.invalidateQueries({ queryKey: ['plots'] });
       queryClient.invalidateQueries({ queryKey: ['polygon-tasks'] });
@@ -110,6 +116,38 @@ export const PolygonDrawingScreen = () => {
     if (newPolygon.length >= 3) {
       const area = calculatePolygonArea(newPolygon);
       setPolygonArea(area);
+      
+      // Auto-validate when polygon has 3+ points
+      validatePolygon(newPolygon);
+    } else {
+      // Clear validation if less than 3 points
+      setValidationResult(null);
+    }
+  };
+
+  const validatePolygon = async (polygon: LatLng[]) => {
+    if (!selectedTask || polygon.length < 3) return;
+
+    setIsValidating(true);
+    try {
+      const geoJsonString = createPolygonGeoJSON(polygon);
+      const response = await validatePolygonArea({
+        plotId: selectedTask.plotId,
+        polygonGeoJson: geoJsonString,
+        tolerancePercent: 10,
+      });
+
+      if (response.succeeded && response.data) {
+        setValidationResult(response.data);
+      } else {
+        setValidationResult(null);
+        console.warn('Validation failed:', response.message);
+      }
+    } catch (error: any) {
+      console.error('Error validating polygon:', error);
+      setValidationResult(null);
+    } finally {
+      setIsValidating(false);
     }
   };
 
@@ -118,6 +156,8 @@ export const PolygonDrawingScreen = () => {
     setIsDrawing(true);
     setDrawnPolygon([]);
     setPolygonArea(0);
+    setValidationResult(null);
+    setIsValidating(false);
     setBottomSheetExpanded(false);
 
     const plot = plots.find((p) => p.plotId === task.plotId);
@@ -141,6 +181,8 @@ export const PolygonDrawingScreen = () => {
     setIsDrawing(false);
     setDrawnPolygon([]);
     setPolygonArea(0);
+    setValidationResult(null);
+    setIsValidating(false);
     setBottomSheetExpanded(true);
   };
 
@@ -150,13 +192,45 @@ export const PolygonDrawingScreen = () => {
       return;
     }
 
+    // Check validation result
+    if (!validationResult) {
+      Alert.alert('Validation Required', 'Please wait for polygon validation to complete');
+      return;
+    }
+
+    if (!validationResult.isValid) {
+      Alert.alert(
+        'Validation Failed',
+        `${validationResult.message}\n\nDifference: ${validationResult.differencePercent.toFixed(1)}%\nTolerance: ${validationResult.tolerancePercent}%`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Save Anyway',
+            style: 'destructive',
+            onPress: () => {
+              const geoJsonString = createPolygonGeoJSON(drawnPolygon);
+              if (selectedTask) {
+                completeTaskMutation.mutate({
+                  taskId: selectedTask.id,
+                  polygonGeoJson: geoJsonString,
+                  notes: `Polygon drawn with area: ${polygonArea}m² (Validation overridden)`,
+                });
+              }
+            },
+          },
+        ]
+      );
+      return;
+    }
+
+    // Validation passed
     const geoJsonString = createPolygonGeoJSON(drawnPolygon);
 
     if (selectedTask) {
       completeTaskMutation.mutate({
         taskId: selectedTask.id,
         polygonGeoJson: geoJsonString,
-        notes: `Polygon drawn with area: ${polygonArea}m²`,
+        notes: `Polygon drawn with area: ${polygonArea}m² (Validated)`,
       });
     }
   };
@@ -203,8 +277,11 @@ export const PolygonDrawingScreen = () => {
       if (newPolygon.length >= 3) {
         const area = calculatePolygonArea(newPolygon);
         setPolygonArea(area);
+        // Re-validate after removing point
+        validatePolygon(newPolygon);
       } else {
         setPolygonArea(0);
+        setValidationResult(null);
       }
     }
   };
@@ -264,6 +341,8 @@ export const PolygonDrawingScreen = () => {
             drawnPolygon={drawnPolygon}
             polygonArea={polygonArea}
             isPending={completeTaskMutation.isPending}
+            isValidating={isValidating}
+            validationResult={validationResult}
             onCancel={cancelDrawing}
             onRemoveLastPoint={removeLastPoint}
             onFinish={finishDrawing}

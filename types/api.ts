@@ -745,6 +745,25 @@ export type CreateFarmLogRequest = {
 export type AlertType = 'Pest' | 'Weather' | 'Disease' | 'Other';
 export type Severity = 'Low' | 'Medium' | 'High' | 'Critical';
 
+export type DetectedPestInfo = {
+  pestName: string;
+  confidence: number;
+  confidenceLevel: string;
+};
+
+export type ImageDimensions = {
+  width: number;
+  height: number;
+};
+
+export type PestDetectionSummary = {
+  hasPest: boolean;
+  totalDetections: number;
+  detectedPests: DetectedPestInfo[];
+  averageConfidence: number;
+  imageInfo?: ImageDimensions | null;
+};
+
 export type CreateEmergencyReportRequest = {
   plotCultivationId?: string | null;
   groupId?: string | null;
@@ -754,6 +773,7 @@ export type CreateEmergencyReportRequest = {
   description: string;
   severity: Severity;
   imageUrls?: string[] | null;
+  aiDetectionResult?: PestDetectionSummary | null;
 };
 
 export type CreateEmergencyReportResponse = {
@@ -761,4 +781,31 @@ export type CreateEmergencyReportResponse = {
   data: string; // The created report ID (GUID)
   message: string | null;
   errors: string[] | null;
+};
+
+// Pest Detection Types
+export type PestDetectionLocation = {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+};
+
+export type DetectedPest = {
+  pestName: string;
+  confidence: number;
+  confidenceLevel: 'Low' | 'Medium' | 'High';
+  location: PestDetectionLocation;
+};
+
+export type PestDetectionImageInfo = {
+  width: number;
+  height: number;
+};
+
+export type PestDetectionResponse = {
+  hasPest: boolean;
+  totalDetections: number;
+  detectedPests: DetectedPest[];
+  imageInfo: PestDetectionImageInfo;
 };

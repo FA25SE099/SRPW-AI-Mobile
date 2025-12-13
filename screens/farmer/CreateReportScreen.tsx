@@ -13,12 +13,13 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Text,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { colors, spacing, borderRadius } from '../../theme';
+import { colors, spacing, borderRadius, shadows } from '../../theme';
 import {
   Container,
   H3,
@@ -36,8 +37,9 @@ import {
   AlertType,
   Severity,
   PlotCultivationPlan,
+  PestDetectionResponse,
 } from '../../types/api';
-import { createEmergencyReport, getPlotCultivationPlans } from '../../libs/farmer';
+import { createEmergencyReport, getPlotCultivationPlans, detectPestInImage } from '../../libs/farmer';
 import { useUser } from '../../libs/auth';
 
 const ALERT_TYPES: AlertType[] = ['Pest', 'Weather', 'Disease', 'Other'];
@@ -69,6 +71,15 @@ export const CreateReportScreen = () => {
   const [showAlertTypePicker, setShowAlertTypePicker] = useState(false);
   const [showSeverityPicker, setShowSeverityPicker] = useState(false);
   const [showCultivationPicker, setShowCultivationPicker] = useState(false);
+  const [pestDetectionResults, setPestDetectionResults] = useState<PestDetectionResponse | null>(null);
+  const [isDetectingPest, setIsDetectingPest] = useState(false);
+  const [annotatedImageDimensions, setAnnotatedImageDimensions] = useState<{ 
+    width: number; 
+    height: number; 
+    offsetX?: number; 
+    offsetY?: number;
+  } | null>(null);
+  const [selectedPestIndex, setSelectedPestIndex] = useState<number | null>(null);
 
   // Fetch cultivations for the selected plot
   const { data: cultivationsData } = useQuery({
@@ -95,10 +106,33 @@ export const CreateReportScreen = () => {
         throw new Error('Please provide a description');
       }
 
+      // Prepare AI detection summary if available
+      let aiDetectionSummary = null;
+      if (pestDetectionResults && pestDetectionResults.hasPest) {
+        // Calculate average confidence
+        const avgConfidence = pestDetectionResults.detectedPests.reduce(
+          (sum, pest) => sum + pest.confidence, 
+          0
+        ) / pestDetectionResults.detectedPests.length;
+
+        aiDetectionSummary = {
+          hasPest: pestDetectionResults.hasPest,
+          totalDetections: pestDetectionResults.totalDetections,
+          detectedPests: pestDetectionResults.detectedPests.map(pest => ({
+            pestName: pest.pestName,
+            confidence: pest.confidence,
+            confidenceLevel: pest.confidenceLevel,
+          })),
+          averageConfidence: avgConfidence,
+          imageInfo: pestDetectionResults.imageInfo,
+        };
+      }
+
       const request: CreateEmergencyReportRequest = {
         ...formData,
         title: formData.title.trim(),
         description: formData.description.trim(),
+        aiDetectionResult: aiDetectionSummary,
       };
 
       // Prepare image files
@@ -150,6 +184,11 @@ export const CreateReportScreen = () => {
         name: asset.fileName || `report_${Date.now()}.jpg`,
       }));
       setImages([...images, ...newImages]);
+      
+      // If alert type is Pest and we just added the first image, auto-detect
+      if (formData.alertType === 'Pest' && images.length === 0 && newImages.length > 0) {
+        detectPestInFirstImage(newImages[0]);
+      }
     }
   };
 
@@ -174,6 +213,11 @@ export const CreateReportScreen = () => {
         name: asset.fileName || `report_${Date.now()}.jpg`,
       };
       setImages([...images, newImage]);
+      
+      // If alert type is Pest and we just added the first image, auto-detect
+      if (formData.alertType === 'Pest' && images.length === 0) {
+        detectPestInFirstImage(newImage);
+      }
     }
   };
 
@@ -201,6 +245,69 @@ export const CreateReportScreen = () => {
 
   const removeImage = (index: number) => {
     setImages(images.filter((_, i) => i !== index));
+    // Clear pest detection results if we remove the first image
+    if (index === 0) {
+      setPestDetectionResults(null);
+      setAnnotatedImageDimensions(null);
+      setSelectedPestIndex(null);
+    }
+  };
+
+  const detectPestInFirstImage = async (image: { uri: string; type: string; name: string }) => {
+    setIsDetectingPest(true);
+    
+    // Show info about processing time
+    Alert.alert(
+      'AI Analysis Started',
+      'Analyzing your image for pests. This may take 1-3 minutes. Please wait...',
+      [{ text: 'OK' }],
+    );
+    
+    try {
+      const result = await detectPestInImage(image);
+      setPestDetectionResults(result);
+      
+      // Auto-fill form if pest detected
+      if (result.hasPest && result.totalDetections > 0) {
+        const topPest = result.detectedPests[0];
+        const pestNames = [...new Set(result.detectedPests.map(p => p.pestName))].join(', ');
+        
+        setFormData({
+          ...formData,
+          title: formData.title || `${pestNames} detected`,
+          description: formData.description || 
+            `AI detected ${result.totalDetections} pest instance(s). Primary: ${topPest.pestName} (${topPest.confidence.toFixed(1)}% confidence).`,
+          severity: result.detectedPests.some(p => p.confidenceLevel === 'High') ? 'High' : 'Medium',
+        });
+        
+        // Show success message
+        Alert.alert(
+          'Analysis Complete!',
+          `Found ${result.totalDetections} pest instance(s). Check the marked areas on your image.`,
+          [{ text: 'OK' }],
+        );
+      } else {
+        // No pests found
+        Alert.alert(
+          'Analysis Complete',
+          'No pests detected in the image. You can still submit your report if needed.',
+          [{ text: 'OK' }],
+        );
+      }
+    } catch (error: any) {
+      console.warn('Pest detection failed:', error);
+      const errorMessage = error.code === 'ECONNABORTED' 
+        ? 'The analysis took too long and timed out. Please try with a smaller image or submit your report manually.'
+        : 'Could not analyze the image automatically. You can still submit your report manually.';
+      
+      Alert.alert(
+        'Analysis Failed',
+        errorMessage,
+        [{ text: 'OK' }],
+      );
+    } finally {
+      setIsDetectingPest(false);
+    }
   };
 
   const getSeverityColor = (severity: Severity) => {
@@ -399,43 +506,249 @@ export const CreateReportScreen = () => {
 
               {/* Images */}
               <BodySmall color={colors.textSecondary}>
-                Images (Optional - Recommended for Pest reports)
+                Images {formData.alertType === 'Pest' ? '(Recommended - AI will help identify pests)' : '(Optional)'}
               </BodySmall>
               <Spacer size="xs" />
-              <Button variant="outline" onPress={showImagePickerOptions}>
-                Add Images
+              <Button 
+                variant="outline" 
+                onPress={showImagePickerOptions}
+                disabled={isDetectingPest}
+              >
+                {isDetectingPest ? 'Analyzing (may take 1-3 min)...' : 'Add Images'}
               </Button>
               <Spacer size="sm" />
 
-              {images.length > 0 && (
-                <View style={styles.imagesGrid}>
-                  {images.map((img, index) => (
-                    <View key={index} style={styles.imageContainer}>
-                      <Image source={{ uri: img.uri }} style={styles.image} />
-                      <TouchableOpacity
-                        style={styles.removeImageButton}
-                        onPress={() => removeImage(index)}
-                      >
-                        <Body style={styles.removeImageText}>✕</Body>
-                      </TouchableOpacity>
+              {/* Pest Detection Results */}
+              {pestDetectionResults && pestDetectionResults.hasPest && (
+                <Card variant="elevated" style={styles.detectionCard}>
+                  <View style={styles.detectionHeader}>
+                    <View style={styles.detectionIconContainer}>
+                      <Body style={styles.detectionIcon}>🔍</Body>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <H4 style={styles.detectionTitle}>AI Pest Detection Complete</H4>
+                      <Body color={colors.textPrimary} style={styles.detectionSubtitle}>
+                        Found {pestDetectionResults.totalDetections} instance(s) - See labels on image below
+                      </Body>
+                    </View>
+                  </View>
+                  <Spacer size="md" />
+                  <View style={styles.pestsListContainer}>
+                    <BodySemibold style={styles.pestListTitle}>Detected Pests:</BodySemibold>
+                    <Spacer size="xs" />
+                    <View style={styles.pestNamesWrapper}>
+                      {[...new Set(pestDetectionResults.detectedPests.map(p => p.pestName))].map((pestName, idx) => (
+                        <View key={idx} style={styles.pestNameChip}>
+                          <Body style={styles.pestChipText}>• {pestName}</Body>
                     </View>
                   ))}
+                </View>
+                  </View>
+                </Card>
+              )}
+
+              {pestDetectionResults && !pestDetectionResults.hasPest && (
+                <Card variant="flat" style={styles.noPestCard}>
+                  <Body color={colors.textPrimary}>
+                    ℹ️ No pests detected in the image. You can still submit your report.
+                  </Body>
+            </Card>
+              )}
+
+              {images.length > 0 && (
+                <View>
+                  {/* First image with detection - show larger */}
+                  {pestDetectionResults && pestDetectionResults.hasPest && (
+                    <View style={styles.annotatedImageContainer}>
+                      <Body color={colors.textPrimary} style={styles.annotatedImageLabel}>
+                        📍 Detected pests marked on image
+                      </Body>
+                      <BodySmall color={colors.textSecondary} style={{ marginTop: spacing.xs }}>
+                        Tap on any box to view pest details
+                      </BodySmall>
+                      <Spacer size="sm" />
+                      <View style={styles.largeImageWrapper}>
+                        <Image 
+                          source={{ uri: images[0].uri }} 
+                          style={styles.largeImage}
+                          resizeMode="contain"
+                          onLayout={(event) => {
+                            const { width: containerWidth, height: containerHeight } = event.nativeEvent.layout;
+                            
+                            // Calculate the actual displayed image dimensions considering aspect ratio
+                            const imageAspectRatio = pestDetectionResults.imageInfo.width / pestDetectionResults.imageInfo.height;
+                            const containerAspectRatio = containerWidth / containerHeight;
+                            
+                            let displayWidth, displayHeight, offsetX, offsetY;
+                            
+                            if (imageAspectRatio > containerAspectRatio) {
+                              // Image is wider - fit to width
+                              displayWidth = containerWidth;
+                              displayHeight = containerWidth / imageAspectRatio;
+                              offsetX = 0;
+                              offsetY = (containerHeight - displayHeight) / 2;
+                            } else {
+                              // Image is taller - fit to height
+                              displayHeight = containerHeight;
+                              displayWidth = containerHeight * imageAspectRatio;
+                              offsetX = (containerWidth - displayWidth) / 2;
+                              offsetY = 0;
+                            }
+                            
+                            setAnnotatedImageDimensions({ 
+                              width: displayWidth, 
+                              height: displayHeight,
+                              offsetX,
+                              offsetY 
+                            });
+                          }}
+                        />
+                        {/* Render bounding boxes with labels */}
+                        {annotatedImageDimensions && (
+                          <View style={[StyleSheet.absoluteFill, { 
+                            left: annotatedImageDimensions.offsetX || 0,
+                            top: annotatedImageDimensions.offsetY || 0,
+                            width: annotatedImageDimensions.width,
+                            height: annotatedImageDimensions.height
+                          }]}>
+                            {pestDetectionResults.detectedPests.map((pest, pestIndex) => {
+                              const scaleX = annotatedImageDimensions.width / pestDetectionResults.imageInfo.width;
+                              const scaleY = annotatedImageDimensions.height / pestDetectionResults.imageInfo.height;
+                              
+                              const borderColor = pest.confidenceLevel === 'High' ? '#FF5252' : 
+                                                 pest.confidenceLevel === 'Medium' ? '#FFA726' : '#FFEB3B';
+                              
+                              const boxLeft = pest.location.x1 * scaleX;
+                              const boxTop = pest.location.y1 * scaleY;
+                              const boxWidth = (pest.location.x2 - pest.location.x1) * scaleX;
+                              const boxHeight = (pest.location.y2 - pest.location.y1) * scaleY;
+                              
+                              const isSelected = selectedPestIndex === pestIndex;
+                              
+                              return (
+                                <TouchableOpacity 
+                                  key={pestIndex}
+                                  activeOpacity={0.7}
+                                  onPress={() => setSelectedPestIndex(isSelected ? null : pestIndex)}
+                                  style={{
+                                    position: 'absolute',
+                                    left: boxLeft,
+                                    top: boxTop,
+                                    width: boxWidth,
+                                    height: boxHeight,
+                                  }}
+                                >
+                                  {/* Bounding box */}
+                                  <View style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    borderWidth: isSelected ? 4 : 3,
+                                    borderColor: borderColor,
+                                    borderRadius: 6,
+                                    backgroundColor: isSelected ? `${borderColor}30` : `${borderColor}15`,
+                                    shadowColor: borderColor,
+                                    shadowOffset: { width: 0, height: 2 },
+                                    shadowOpacity: isSelected ? 1 : 0.8,
+                                    shadowRadius: isSelected ? 6 : 4,
+                                    elevation: isSelected ? 8 : 5,
+                                  }} />
+                                  
+                                  {/* Label on top of the box (shown only when selected) */}
+                                  {isSelected && (
+                                    <View style={{
+                                      position: 'absolute',
+                                      top: -35,
+                                      left: 0,
+                                      backgroundColor: borderColor,
+                                      paddingHorizontal: 10,
+                                      paddingVertical: 5,
+                                      borderRadius: 6,
+                                      shadowColor: '#000',
+                                      shadowOffset: { width: 0, height: 2 },
+                                      shadowOpacity: 0.5,
+                                      shadowRadius: 4,
+                                      elevation: 6,
+                                      minWidth: 100,
+                                    }}>
+                                      <Text style={{ 
+                                        color: '#FFFFFF', 
+                                        fontSize: 13, 
+                                        fontWeight: '700',
+                                        textAlign: 'center',
+                                      }}>
+                                        {pest.pestName}
+                                      </Text>
+                                      <Text style={{ 
+                                        color: '#FFFFFF', 
+                                        fontSize: 11,
+                                        fontWeight: '600',
+                                        textAlign: 'center',
+                                        marginTop: 2,
+                                      }}>
+                                        {pest.confidence.toFixed(1)}%
+                                      </Text>
+                                    </View>
+                                  )}
+                                </TouchableOpacity>
+                              );
+                            })}
+                          </View>
+                        )}
+              <TouchableOpacity
+                          style={styles.removeImageButton}
+                          onPress={() => removeImage(0)}
+                        >
+                          <Body style={styles.removeImageText}>✕</Body>
+              </TouchableOpacity>
+          </View>
+                    </View>
+                  )}
+                  
+                  {/* Other images or single image without detection */}
+                  <View style={styles.imagesGrid}>
+                    {images.map((img, index) => {
+                      // Skip first image if it has detection results (already shown above)
+                      if (index === 0 && pestDetectionResults && pestDetectionResults.hasPest) {
+                        return null;
+                      }
+                      
+                      return (
+                        <View key={index} style={styles.imageContainer}>
+                          <Image 
+                            source={{ uri: img.uri }} 
+                            style={styles.image}
+                          />
+              <TouchableOpacity
+                            style={styles.removeImageButton}
+                            onPress={() => removeImage(index)}
+                          >
+                            <Body style={styles.removeImageText}>✕</Body>
+              </TouchableOpacity>
+                          {index === 0 && isDetectingPest && (
+                            <View style={styles.analyzingOverlay}>
+                              <BodySmall color={colors.white}>Analyzing...</BodySmall>
+          </View>
+                          )}
+                        </View>
+                      );
+                    })}
+                  </View>
                 </View>
               )}
             </Card>
 
-            <Spacer size="xl" />
+          <Spacer size="xl" />
 
-            {/* Submit Button */}
-            <Button
+          {/* Submit Button */}
+          <Button
               onPress={() => createReportMutation.mutate()}
-              disabled={createReportMutation.isPending}
-            >
+            disabled={createReportMutation.isPending}
+          >
               {createReportMutation.isPending ? 'Submitting...' : 'Submit Report'}
-            </Button>
+          </Button>
 
-            <Spacer size="xl" />
-          </Container>
+          <Spacer size="xl" />
+      </Container>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -509,6 +822,28 @@ const styles = StyleSheet.create({
     height: 100,
     textAlignVertical: 'top',
   },
+  annotatedImageContainer: {
+    marginBottom: spacing.lg,
+  },
+  annotatedImageLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  largeImageWrapper: {
+    position: 'relative',
+    width: '100%',
+    height: 300,
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+    backgroundColor: '#000',
+    borderWidth: 2,
+    borderColor: colors.border,
+    ...shadows.lg,
+  },
+  largeImage: {
+    width: '100%',
+    height: '100%',
+  },
   imagesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -539,6 +874,151 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  detectionCard: {
+    padding: spacing.lg,
+    backgroundColor: '#E8F5E9',
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.md,
+    borderWidth: 2,
+    borderColor: '#4CAF50',
+  },
+  detectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+  },
+  detectionIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#4CAF50',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  detectionIcon: {
+    fontSize: 22,
+  },
+  detectionTitle: {
+    color: '#2E7D32',
+    marginBottom: spacing.xs,
+  },
+  detectionSubtitle: {
+    fontSize: 15,
+    lineHeight: 20,
+  },
+  legendContainer: {
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+  },
+  legendTitle: {
+    marginBottom: spacing.xs,
+    fontWeight: '600',
+  },
+  legendRow: {
+    flexDirection: 'row',
+    gap: spacing.lg,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  legendDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  pestsListContainer: {
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+  },
+  pestListTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  pestNamesWrapper: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+  },
+  pestNameChip: {
+    backgroundColor: '#F5F5F5',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  pestChipText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  noPestCard: {
+    padding: spacing.md,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.sm,
+  },
+  pestItem: {
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+  },
+  pestInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  pestNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flex: 1,
+  },
+  pestNameText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  confidenceDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: colors.white,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  confidenceBadge: {
+    backgroundColor: colors.primaryLighter,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
+    minWidth: 60,
+    alignItems: 'center',
+  },
+  confidenceText: {
+    color: colors.primary,
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  analyzingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: borderRadius.md,
   },
 });
 
