@@ -12,11 +12,13 @@ import {
   SafeAreaView,
   RefreshControl,
   Modal,
+  useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueries } from '@tanstack/react-query';
 import MapView, { Marker, Polygon as MapPolygon, Region} from 'react-native-maps';
 import { colors, spacing, borderRadius, shadows } from '../../theme';
+import { scale, moderateScale, getFontSize, getSpacing, isTablet, verticalScale } from '../../utils/responsive';
 import {
   Container,
   H3,
@@ -194,6 +196,7 @@ const FieldCard = ({ field, onPressCard, onFocusOnMap, hasCultivationPlans, onRe
 export const FieldsScreen = () => {
   const router = useRouter();
   const { data: user } = useUser();
+  const { width: screenWidth } = useWindowDimensions();
   const mapRef = useRef<MapView | null>(null);
   const fullscreenMapRef = useRef<MapView | null>(null);
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
@@ -587,26 +590,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: spacing.md,
+    paddingTop: getSpacing(spacing.md),
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: scale(40),
+    height: scale(40),
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
+    fontSize: getFontSize(20),
   },
   addButton: {
-    width: 40,
-    height: 40,
+    width: scale(40),
+    height: scale(40),
     justifyContent: 'center',
     alignItems: 'center',
   },
   mapCard: {
-    height: 220,
+    height: verticalScale(220),
     padding: 0,
     overflow: 'hidden',
   },
@@ -615,13 +619,13 @@ const styles = StyleSheet.create({
   },
   expandButton: {
     position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm,
+    top: getSpacing(spacing.sm),
+    right: getSpacing(spacing.sm),
     zIndex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.md,
+    paddingHorizontal: getSpacing(spacing.md),
+    paddingVertical: getSpacing(spacing.xs),
+    borderRadius: moderateScale(borderRadius.md),
   },
   fullscreenMapContainer: {
     flex: 1,
@@ -631,13 +635,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: spacing.md,
+    padding: getSpacing(spacing.md),
   },
   closeButton: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: getSpacing(spacing.md),
+    paddingVertical: getSpacing(spacing.sm),
     backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.sm,
+    borderRadius: moderateScale(borderRadius.sm),
   },
   fullscreenMap: {
     flex: 1,
@@ -645,28 +649,28 @@ const styles = StyleSheet.create({
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: spacing.md,
+    gap: getSpacing(spacing.md),
   },
   summaryCard: {
     flex: 1,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.lg,
+    paddingVertical: getSpacing(spacing.md),
+    paddingHorizontal: getSpacing(spacing.md),
+    borderRadius: moderateScale(borderRadius.lg),
     backgroundColor: colors.backgroundSecondary,
   },
   fieldCard: {
-    padding: spacing.md,
-    borderRadius: borderRadius.lg,
+    padding: getSpacing(spacing.md),
+    borderRadius: moderateScale(borderRadius.lg),
   },
   fieldCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: getSpacing(spacing.md),
   },
   fieldIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.md,
+    width: scale(48),
+    height: scale(48),
+    borderRadius: moderateScale(borderRadius.md),
     backgroundColor: colors.primaryLighter,
     justifyContent: 'center',
     alignItems: 'center',
@@ -678,7 +682,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     flexWrap: 'wrap',
-    gap: spacing.md,
+    gap: getSpacing(spacing.md),
   },
   fieldDetailItem: {
     minWidth: '30%',
@@ -688,15 +692,15 @@ const styles = StyleSheet.create({
   },
   buttonRow: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: getSpacing(spacing.sm),
   },
   errorCard: {
-    padding: spacing.lg,
+    padding: getSpacing(spacing.lg),
     alignItems: 'flex-start',
-    gap: spacing.sm,
+    gap: getSpacing(spacing.sm),
   },
   emptyState: {
-    padding: spacing.lg,
+    padding: getSpacing(spacing.lg),
     alignItems: 'flex-start',
   },
 });

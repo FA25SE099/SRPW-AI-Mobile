@@ -86,21 +86,51 @@ const loginWithCredentials = async (
     rememberMe: data.rememberMe ?? true,
   };
 
-  // The api client interceptor unwraps Result<T> responses, so we get LoginResponseData directly
-  const response: LoginResponseData = await api.post('/Auth/login', request);
+  console.log('🔐 [LOGIN] Starting login request...');
+  console.log('📧 [LOGIN] Login method:', data.email ? 'email' : 'phone');
+  console.log('📝 [LOGIN] Request payload:', {
+    email: request.email,
+    phoneNumber: request.phoneNumber,
+    password: '***' + (request.password?.slice(-2) || ''),
+    rememberMe: request.rememberMe,
+  });
 
-  if (!response || !response.accessToken || !response.refreshToken) {
-    throw new Error('Login failed: Invalid response data');
+  try {
+    // The api client interceptor unwraps Result<T> responses, so we get LoginResponseData directly
+    const response: LoginResponseData = await api.post('/Auth/login', request);
+    
+    console.log('✅ [LOGIN] Login successful!');
+    console.log('👤 [LOGIN] User:', response.user?.userName || 'Unknown');
+    console.log('🎭 [LOGIN] Role:', response.user?.role || 'Unknown');
+    console.log('🔑 [LOGIN] Access token received:', response.accessToken ? 'Yes' : 'No');
+    console.log('🔄 [LOGIN] Refresh token received:', response.refreshToken ? 'Yes' : 'No');
+
+    if (!response || !response.accessToken || !response.refreshToken) {
+      console.error('❌ [LOGIN] Invalid response data:', response);
+      throw new Error('Login failed: Invalid response data');
+    }
+
+    // Store tokens in AsyncStorage
+    await tokenStorage.setTokens(
+      response.accessToken,
+      response.refreshToken,
+      response.expiresAt,
+    );
+    
+    console.log('💾 [LOGIN] Tokens stored successfully');
+
+    return response;
+  } catch (error: any) {
+    console.error('❌ [LOGIN] Login failed with error:', error.message);
+    console.error('📍 [LOGIN] Error details:', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      url: error.config?.url,
+      baseURL: error.config?.baseURL,
+    });
+    throw error;
   }
-
-  // Store tokens in AsyncStorage
-  await tokenStorage.setTokens(
-    response.accessToken,
-    response.refreshToken,
-    response.expiresAt,
-  );
-
-  return response;
 };
 
 // Fast login for testing

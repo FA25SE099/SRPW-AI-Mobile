@@ -236,17 +236,25 @@ export const detectPestInImage = async (
 ): Promise<PestDetectionResponse> => {
   const formData = new FormData();
 
-  formData.append('file', {
+  // Backend now expects 'files' (IFormFileCollection) instead of 'file'
+  formData.append('files', {
     uri: imageFile.uri,
     type: imageFile.type,
     name: imageFile.name,
   } as any);
 
   // AI image analysis can take 2+ minutes, so we need a longer timeout
-  const response = await api.post<PestDetectionResponse>('/rice/check-pest', formData, {
+  const response = await api.post<PestDetectionResponse[]>('/rice/check-pest', formData, {
     timeout: 240000, // 4 minutes timeout for AI processing
   });
 
-  return response as unknown as PestDetectionResponse;
+  // Backend now returns an array of results, we take the first one
+  const results = response as unknown as PestDetectionResponse[];
+  
+  if (!results || results.length === 0) {
+    throw new Error('No pest detection results returned from the server');
+  }
+  
+  return results[0];
 };
 

@@ -7,19 +7,20 @@ import React, { useState } from 'react';
 import {
   View,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   Image,
   Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { colors, spacing, borderRadius } from '../../theme';
+import { scale, moderateScale, getFontSize, getSpacing, verticalScale } from '../../utils/responsive';
 import {
   Container,
   H3,
@@ -205,7 +206,7 @@ export const CompleteTaskScreen = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <Container padding="lg">
+        <Container scrollable padding="lg">
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -225,176 +226,174 @@ export const CompleteTaskScreen = () => {
 
           <Spacer size="lg" />
 
-          <ScrollView showsVerticalScrollIndicator={false}>
-            {/* Work Description */}
-            <Input
-              label="Work Description"
-              placeholder="Describe the work completed..."
-              value={formData.workDescription || ''}
-              onChangeText={(text) => setFormData({ ...formData, workDescription: text })}
-              multiline
-              numberOfLines={4}
-              style={styles.textArea}
-            />
+          {/* Work Description */}
+          <Input
+            label="Work Description"
+            placeholder="Describe the work completed..."
+            value={formData.workDescription || ''}
+            onChangeText={(text) => setFormData({ ...formData, workDescription: text })}
+            multiline
+            numberOfLines={4}
+            style={styles.textArea}
+          />
 
-            {/* Actual Area Covered */}
-            <Input
-              label="Actual Area Covered (ha)"
-              placeholder="0.00"
-              value={formData.actualAreaCovered?.toString() || ''}
-              onChangeText={(text) => {
-                const num = parseFloat(text);
-                setFormData({
-                  ...formData,
-                  actualAreaCovered: isNaN(num) ? null : num,
-                });
-              }}
-              keyboardType="decimal-pad"
-            />
+          {/* Actual Area Covered */}
+          <Input
+            label="Actual Area Covered (ha)"
+            placeholder="0.00"
+            value={formData.actualAreaCovered?.toString() || ''}
+            onChangeText={(text) => {
+              const num = parseFloat(text);
+              setFormData({
+                ...formData,
+                actualAreaCovered: isNaN(num) ? null : num,
+              });
+            }}
+            keyboardType="decimal-pad"
+          />
 
-            {/* Service Cost */}
-            <Input
-              label="Service Cost (₫)"
-              placeholder="0"
-              value={formData.serviceCost?.toString() || ''}
-              onChangeText={(text) => {
-                const num = parseFloat(text);
-                setFormData({
-                  ...formData,
-                  serviceCost: isNaN(num) ? null : num,
-                });
-              }}
-              keyboardType="numeric"
-            />
+          {/* Service Cost */}
+          <Input
+            label="Service Cost (₫)"
+            placeholder="0"
+            value={formData.serviceCost?.toString() || ''}
+            onChangeText={(text) => {
+              const num = parseFloat(text);
+              setFormData({
+                ...formData,
+                serviceCost: isNaN(num) ? null : num,
+              });
+            }}
+            keyboardType="numeric"
+          />
 
-            {/* Service Notes */}
-            <Input
-              label="Service Notes"
-              placeholder="Additional notes about the service..."
-              value={formData.serviceNotes || ''}
-              onChangeText={(text) => setFormData({ ...formData, serviceNotes: text })}
-              multiline
-              numberOfLines={3}
-              style={styles.textArea}
-            />
+          {/* Service Notes */}
+          <Input
+            label="Service Notes"
+            placeholder="Additional notes about the service..."
+            value={formData.serviceNotes || ''}
+            onChangeText={(text) => setFormData({ ...formData, serviceNotes: text })}
+            multiline
+            numberOfLines={3}
+            style={styles.textArea}
+          />
 
-            {/* Weather Conditions */}
-            <Input
-              label="Weather Conditions"
-              placeholder="e.g., Sunny, Rainy, Cloudy..."
-              value={formData.weatherConditions || ''}
-              onChangeText={(text) => setFormData({ ...formData, weatherConditions: text })}
-            />
+          {/* Weather Conditions */}
+          <Input
+            label="Weather Conditions"
+            placeholder="e.g., Sunny, Rainy, Cloudy..."
+            value={formData.weatherConditions || ''}
+            onChangeText={(text) => setFormData({ ...formData, weatherConditions: text })}
+          />
 
-            {/* Interruption Reason */}
-            <Input
-              label="Interruption Reason (if any)"
-              placeholder="Reason for interruption..."
-              value={formData.interruptionReason || ''}
-              onChangeText={(text) => setFormData({ ...formData, interruptionReason: text })}
-              multiline
-              numberOfLines={2}
-              style={styles.textArea}
-            />
+          {/* Interruption Reason */}
+          <Input
+            label="Interruption Reason (if any)"
+            placeholder="Reason for interruption..."
+            value={formData.interruptionReason || ''}
+            onChangeText={(text) => setFormData({ ...formData, interruptionReason: text })}
+            multiline
+            numberOfLines={2}
+            style={styles.textArea}
+          />
 
-            {/* Materials */}
-            {formData.materials && formData.materials.length > 0 && (
-              <>
-                <Spacer size="md" />
-                <BodySemibold style={styles.sectionTitle}>Materials Used</BodySemibold>
-                <Spacer size="sm" />
-                {formData.materials.map((material: any) => (
-                  <Card key={material.materialId} variant="elevated" style={styles.materialCard}>
-                    <BodySemibold>{material.materialName}</BodySemibold>
-                    <BodySmall color={colors.textSecondary}>
-                      Unit: {material.materialUnit}
-                    </BodySmall>
-                    <BodySmall color={colors.textSecondary}>
-                      Planned: {material.plannedQuantityTotal.toLocaleString()}
-                    </BodySmall>
-                    <Spacer size="sm" />
-                    <Input
-                      label="Actual Quantity Used"
-                      placeholder="0"
-                      value={materialQuantities[material.materialId]?.quantity || ''}
-                      onChangeText={(text) =>
-                        updateMaterialQuantity(
-                          material.materialId,
-                          text,
-                          materialQuantities[material.materialId]?.notes || '',
-                        )
-                      }
-                      keyboardType="decimal-pad"
-                    />
-                    <Input
-                      label="Notes (optional)"
-                      placeholder="Notes about this material..."
-                      value={materialQuantities[material.materialId]?.notes || ''}
-                      onChangeText={(text) =>
-                        updateMaterialQuantity(
-                          material.materialId,
-                          materialQuantities[material.materialId]?.quantity || '',
-                          text,
-                        )
-                      }
-                      multiline
-                      numberOfLines={2}
-                      style={styles.textArea}
-                    />
-                  </Card>
-                ))}
-              </>
-            )}
+          {/* Materials */}
+          {formData.materials && formData.materials.length > 0 && (
+            <>
+              <Spacer size="md" />
+              <BodySemibold style={styles.sectionTitle}>Materials Used</BodySemibold>
+              <Spacer size="sm" />
+              {formData.materials.map((material: any) => (
+                <Card key={material.materialId} variant="elevated" style={styles.materialCard}>
+                  <BodySemibold>{material.materialName}</BodySemibold>
+                  <BodySmall color={colors.textSecondary}>
+                    Unit: {material.materialUnit}
+                  </BodySmall>
+                  <BodySmall color={colors.textSecondary}>
+                    Planned: {material.plannedQuantityTotal.toLocaleString()}
+                  </BodySmall>
+                  <Spacer size="sm" />
+                  <Input
+                    label="Actual Quantity Used"
+                    placeholder="0"
+                    value={materialQuantities[material.materialId]?.quantity || ''}
+                    onChangeText={(text) =>
+                      updateMaterialQuantity(
+                        material.materialId,
+                        text,
+                        materialQuantities[material.materialId]?.notes || '',
+                      )
+                    }
+                    keyboardType="decimal-pad"
+                  />
+                  <Input
+                    label="Notes (optional)"
+                    placeholder="Notes about this material..."
+                    value={materialQuantities[material.materialId]?.notes || ''}
+                    onChangeText={(text) =>
+                      updateMaterialQuantity(
+                        material.materialId,
+                        materialQuantities[material.materialId]?.quantity || '',
+                        text,
+                      )
+                    }
+                    multiline
+                    numberOfLines={2}
+                    style={styles.textArea}
+                  />
+                </Card>
+              ))}
+            </>
+          )}
 
-            {/* Proof Images */}
-            <Spacer size="md" />
-            <BodySemibold style={styles.sectionTitle}>Proof Images</BodySemibold>
-            <Spacer size="sm" />
-            <View style={styles.imageButtonRow}>
-              <Button
-                variant="outline"
-                size="sm"
-                onPress={showImagePickerOptions}
-                style={styles.addImageButton}
-              >
-                📷 Add Images
-              </Button>
-            </View>
-            <Spacer size="sm" />
-            {images.length > 0 && (
-              <View style={styles.imageGrid}>
-                {images.map((image, index) => (
-                  <View key={index} style={styles.imageContainer}>
-                    <Image source={{ uri: image.uri }} style={styles.image} />
-                    <TouchableOpacity
-                      style={styles.removeImageButton}
-                      onPress={() => removeImage(index)}
-                    >
-                      <BodySmall color={colors.white}>×</BodySmall>
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </View>
-            )}
-
-            <Spacer size="xl" />
-
-            {/* Submit Button */}
+          {/* Proof Images */}
+          <Spacer size="md" />
+          <BodySemibold style={styles.sectionTitle}>Proof Images</BodySemibold>
+          <Spacer size="sm" />
+          <View style={styles.imageButtonRow}>
             <Button
-              onPress={handleSubmit}
-              fullWidth
-              size="lg"
-              disabled={createFarmLogMutation.isPending}
+              variant="outline"
+              size="sm"
+              onPress={showImagePickerOptions}
+              style={styles.addImageButton}
             >
-              {createFarmLogMutation.isPending ? (
-                <ActivityIndicator color={colors.white} />
-              ) : (
-                'Submit Farm Log'
-              )}
+              📷 Add Images
             </Button>
+          </View>
+          <Spacer size="sm" />
+          {images.length > 0 && (
+            <View style={styles.imageGrid}>
+              {images.map((image, index) => (
+                <View key={index} style={styles.imageContainer}>
+                  <Image source={{ uri: image.uri }} style={styles.image} />
+                  <TouchableOpacity
+                    style={styles.removeImageButton}
+                    onPress={() => removeImage(index)}
+                  >
+                    <BodySmall color={colors.white}>×</BodySmall>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
 
-            <Spacer size="xl" />
-          </ScrollView>
+          <Spacer size="xl" />
+
+          {/* Submit Button */}
+          <Button
+            onPress={handleSubmit}
+            fullWidth
+            size="lg"
+            disabled={createFarmLogMutation.isPending}
+          >
+            {createFarmLogMutation.isPending ? (
+              <ActivityIndicator color={colors.white} />
+            ) : (
+              'Submit Farm Log'
+            )}
+          </Button>
+
+          <Spacer size="xl" />
         </Container>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -413,43 +412,44 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: spacing.md,
+    paddingTop: getSpacing(spacing.md),
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: scale(40),
+    height: scale(40),
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
+    fontSize: getFontSize(20),
   },
   headerRight: {
-    width: 40,
+    width: scale(40),
   },
   infoCard: {
-    padding: spacing.md,
+    padding: getSpacing(spacing.md),
   },
   taskName: {
-    fontSize: 16,
-    marginBottom: spacing.xs,
+    fontSize: getFontSize(16),
+    marginBottom: getSpacing(spacing.xs),
   },
   textArea: {
-    minHeight: 80,
+    minHeight: verticalScale(80),
     textAlignVertical: 'top',
   },
   sectionTitle: {
-    fontSize: 16,
-    marginBottom: spacing.xs,
+    fontSize: getFontSize(16),
+    marginBottom: getSpacing(spacing.xs),
   },
   materialCard: {
-    padding: spacing.md,
-    marginBottom: spacing.md,
+    padding: getSpacing(spacing.md),
+    marginBottom: getSpacing(spacing.md),
   },
   imageButtonRow: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: getSpacing(spacing.sm),
   },
   addImageButton: {
     alignSelf: 'flex-start',
@@ -457,27 +457,27 @@ const styles = StyleSheet.create({
   imageGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.sm,
+    gap: getSpacing(spacing.sm),
   },
   imageContainer: {
     position: 'relative',
-    width: 100,
-    height: 100,
-    marginRight: spacing.sm,
-    marginBottom: spacing.sm,
+    width: scale(100),
+    height: scale(100),
+    marginRight: getSpacing(spacing.sm),
+    marginBottom: getSpacing(spacing.sm),
   },
   image: {
     width: '100%',
     height: '100%',
-    borderRadius: borderRadius.md,
+    borderRadius: moderateScale(borderRadius.md),
   },
   removeImageButton: {
     position: 'absolute',
-    top: -8,
-    right: -8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    top: scale(-8),
+    right: scale(-8),
+    width: scale(24),
+    height: scale(24),
+    borderRadius: scale(12),
     backgroundColor: colors.error,
     justifyContent: 'center',
     alignItems: 'center',

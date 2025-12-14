@@ -3,7 +3,7 @@
  * Supports primary, secondary, outline, and ghost variants
  */
 
-import React from 'react';
+import React, { PropsWithChildren } from 'react';
 import {
   TouchableOpacity,
   Text,
@@ -19,7 +19,6 @@ type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface ButtonProps {
   onPress: () => void;
-  children: React.ReactNode;
   variant?: ButtonVariant;
   size?: ButtonSize;
   disabled?: boolean;
@@ -29,7 +28,7 @@ interface ButtonProps {
   textStyle?: TextStyle;
 }
 
-export const Button: React.FC<ButtonProps> = ({
+export const Button: React.FC<PropsWithChildren<ButtonProps>> = ({
   onPress,
   children,
   variant = 'primary',

@@ -34,7 +34,7 @@ export default function Index() {
           router.replace('/(tabs)/home');
         }
       } else {
-        router.replace('/auth/onboarding');
+        router.replace('/auth/login');
       }
     }
   }, [user, isLoading]);

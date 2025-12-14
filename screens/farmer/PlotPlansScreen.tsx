@@ -11,12 +11,14 @@ import {
   TouchableOpacity,
   SafeAreaView,
   RefreshControl,
+  useWindowDimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 
 import { colors, spacing, borderRadius } from '../../theme';
+import { scale, moderateScale, getFontSize, getSpacing, verticalScale } from '../../utils/responsive';
 import {
   Container,
   H3,
@@ -197,32 +199,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: spacing.md,
+    paddingTop: getSpacing(spacing.md),
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: scale(40),
+    height: scale(40),
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
+    fontSize: getFontSize(20),
   },
   headerRight: {
-    width: 40,
+    width: scale(40),
   },
   errorCard: {
-    padding: spacing.lg,
-    gap: spacing.sm,
+    padding: getSpacing(spacing.lg),
+    gap: getSpacing(spacing.sm),
   },
   emptyState: {
-    padding: spacing.lg,
-    gap: spacing.sm,
+    padding: getSpacing(spacing.lg),
+    gap: getSpacing(spacing.sm),
   },
   planCard: {
-    padding: spacing.md,
-    marginBottom: spacing.md,
+    padding: getSpacing(spacing.md),
+    marginBottom: getSpacing(spacing.md),
   },
   planHeader: {
     flexDirection: 'row',
@@ -230,14 +233,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   planHeaderLeft: {
-    gap: spacing.xs,
+    gap: getSpacing(spacing.xs),
   },
   statusText: {
     fontWeight: '600',
+    fontSize: getFontSize(14),
   },
   planDetails: {
-    marginTop: spacing.sm,
-    gap: spacing.sm,
+    marginTop: getSpacing(spacing.sm),
+    gap: getSpacing(spacing.sm),
   },
   detailItem: {
     flexDirection: 'row',

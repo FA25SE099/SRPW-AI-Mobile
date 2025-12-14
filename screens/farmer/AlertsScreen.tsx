@@ -10,10 +10,12 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import dayjs from 'dayjs';
 import { colors, spacing, borderRadius, shadows } from '../../theme';
+import { scale, moderateScale, getFontSize, getSpacing, verticalScale } from '../../utils/responsive';
 import {
   Container,
   H3,
@@ -266,67 +268,70 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: spacing.md,
+    paddingTop: getSpacing(spacing.md),
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: scale(40),
+    height: scale(40),
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
+    fontSize: getFontSize(20),
   },
   headerRight: {
-    width: 40,
+    width: scale(40),
   },
   filterContainer: {
-    gap: spacing.sm,
-    paddingRight: spacing.lg,
+    gap: getSpacing(spacing.sm),
+    paddingRight: getSpacing(spacing.lg),
   },
   filterButton: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
+    paddingHorizontal: getSpacing(spacing.md),
+    paddingVertical: getSpacing(spacing.sm),
+    borderRadius: moderateScale(borderRadius.md),
     backgroundColor: colors.backgroundSecondary,
   },
   filterButtonActive: {
     backgroundColor: colors.primary,
   },
   alertCard: {
-    padding: spacing.md,
+    padding: getSpacing(spacing.md),
   },
   alertHeader: {
     flexDirection: 'row',
-    gap: spacing.md,
+    gap: getSpacing(spacing.md),
   },
   alertIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.md,
+    width: scale(48),
+    height: scale(48),
+    borderRadius: moderateScale(borderRadius.md),
     backgroundColor: colors.backgroundSecondary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   alertHeaderInfo: {
     flex: 1,
-    gap: spacing.xs,
+    gap: getSpacing(spacing.xs),
   },
   alertTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: getSpacing(spacing.sm),
     flexWrap: 'wrap',
   },
   alertTitle: {
     flex: 1,
+    fontSize: getFontSize(15),
   },
   severityBadge: {
     alignSelf: 'flex-start',
   },
   alertMessage: {
-    lineHeight: 20,
+    lineHeight: moderateScale(20),
+    fontSize: getFontSize(14),
   },
   alertDetail: {
     flexDirection: 'row',
@@ -334,15 +339,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   treatmentCard: {
-    padding: spacing.sm,
+    padding: getSpacing(spacing.sm),
     backgroundColor: colors.primaryLighter,
-    borderRadius: borderRadius.sm,
+    borderRadius: moderateScale(borderRadius.sm),
   },
   treatmentLabel: {
-    marginBottom: spacing.xs,
+    marginBottom: getSpacing(spacing.xs),
   },
   treatmentText: {
     color: colors.primary,
+    fontSize: getFontSize(14),
   },
 });
 

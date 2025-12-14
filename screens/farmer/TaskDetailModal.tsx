@@ -7,9 +7,11 @@ import {
   ScrollView,
   ActivityIndicator,
   Image,
+  useWindowDimensions,
 } from 'react-native';
 import { Body, BodySmall, BodySemibold, H4, Spacer, Button } from '../../components/ui';
 import { colors, spacing, borderRadius, shadows } from '../../theme';
+import { scale, moderateScale, getFontSize, getSpacing, verticalScale } from '../../utils/responsive';
 import { useQuery } from '@tanstack/react-query';
 import { getCultivationTaskDetail } from '../../libs/farmer';
 import { CultivationTaskDetailResponse } from '../../types/api';
@@ -224,9 +226,9 @@ const styles = StyleSheet.create({
   sheet: {
     maxHeight: '85%',
     backgroundColor: colors.white,
-    borderTopLeftRadius: borderRadius['2xl'],
-    borderTopRightRadius: borderRadius['2xl'],
-    padding: spacing.lg,
+    borderTopLeftRadius: moderateScale(borderRadius['2xl']),
+    borderTopRightRadius: moderateScale(borderRadius['2xl']),
+    padding: getSpacing(spacing.lg),
     ...shadows.lg,
   },
   sheetHeader: {
@@ -235,58 +237,59 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   contentContainer: {
-    paddingBottom: spacing.lg,
+    paddingBottom: getSpacing(spacing.lg),
   },
   centered: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.xl,
+    paddingVertical: getSpacing(spacing.xl),
   },
   title: {
-    marginTop: spacing.xs,
+    marginTop: getSpacing(spacing.xs),
+    fontSize: getFontSize(18),
   },
   badgeRow: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    marginVertical: spacing.sm,
+    gap: getSpacing(spacing.sm),
+    marginVertical: getSpacing(spacing.sm),
     flexWrap: 'wrap',
   },
   statusBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
+    paddingHorizontal: getSpacing(spacing.sm),
+    paddingVertical: getSpacing(spacing.xs),
+    borderRadius: moderateScale(borderRadius.full),
   },
   badgeText: {
-    fontSize: 12,
+    fontSize: getFontSize(12),
     fontWeight: '600',
   },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: spacing.xs / 2,
+    marginBottom: getSpacing(spacing.xs / 2),
   },
   materialCard: {
-    padding: spacing.sm,
-    borderRadius: borderRadius.md,
+    padding: getSpacing(spacing.sm),
+    borderRadius: moderateScale(borderRadius.md),
     backgroundColor: colors.backgroundSecondary,
-    marginBottom: spacing.sm,
+    marginBottom: getSpacing(spacing.sm),
   },
   logCard: {
-    padding: spacing.sm,
-    borderRadius: borderRadius.md,
+    padding: getSpacing(spacing.sm),
+    borderRadius: moderateScale(borderRadius.md),
     borderWidth: 1,
     borderColor: colors.borderLight,
-    marginBottom: spacing.sm,
-    gap: spacing.xs / 2,
+    marginBottom: getSpacing(spacing.sm),
+    gap: getSpacing(spacing.xs / 2),
   },
   photoRow: {
-    marginTop: spacing.xs,
+    marginTop: getSpacing(spacing.xs),
   },
   photo: {
-    width: 72,
-    height: 72,
-    borderRadius: borderRadius.sm,
-    marginRight: spacing.xs,
+    width: scale(72),
+    height: scale(72),
+    borderRadius: moderateScale(borderRadius.sm),
+    marginRight: getSpacing(spacing.xs),
     backgroundColor: colors.backgroundSecondary,
   },
 });

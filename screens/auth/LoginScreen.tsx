@@ -1,6 +1,6 @@
 /**
- * Login Screen
- * User authentication screen with email and password
+ * Simple Modern Login Screen
+ * Clean authentication screen with minimal design
  */
 
 import React, { useState } from 'react';
@@ -12,40 +12,46 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  TextInput,
+  Text,
   Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { colors, spacing, textStyles, borderRadius } from '../../theme';
-import { Container, Input, Button, H1, Body, BodySemibold, Spacer, Card } from '../../components/ui';
+import { colors, spacing } from '../../theme';
+import { Button, Spacer } from '../../components/ui';
 import { useLogin } from '../../libs/auth';
+import { Ionicons } from '@expo/vector-icons';
 
 export const LoginScreen = () => {
   const router = useRouter();
   const login = useLogin();
   
-  const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
-  const [email, setEmail] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [credential, setCredential] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({ credential: '', password: '' });
+
+  // Auto-detect if input is email or phone number
+  const isEmail = (input: string) => {
+    return input.includes('@');
+  };
 
   const validateForm = () => {
     let valid = true;
     const newErrors = { credential: '', password: '' };
 
-    if (loginMethod === 'email') {
-      if (!email) {
-        newErrors.credential = 'Email is required';
-        valid = false;
-      } else if (!/\S+@\S+\.\S+/.test(email)) {
+    if (!credential) {
+      newErrors.credential = 'Email or phone number is required';
+      valid = false;
+    } else if (isEmail(credential)) {
+      // Validate as email
+      if (!/\S+@\S+\.\S+/.test(credential)) {
         newErrors.credential = 'Email is invalid';
         valid = false;
       }
     } else {
-      if (!phoneNumber) {
-        newErrors.credential = 'Phone number is required';
-        valid = false;
-      } else if (!/^[+]?[\d\s-()]+$/.test(phoneNumber)) {
+      // Validate as phone number
+      if (!/^[+]?[\d\s-()]+$/.test(credential)) {
         newErrors.credential = 'Phone number is invalid';
         valid = false;
       }
@@ -68,12 +74,11 @@ export const LoginScreen = () => {
 
     try {
       await login.mutateAsync({
-        email: loginMethod === 'email' ? email : null,
-        phoneNumber: loginMethod === 'phone' ? phoneNumber : null,
+        email: isEmail(credential) ? credential : null,
+        phoneNumber: !isEmail(credential) ? credential : null,
         password,
         rememberMe: true,
       });
-      // Navigate to index, which will handle role-based routing
       router.replace('/');
     } catch (error: any) {
       setErrors({
@@ -92,124 +97,109 @@ export const LoginScreen = () => {
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <Container padding="lg">
-            <View style={styles.heroRow}>
-              <View style={styles.heroText}>
-                <BodySemibold color={colors.primary}>Welcome back</BodySemibold>
-                <H1 style={styles.title}>Sign in to your farm hub</H1>
-                <Body color={colors.textSecondary} style={styles.subtitle}>
-                  Keep today’s plots, weather notes, and UAV spraying tasks in sync.
-                </Body>
-              </View>
-              <Image
-                source={require('../../assets/icons/splash-icon.png')}
-                style={styles.heroImage}
-                resizeMode="contain"
+          {/* Header */}
+          <View style={styles.header}>
+            <Image 
+              source={require('../../assets/logo.png')} 
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+            <Text style={styles.logoSubtitle}>Managing your farm made easy</Text>
+          </View>
+
+          <Spacer size="xl" />
+
+          {/* Form */}
+          <View style={styles.form}>
+            {/* Email Address Label */}
+            <Text style={styles.label}>Email Address</Text>
+            
+            {/* Input Field */}
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Uzzalh4343@gmail.com"
+                placeholderTextColor="#999999"
+                value={credential}
+                onChangeText={setCredential}
+                keyboardType="default"
+                autoCapitalize="none"
+                autoComplete="username"
               />
             </View>
-
-            <Spacer size="xl" />
-
-            <Card variant="elevated" style={styles.formCard}>
-              <View style={styles.form}>
-                {/* Login Method Toggle */}
-                <View style={styles.methodToggle}>
-                  <TouchableOpacity
-                    style={[
-                      styles.methodButton,
-                      loginMethod === 'email' && styles.methodButtonActive,
-                    ]}
-                    onPress={() => {
-                      setLoginMethod('email');
-                      setErrors({ credential: '', password: '' });
-                    }}
-                  >
-                    <Body
-                      color={loginMethod === 'email' ? colors.white : colors.textSecondary}
-                      style={styles.methodButtonText}
-                    >
-                      Email
-                    </Body>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.methodButton,
-                      loginMethod === 'phone' && styles.methodButtonActive,
-                    ]}
-                    onPress={() => {
-                      setLoginMethod('phone');
-                      setErrors({ credential: '', password: '' });
-                    }}
-                  >
-                    <Body
-                      color={loginMethod === 'phone' ? colors.white : colors.textSecondary}
-                      style={styles.methodButtonText}
-                    >
-                      Phone
-                    </Body>
-                  </TouchableOpacity>
-                </View>
-
-                <Spacer size="md" />
-
-                {loginMethod === 'email' ? (
-                  <Input
-                    label="Email"
-                    placeholder="farmer@example.com"
-                    value={email}
-                    onChangeText={setEmail}
-                    error={errors.credential}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoComplete="email"
-                  />
-                ) : (
-                  <Input
-                    label="Phone Number"
-                    placeholder="+84912345678"
-                    value={phoneNumber}
-                    onChangeText={setPhoneNumber}
-                    error={errors.credential}
-                    keyboardType="phone-pad"
-                    autoComplete="tel"
-                  />
-                )}
-
-                <Input
-                  label="Password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChangeText={setPassword}
-                  error={errors.password}
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoComplete="password"
-                />
-
-                <TouchableOpacity style={styles.forgotPassword}>
-                  <Body color={colors.primary}>Forgot Password?</Body>
-                </TouchableOpacity>
-              </View>
-
-              <Spacer size="lg" />
-
-              <Button onPress={handleLogin} loading={login.isPending} fullWidth size="lg">
-                Log in
-              </Button>
-            </Card>
+            {errors.credential ? (
+              <Text style={styles.errorText}>{errors.credential}</Text>
+            ) : null}
 
             <Spacer size="lg" />
 
-            <View style={styles.footer}>
-              <Body color={colors.textSecondary}>Need an account? </Body>
-              <TouchableOpacity onPress={() => router.push('/auth/register')}>
-                <Body color={colors.primary} style={styles.signUpText}>
-                  Contact support
-                </Body>
+            {/* Password Label */}
+            <Text style={styles.label}>Password</Text>
+            
+            {/* Password Input */}
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="••••••••••••"
+                placeholderTextColor="#999999"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                autoComplete="password"
+              />
+              <TouchableOpacity
+                style={styles.eyeIcon}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Ionicons 
+                  name={showPassword ? 'eye-outline' : 'eye-off-outline'} 
+                  size={22} 
+                  color="#999999" 
+                />
               </TouchableOpacity>
             </View>
-          </Container>
+            {errors.password ? (
+              <Text style={styles.errorText}>{errors.password}</Text>
+            ) : null}
+
+            <Spacer size="sm" />
+
+            {/* Forgot Password */}
+            <TouchableOpacity style={styles.forgotPassword}>
+              <Text style={styles.forgotPasswordText}>Forgot your password?</Text>
+            </TouchableOpacity>
+          </View>
+
+          <Spacer size="xl" />
+
+          {/* Sign In Button */}
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={styles.signInButton}
+              onPress={handleLogin}
+              disabled={login.isPending}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.signInButtonText}>
+                {login.isPending ? 'SIGNING IN...' : 'SIGN IN'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <Spacer size="md" />
+
+          {/* Sign Up Link */}
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Lost your password? </Text>
+            <TouchableOpacity onPress={() => router.push('/auth/register')}>
+              <Text style={styles.signUpText}>Contact Support</Text>
+            </TouchableOpacity>
+          </View>
+
+          <Spacer size="xl" />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -219,80 +209,108 @@ export const LoginScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#FFFFFF',
   },
   container: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
   },
   scrollContent: {
     flexGrow: 1,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xl,
   },
-  heroRow: {
-    backgroundColor: colors.white,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    flexDirection: 'row',
+  header: {
     alignItems: 'center',
-    gap: spacing.lg,
-    ...{
-      shadowColor: colors.dark,
-      shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.08,
-      shadowRadius: 12,
-      elevation: 3,
-    },
+    marginBottom: spacing.lg,
   },
-  heroText: {
-    flex: 1,
+  logoImage: {
+    width: 220,
+    height: 90,
+    marginBottom: spacing.xs,
   },
-  title: {
-    paddingTop: spacing.xs,
-  },
-  subtitle: {
-    paddingTop: spacing.xs,
-    lineHeight: 22,
-  },
-  heroImage: {
-    width: 100,
-    height: 100,
-  },
-  formCard: {
-    padding: spacing.lg,
-    borderRadius: borderRadius.xl,
+  logoSubtitle: {
+    fontSize: 14,
+    color: '#999999',
+    textAlign: 'center',
+    marginTop: spacing.xs,
   },
   form: {
     width: '100%',
   },
-  methodToggle: {
+  label: {
+    fontSize: 16,
+    color: '#000000',
+    marginBottom: spacing.sm,
+    fontWeight: '600',
+  },
+  inputContainer: {
     flexDirection: 'row',
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.full,
-    padding: spacing.xs / 2,
-  },
-  methodButton: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.full,
     alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: '#F5F5F5',
+    borderRadius: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 4,
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
   },
-  methodButtonActive: {
-    backgroundColor: colors.primary,
+  input: {
+    flex: 1,
+    fontSize: 15,
+    color: '#333333',
+    paddingVertical: 0,
   },
-  methodButtonText: {
-    fontFamily: textStyles.bodySemibold.fontFamily,
+  eyeIcon: {
+    padding: spacing.xs,
+    marginLeft: spacing.xs,
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#FF3B30',
+    marginTop: spacing.xs,
   },
   forgotPassword: {
     alignSelf: 'flex-end',
-    marginTop: -spacing.sm,
+    marginTop: spacing.sm,
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+    color: '#007AFF',
+  },
+  buttonContainer: {
+    width: '100%',
+  },
+  signInButton: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#007AFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  signInButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
   },
+  footerText: {
+    fontSize: 14,
+    color: '#666666',
+  },
   signUpText: {
-    fontFamily: textStyles.bodySemibold.fontFamily,
+    fontSize: 14,
+    color: '#007AFF',
+    fontWeight: '600',
   },
 });
-

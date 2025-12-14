@@ -35,6 +35,14 @@ async function authRequestInterceptor(config: InternalAxiosRequestConfig) {
   }
 
   config.withCredentials = true;
+  
+  // Log all API requests
+  const fullUrl = `${config.baseURL}${config.url}`;
+  console.log(`🌐 [API] ${config.method?.toUpperCase()} ${fullUrl}`);
+  if (config.data && !config.url?.includes('login')) {
+    console.log('📦 [API] Request data:', config.data);
+  }
+  
   return config;
 }
 
@@ -45,12 +53,17 @@ export const api = Axios.create({
 api.interceptors.request.use(authRequestInterceptor);
 api.interceptors.response.use(
   (response) => {
+    // Log successful responses
+    console.log(`✅ [API] ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`);
+    
     // Handle Result<T> wrapper from backend
     const data = response.data;
 
     // If response has a 'succeeded' property, it's a Result<T> wrapper
     if (data && typeof data.succeeded === 'boolean') {
       if (!data.succeeded) {
+        console.error('❌ [API] Backend returned error:', data.message, data.errors);
+        
         // Backend returned an error wrapped in Result<T>
         const error = new Error(data.message || 'Request failed') as Error & {
           errors?: string[];
@@ -87,13 +100,23 @@ api.interceptors.response.use(
       _retry?: boolean;
     };
 
+    // Log API errors
+    console.error(`❌ [API] ${error.response?.status || 'Network Error'} ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url}`);
+    console.error(`📍 [API] Error message:`, error.message);
+    if (error.response?.data) {
+      console.error(`📦 [API] Error response:`, error.response.data);
+    }
+
     // Handle 401 Unauthorized errors
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+      console.warn('🔒 [API] 401 Unauthorized - attempting token refresh...');
+      
       // Don't retry for login/refresh endpoints
       if (
         originalRequest.url?.includes('/Auth/login') ||
         originalRequest.url?.includes('/Auth/refresh')
       ) {
+        console.error('❌ [API] Auth endpoint failed, cannot retry');
         const message = (error.response?.data as any)?.message || error.message;
         Alert.alert('Authentication Error', message);
         return Promise.reject(error);
@@ -130,7 +153,7 @@ api.interceptors.response.use(
         // Try to refresh the token
         const accessToken = await tokenStorage.getAccessToken();
         const response = await Axios.post<Result<LoginResponseData>>(
-          `${env.API_URL}/api/auth/refresh-token`,
+          `${env.API_URL}/Auth/refresh-token`,
           { 
             accessToken,
             refreshToken 

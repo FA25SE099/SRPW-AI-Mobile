@@ -10,12 +10,14 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  useWindowDimensions,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router';
 import dayjs from 'dayjs';
 import { useQuery } from '@tanstack/react-query';
 import { colors, spacing, borderRadius, shadows } from '../../theme';
+import { scale, moderateScale, getFontSize, getSpacing, isTablet, verticalScale } from '../../utils/responsive';
 import {
   Container,
   H3,
@@ -32,6 +34,7 @@ import { TaskDetailModal } from './TaskDetailModal';
 
 export const FarmerTasksScreen = () => {
   const router = useRouter();
+  const { width: screenWidth } = useWindowDimensions();
   const [selectedFilter, setSelectedFilter] = useState<'in-progress' | 'approved' | 'completed'>(
     'in-progress',
   );
@@ -44,6 +47,9 @@ export const FarmerTasksScreen = () => {
   });
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
   const [isDetailVisible, setIsDetailVisible] = useState(false);
+  
+  // Responsive styles
+  const responsiveStyles = getResponsiveStyles(screenWidth);
 
   const statusFilterMap: Record<'in-progress' | 'approved' | 'completed', string> = {
     'in-progress': 'InProgress',
@@ -557,6 +563,20 @@ export const FarmerTasksScreen = () => {
   );
 };
 
+// Responsive styles function
+const getResponsiveStyles = (screenWidth: number) => {
+  const isTabletSize = screenWidth >= 768;
+  const padding = isTabletSize ? getSpacing(24) : getSpacing(16);
+  const fontSize = isTabletSize ? getFontSize(16) : getFontSize(14);
+  
+  return {
+    padding,
+    fontSize,
+    cardSpacing: isTabletSize ? getSpacing(20) : getSpacing(16),
+    iconSize: isTabletSize ? scale(56) : scale(52),
+  };
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -566,26 +586,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: spacing.md,
+    paddingTop: getSpacing(spacing.md),
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: scale(40),
+    height: scale(40),
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
+    fontSize: getFontSize(20),
   },
   headerRight: {
-    width: 40,
+    width: scale(40),
   },
   filterContainer: {
     flexDirection: 'row',
     backgroundColor: colors.white,
-    borderRadius: borderRadius.lg,
-    padding: 4,
+    borderRadius: moderateScale(borderRadius.lg),
+    padding: getSpacing(4),
     ...shadows.sm,
   },
   filterTab: {
@@ -593,24 +614,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xs,
-    borderRadius: borderRadius.md,
-    gap: spacing.xs,
+    paddingVertical: getSpacing(spacing.sm),
+    paddingHorizontal: getSpacing(spacing.xs),
+    borderRadius: moderateScale(borderRadius.md),
+    gap: getSpacing(spacing.xs),
   },
   filterTabActive: {
     backgroundColor: colors.primaryLighter,
   },
   filterTabText: {
-    fontSize: 14,
+    fontSize: getFontSize(14),
     fontWeight: '600',
   },
   filterBadge: {
     backgroundColor: colors.textSecondary + '20',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: borderRadius.full,
-    minWidth: 20,
+    paddingHorizontal: getSpacing(6),
+    paddingVertical: getSpacing(2),
+    borderRadius: moderateScale(borderRadius.full),
+    minWidth: scale(20),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -619,36 +640,36 @@ const styles = StyleSheet.create({
   },
   filterBadgeText: {
     color: colors.textSecondary,
-    fontSize: 11,
+    fontSize: getFontSize(11),
     fontWeight: '700',
   },
   filterBadgeTextActive: {
     color: colors.white,
   },
   taskCard: {
-    padding: spacing.lg,
-    borderRadius: borderRadius.xl,
+    padding: getSpacing(spacing.lg),
+    borderRadius: moderateScale(borderRadius.xl),
   },
   badgesRow: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: getSpacing(spacing.sm),
     flexWrap: 'wrap',
   },
   statusBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: borderRadius.full,
+    paddingHorizontal: getSpacing(spacing.sm),
+    paddingVertical: getSpacing(4),
+    borderRadius: moderateScale(borderRadius.full),
     alignItems: 'center',
   },
   taskHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: getSpacing(spacing.md),
   },
   taskIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: borderRadius.lg,
+    width: scale(52),
+    height: scale(52),
+    borderRadius: moderateScale(borderRadius.lg),
     backgroundColor: colors.primaryLighter,
     justifyContent: 'center',
     alignItems: 'center',
@@ -658,33 +679,33 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   taskTitle: {
-    fontSize: 17,
+    fontSize: getFontSize(17),
     fontWeight: '700',
     color: colors.textPrimary,
   },
   dropdownSection: {
     backgroundColor: colors.white,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
+    borderRadius: moderateScale(borderRadius.lg),
+    padding: getSpacing(spacing.md),
     ...shadows.sm,
   },
   dropdownTrigger: {
-    marginTop: spacing.xs,
-    paddingVertical: spacing.sm,
+    marginTop: getSpacing(spacing.xs),
+    paddingVertical: getSpacing(spacing.sm),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   dropdownList: {
-    marginTop: spacing.sm,
+    marginTop: getSpacing(spacing.sm),
     borderWidth: 1,
     borderColor: colors.borderLight,
-    borderRadius: borderRadius.md,
+    borderRadius: moderateScale(borderRadius.md),
     backgroundColor: colors.background,
   },
   dropdownOption: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
+    paddingVertical: getSpacing(spacing.sm),
+    paddingHorizontal: getSpacing(spacing.md),
     borderBottomWidth: 1,
     borderBottomColor: colors.borderLight,
   },
@@ -692,73 +713,73 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryLighter,
   },
   dropdownError: {
-    marginTop: spacing.xs,
+    marginTop: getSpacing(spacing.xs),
   },
   plotInfoCard: {
     backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.md,
-    padding: spacing.sm,
-    gap: spacing.xs,
+    borderRadius: moderateScale(borderRadius.md),
+    padding: getSpacing(spacing.sm),
+    gap: getSpacing(spacing.xs),
   },
   plotInfoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: getSpacing(spacing.sm),
   },
   plotInfoText: {
-    fontSize: 14,
+    fontSize: getFontSize(14),
     fontWeight: '600',
     color: colors.textPrimary,
   },
   taskDescription: {
-    lineHeight: 20,
-    fontSize: 14,
+    lineHeight: moderateScale(20),
+    fontSize: getFontSize(14),
   },
   detailsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.sm,
+    gap: getSpacing(spacing.sm),
   },
   detailCard: {
     flex: 1,
     minWidth: '30%',
     backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.md,
-    padding: spacing.sm,
+    borderRadius: moderateScale(borderRadius.md),
+    padding: getSpacing(spacing.sm),
   },
   detailLabel: {
-    fontSize: 11,
-    marginBottom: 4,
+    fontSize: getFontSize(11),
+    marginBottom: getSpacing(4),
   },
   detailValue: {
-    fontSize: 14,
+    fontSize: getFontSize(14),
     color: colors.textPrimary,
   },
   actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: getSpacing(spacing.sm),
   },
   primaryActionButton: {
     flex: 1,
     backgroundColor: colors.primary,
-    borderRadius: borderRadius.lg,
+    borderRadius: moderateScale(borderRadius.lg),
     ...shadows.sm,
   },
   primaryActionButtonContent: {
-    paddingVertical: spacing.md,
+    paddingVertical: getSpacing(spacing.md),
     alignItems: 'center',
     justifyContent: 'center',
   },
   primaryActionButtonText: {
     color: colors.white,
-    fontSize: 15,
+    fontSize: getFontSize(15),
   },
   completedBanner: {
     flex: 1,
     backgroundColor: colors.success + '15',
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
+    borderRadius: moderateScale(borderRadius.lg),
+    padding: getSpacing(spacing.md),
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.success + '30',
@@ -766,45 +787,45 @@ const styles = StyleSheet.create({
   completedText: {
     color: colors.success,
     fontWeight: '700',
-    fontSize: 15,
+    fontSize: getFontSize(15),
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: spacing['2xl'],
+    paddingVertical: getSpacing(spacing['2xl']),
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: spacing['2xl'],
+    paddingVertical: getSpacing(spacing['2xl']),
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 260,
-    paddingVertical: spacing['4xl'],
+    marginTop: verticalScale(260),
+    paddingVertical: getSpacing(spacing['4xl']),
   },
   overdueBadge: {
     backgroundColor: colors.error + '20',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: borderRadius.full,
+    paddingHorizontal: getSpacing(spacing.sm),
+    paddingVertical: getSpacing(4),
+    borderRadius: moderateScale(borderRadius.full),
     borderWidth: 1,
     borderColor: colors.error + '40',
   },
   overdueText: {
     color: colors.error,
-    fontSize: 10,
+    fontSize: getFontSize(10),
     fontWeight: '700',
     letterSpacing: 0.5,
   },
   materialsSection: {
     backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
+    borderRadius: moderateScale(borderRadius.lg),
+    padding: getSpacing(spacing.md),
   },
   materialsSectionHeader: {
     flexDirection: 'row',
@@ -812,42 +833,42 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   materialsTitle: {
-    fontSize: 14,
+    fontSize: getFontSize(14),
     color: colors.textPrimary,
   },
   materialsCountBadge: {
     backgroundColor: colors.primary + '20',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: borderRadius.full,
-    minWidth: 24,
+    paddingHorizontal: getSpacing(spacing.sm),
+    paddingVertical: getSpacing(2),
+    borderRadius: moderateScale(borderRadius.full),
+    minWidth: scale(24),
     alignItems: 'center',
   },
   materialsCountText: {
     color: colors.primary,
-    fontSize: 12,
+    fontSize: getFontSize(12),
     fontWeight: '700',
   },
   materialItem: {
     backgroundColor: colors.white,
-    borderRadius: borderRadius.md,
-    padding: spacing.sm,
-    marginBottom: spacing.xs,
+    borderRadius: moderateScale(borderRadius.md),
+    padding: getSpacing(spacing.sm),
+    marginBottom: getSpacing(spacing.xs),
     borderWidth: 1,
     borderColor: colors.borderLight,
   },
   materialHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
-    marginBottom: 4,
+    gap: getSpacing(spacing.xs),
+    marginBottom: getSpacing(4),
   },
   materialName: {
-    fontSize: 14,
+    fontSize: getFontSize(14),
     color: colors.textPrimary,
   },
   materialUnit: {
-    fontSize: 13,
+    fontSize: getFontSize(13),
   },
   materialDetails: {
     flexDirection: 'row',
@@ -856,7 +877,7 @@ const styles = StyleSheet.create({
   moreMaterials: {
     textAlign: 'center',
     fontWeight: '600',
-    fontSize: 13,
+    fontSize: getFontSize(13),
   },
 });
 

@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   RefreshControl,
+  useWindowDimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -28,6 +29,7 @@ import {
   Button,
 } from '../../components/ui';
 import { colors, spacing, borderRadius } from '../../theme';
+import { scale, moderateScale, getFontSize, getSpacing, verticalScale } from '../../utils/responsive';
 import { getPlotPlanView, getFarmLogsByCultivation } from '../../libs/farmer';
 import {
   PlotPlanStage,
@@ -391,39 +393,40 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: spacing.md,
+    paddingTop: getSpacing(spacing.md),
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: scale(40),
+    height: scale(40),
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
+    fontSize: getFontSize(20),
   },
   reportButton: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.sm,
+    paddingHorizontal: getSpacing(spacing.sm),
+    paddingVertical: getSpacing(spacing.xs),
+    borderRadius: moderateScale(borderRadius.sm),
     borderWidth: 1,
     borderColor: colors.error,
-    minWidth: 60,
+    minWidth: scale(60),
     alignItems: 'center',
   },
   errorCard: {
-    padding: spacing.lg,
-    gap: spacing.sm,
+    padding: getSpacing(spacing.lg),
+    gap: getSpacing(spacing.sm),
   },
   emptyState: {
-    padding: spacing.lg,
-    gap: spacing.sm,
+    padding: getSpacing(spacing.lg),
+    gap: getSpacing(spacing.sm),
   },
   stageCard: {
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    gap: spacing.sm,
+    padding: getSpacing(spacing.md),
+    marginBottom: getSpacing(spacing.md),
+    gap: getSpacing(spacing.sm),
   },
   stageHeader: {
     flexDirection: 'row',
@@ -431,12 +434,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   taskCard: {
-    padding: spacing.sm,
+    padding: getSpacing(spacing.sm),
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: borderRadius.md,
-    marginTop: spacing.sm,
-    gap: spacing.xs,
+    borderRadius: moderateScale(borderRadius.md),
+    marginTop: getSpacing(spacing.sm),
+    gap: getSpacing(spacing.xs),
   },
   taskHeader: {
     flexDirection: 'row',
@@ -444,34 +447,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   materialSection: {
-    marginTop: spacing.sm,
-    gap: spacing.xs,
+    marginTop: getSpacing(spacing.sm),
+    gap: getSpacing(spacing.xs),
   },
   materialCard: {
-    padding: spacing.sm,
-    borderRadius: borderRadius.sm,
+    padding: getSpacing(spacing.sm),
+    borderRadius: moderateScale(borderRadius.sm),
     backgroundColor: colors.backgroundSecondary,
-    gap: spacing.xs / 2,
+    gap: getSpacing(spacing.xs / 2),
   },
   taskActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
   },
   secondaryButton: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.full,
+    paddingHorizontal: getSpacing(spacing.md),
+    paddingVertical: getSpacing(spacing.sm),
+    borderRadius: moderateScale(borderRadius.full),
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.white,
   },
   secondaryButtonText: {
     color: colors.primary,
+    fontSize: getFontSize(14),
   },
   logCard: {
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    borderRadius: borderRadius.md,
+    padding: getSpacing(spacing.md),
+    marginBottom: getSpacing(spacing.md),
+    borderRadius: moderateScale(borderRadius.md),
   },
   logHeader: {
     flexDirection: 'row',
@@ -481,7 +485,7 @@ const styles = StyleSheet.create({
   logMaterialRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: spacing.xs,
+    marginTop: getSpacing(spacing.xs),
   },
 });
 

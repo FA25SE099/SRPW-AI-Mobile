@@ -10,10 +10,12 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import dayjs from 'dayjs';
 import { colors, spacing, borderRadius, shadows } from '../../theme';
+import { scale, moderateScale, getFontSize, getSpacing, verticalScale } from '../../utils/responsive';
 import {
   Container,
   H3,
@@ -241,60 +243,61 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: spacing.md,
+    paddingTop: getSpacing(spacing.md),
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: scale(40),
+    height: scale(40),
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
+    fontSize: getFontSize(20),
   },
   addButton: {
-    width: 40,
-    height: 40,
+    width: scale(40),
+    height: scale(40),
     justifyContent: 'center',
     alignItems: 'center',
   },
   summaryCard: {
-    padding: spacing.lg,
+    padding: getSpacing(spacing.lg),
   },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
   },
   summaryNumber: {
-    fontSize: 24,
-    marginTop: spacing.xs,
+    fontSize: getFontSize(24),
+    marginTop: getSpacing(spacing.xs),
   },
   filterContainer: {
-    gap: spacing.sm,
-    paddingRight: spacing.lg,
+    gap: getSpacing(spacing.sm),
+    paddingRight: getSpacing(spacing.lg),
   },
   filterButton: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
+    paddingHorizontal: getSpacing(spacing.md),
+    paddingVertical: getSpacing(spacing.sm),
+    borderRadius: moderateScale(borderRadius.md),
     backgroundColor: colors.backgroundSecondary,
   },
   filterButtonActive: {
     backgroundColor: colors.primary,
   },
   activityCard: {
-    padding: spacing.md,
+    padding: getSpacing(spacing.md),
   },
   activityCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: getSpacing(spacing.md),
   },
   activityIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.md,
+    width: scale(48),
+    height: scale(48),
+    borderRadius: moderateScale(borderRadius.md),
     backgroundColor: colors.primaryLighter,
     justifyContent: 'center',
     alignItems: 'center',
@@ -306,7 +309,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   activityDetails: {
-    gap: spacing.sm,
+    gap: getSpacing(spacing.sm),
   },
   activityDetailRow: {
     flexDirection: 'row',
@@ -314,10 +317,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activityNotes: {
-    marginTop: spacing.xs,
-    padding: spacing.sm,
+    marginTop: getSpacing(spacing.xs),
+    padding: getSpacing(spacing.sm),
     backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.sm,
+    borderRadius: moderateScale(borderRadius.sm),
   },
 });
 

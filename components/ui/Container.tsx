@@ -3,41 +3,44 @@
  * Screen-level container with consistent padding
  */
 
-import React from 'react';
+import React, { PropsWithChildren } from 'react';
 import { View, ScrollView, StyleSheet, ViewStyle } from 'react-native';
 import { colors, spacing } from '../../theme';
+
 interface ContainerProps {
-  children: React.ReactNode;
   scrollable?: boolean;
   padding?: keyof typeof spacing;
   backgroundColor?: string;
   style?: ViewStyle;
 }
 
-export const Container: React.FC<ContainerProps> = ({
+export const Container: React.FC<PropsWithChildren<ContainerProps>> = ({
   children,
   scrollable = false,
   padding = 'md',
   backgroundColor = colors.background,
   style,
 }) => {
-  const containerStyle = [
-    styles.base,
-    { padding: spacing[padding], backgroundColor },
-    style,
-  ];
-
   if (scrollable) {
     return (
       <ScrollView
-        style={containerStyle}
-        contentContainerStyle={styles.scrollContent}
+        style={[styles.base, { backgroundColor }, style]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { padding: spacing[padding] },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {children}
       </ScrollView>
     );
   }
+
+  const containerStyle = [
+    styles.base,
+    { padding: spacing[padding], backgroundColor },
+    style,
+  ];
 
   return <View style={containerStyle}>{children}</View>;
 };

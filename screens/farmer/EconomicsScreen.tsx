@@ -10,10 +10,12 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Svg, { Circle, G } from 'react-native-svg';
 import { colors, spacing, borderRadius, shadows } from '../../theme';
+import { scale, moderateScale, getFontSize, getSpacing, verticalScale } from '../../utils/responsive';
 import {
   Container,
   H3,
@@ -213,61 +215,62 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: spacing.md,
+    paddingTop: getSpacing(spacing.md),
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: scale(40),
+    height: scale(40),
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
+    fontSize: getFontSize(20),
   },
   headerRight: {
-    width: 40,
+    width: scale(40),
   },
   seasonCard: {
-    padding: spacing.md,
+    padding: getSpacing(spacing.md),
   },
   summaryRow: {
     flexDirection: 'row',
-    gap: spacing.md,
+    gap: getSpacing(spacing.md),
   },
   summaryCard: {
     flex: 1,
-    padding: spacing.md,
+    padding: getSpacing(spacing.md),
   },
   summaryLabel: {
-    fontSize: 12,
-    marginBottom: spacing.xs,
+    fontSize: getFontSize(12),
+    marginBottom: getSpacing(spacing.xs),
   },
   summaryAmount: {
-    fontSize: 18,
+    fontSize: getFontSize(18),
     fontWeight: '700',
   },
   profitCard: {
-    padding: spacing.lg,
+    padding: getSpacing(spacing.lg),
   },
   profitLabel: {
-    fontSize: 14,
-    marginBottom: 10,
+    fontSize: getFontSize(14),
+    marginBottom: getSpacing(10),
     opacity: 0.9,
   },
   profitAmount: {
-    fontSize: 20,
+    fontSize: getFontSize(20),
     fontWeight: '700',
-    paddingTop: 10,
+    paddingTop: getSpacing(10),
   },
   profitDetails: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: spacing.xs,
+    marginTop: getSpacing(spacing.xs),
   },
   fieldCard: {
-    padding: spacing.md,
-    marginBottom: spacing.md,
+    padding: getSpacing(spacing.md),
+    marginBottom: getSpacing(spacing.md),
   },
   fieldCardHeader: {
     flexDirection: 'row',
@@ -277,7 +280,7 @@ const styles = StyleSheet.create({
   fieldMetrics: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: spacing.sm,
+    gap: getSpacing(spacing.sm),
   },
   metricItem: {
     flex: 1,
@@ -287,7 +290,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: spacing.sm,
+    paddingTop: getSpacing(spacing.sm),
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
