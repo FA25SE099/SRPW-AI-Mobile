@@ -22,12 +22,14 @@ type TaskBottomSheetProps = {
   completedPlots: PlotDTO[];
   focusedTaskId: string | null;
   selectedTaskId: string | null;
+  editingPlotId: string | null;
   focusedPlotId: string | null;
   onToggle: () => void;
   onTabChange: (tab: 'tasks' | 'completed') => void;
   onTaskFocus: (task: PolygonTask) => void;
   onTaskStartDrawing: (task: PolygonTask) => void;
   onPlotFocus: (plot: PlotDTO) => void;
+  onPlotEdit: (plot: PlotDTO) => void;
 };
 
 export const TaskBottomSheet: React.FC<TaskBottomSheetProps> = ({
@@ -37,12 +39,14 @@ export const TaskBottomSheet: React.FC<TaskBottomSheetProps> = ({
   completedPlots,
   focusedTaskId,
   selectedTaskId,
+  editingPlotId,
   focusedPlotId,
   onToggle,
   onTabChange,
   onTaskFocus,
   onTaskStartDrawing,
   onPlotFocus,
+  onPlotEdit,
 }) => {
   return (
     <View
@@ -137,7 +141,9 @@ export const TaskBottomSheet: React.FC<TaskBottomSheetProps> = ({
                       key={plot.plotId}
                       plot={plot}
                       isFocused={focusedPlotId === plot.plotId}
+                      isEditing={editingPlotId === plot.plotId}
                       onFocus={onPlotFocus}
+                      onEdit={onPlotEdit}
                     />
                   ))
                 )}

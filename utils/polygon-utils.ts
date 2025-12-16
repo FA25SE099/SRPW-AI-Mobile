@@ -178,3 +178,34 @@ export const createPolygonGeoJSON = (coordinates: LatLng[]): string => {
   return JSON.stringify(geoJson);
 };
 
+/**
+ * Convert GeoJSON polygon to WKT format
+ */
+export const convertGeoJSONToWKT = (geoJsonString: string): string => {
+  const geoJson = JSON.parse(geoJsonString);
+  
+  if (geoJson.type !== 'Polygon') {
+    throw new Error('Only Polygon GeoJSON is supported');
+  }
+
+  const coordinates = geoJson.coordinates[0];
+  const wktCoords = coordinates
+    .map((coord: number[]) => `${coord[0]} ${coord[1]}`)
+    .join(', ');
+  
+  return `POLYGON((${wktCoords}))`;
+};
+
+/**
+ * Convert LatLng coordinates array to WKT polygon format
+ */
+export const createPolygonWKT = (coordinates: LatLng[]): string => {
+  // Create closed ring
+  const ring = coordinates.map((coord) => [coord.longitude, coord.latitude]);
+  const firstPoint = ring[0];
+  ring.push(firstPoint);
+
+  const wktCoords = ring.map((coord) => `${coord[0]} ${coord[1]}`).join(', ');
+  return `POLYGON((${wktCoords}))`;
+};
+
