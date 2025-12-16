@@ -22,6 +22,7 @@ import {
   getPlots,
   completePolygonTask,
   validatePolygonArea,
+  updatePlot,
   PolygonTask,
   PlotDTO,
   ValidatePolygonAreaResponse,
@@ -30,6 +31,7 @@ import {
   getCoordinatesFromGeoJSON,
   calculatePolygonArea,
   createPolygonGeoJSON,
+  createPolygonWKT,
 } from '../../utils/polygon-utils';
 
 export const PolygonDrawingScreen = () => {
@@ -47,6 +49,7 @@ export const PolygonDrawingScreen = () => {
   const [bottomSheetExpanded, setBottomSheetExpanded] = useState(false);
   const [validationResult, setValidationResult] = useState<ValidatePolygonAreaResponse['data'] | null>(null);
   const [isValidating, setIsValidating] = useState(false);
+  const [editingPlot, setEditingPlot] = useState<PlotDTO | null>(null);
 
   // Queries
   const { data: tasks = [], isLoading: tasksLoading, refetch: refetchTasks } = useQuery({
@@ -63,19 +66,67 @@ export const PolygonDrawingScreen = () => {
     mutationFn: ({ taskId, polygonGeoJson, notes }: { taskId: string; polygonGeoJson: string; notes?: string }) =>
       completePolygonTask(taskId, polygonGeoJson, notes),
     onSuccess: async () => {
+      console.log('✅ Task completed successfully');
+      
+      // Clear all drawing states
       setSelectedTask(null);
       setIsDrawing(false);
       setDrawnPolygon([]);
       setPolygonArea(0);
       setValidationResult(null);
       setIsValidating(false);
-      await Promise.all([refetchPlots(), refetchTasks()]);
+      setFocusedPlotId(null);
+      
+      // Force immediate cache invalidation and refetch
       queryClient.invalidateQueries({ queryKey: ['plots'] });
       queryClient.invalidateQueries({ queryKey: ['polygon-tasks'] });
+      
+      // Wait a tiny bit for the backend to propagate changes
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Refetch the data
+      await Promise.all([refetchPlots(), refetchTasks()]);
+      
+      console.log('🔄 Data refetched after task completion');
       Alert.alert('Success', 'Polygon task completed successfully!');
     },
     onError: (error: any) => {
+      console.error('❌ Error completing task:', error);
       Alert.alert('Error', error.message || 'Failed to complete task');
+    },
+  });
+
+  const updatePlotMutation = useMutation({
+    mutationFn: updatePlot,
+    onSuccess: async () => {
+      console.log('✅ Plot updated successfully');
+      
+      // Clear all drawing states
+      setEditingPlot(null);
+      setSelectedTask(null);
+      setIsDrawing(false);
+      setDrawnPolygon([]);
+      setPolygonArea(0);
+      setValidationResult(null);
+      setIsValidating(false);
+      setFocusedPlotId(null);
+      
+      // Force immediate cache invalidation and refetch
+      queryClient.invalidateQueries({ queryKey: ['plots'] });
+      queryClient.invalidateQueries({ queryKey: ['polygon-tasks'] });
+      
+      // Wait a tiny bit for the backend to propagate changes
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Refetch the data
+      await Promise.all([refetchPlots(), refetchTasks()]);
+      
+      console.log('🔄 Data refetched after update');
+      Alert.alert('Success', 'Plot boundary updated successfully!');
+    },
+    onError: (error: any) => {
+      console.error('❌ Error updating plot:', error);
+      Alert.alert('Error', error.message || 'Failed to update plot');
     },
   });
 
@@ -107,8 +158,13 @@ export const PolygonDrawingScreen = () => {
       };
 
   const handleMapPress = (event: any) => {
-    if (!isDrawing || !selectedTask) return;
+    // Allow drawing for both task AND editing modes
+    if (!isDrawing || (!selectedTask && !editingPlot)) {
+      console.log('⚠️ Map press ignored:', { isDrawing, hasTask: !!selectedTask, hasEditingPlot: !!editingPlot });
+      return;
+    }
 
+    console.log('📍 Map pressed, adding point');
     const { coordinate } = event.nativeEvent;
     const newPolygon = [...drawnPolygon, coordinate];
     setDrawnPolygon(newPolygon);
@@ -126,23 +182,21 @@ export const PolygonDrawingScreen = () => {
   };
 
   const validatePolygon = async (polygon: LatLng[]) => {
-    if (!selectedTask || polygon.length < 3) return;
+    const plotId = selectedTask?.plotId || editingPlot?.plotId;
+    if (!plotId || polygon.length < 3) return;
 
     setIsValidating(true);
     try {
       const geoJsonString = createPolygonGeoJSON(polygon);
-      const response = await validatePolygonArea({
-        plotId: selectedTask.plotId,
+      const validationData = await validatePolygonArea({
+        plotId: plotId,
         polygonGeoJson: geoJsonString,
         tolerancePercent: 10,
       });
 
-      if (response.succeeded && response.data) {
-        setValidationResult(response.data);
-      } else {
-        setValidationResult(null);
-        console.warn('Validation failed:', response.message);
-      }
+      // API client automatically unwraps Result<T>, so validationData is the actual data
+      setValidationResult(validationData);
+      console.log('Validation result:', validationData);
     } catch (error: any) {
       console.error('Error validating polygon:', error);
       setValidationResult(null);
@@ -176,8 +230,35 @@ export const PolygonDrawingScreen = () => {
     }
   };
 
+  const startEditingPlot = (plot: PlotDTO) => {
+    console.log('🖊️ Starting to edit plot:', plot.plotId, `(${plot.soThua}/${plot.soTo})`);
+    setEditingPlot(plot);
+    setSelectedTask(null);
+    setIsDrawing(true);
+    setDrawnPolygon([]);
+    setPolygonArea(0);
+    setValidationResult(null);
+    setIsValidating(false);
+    setBottomSheetExpanded(false);
+
+    if (mapRef.current) {
+      const coord = getCoordinatesFromGeoJSON(plot.coordinateGeoJson || '');
+      if (coord) {
+        mapRef.current.animateToRegion(
+          {
+            ...coord,
+            latitudeDelta: 0.005,
+            longitudeDelta: 0.005,
+          },
+          1000,
+        );
+      }
+    }
+  };
+
   const cancelDrawing = () => {
     setSelectedTask(null);
+    setEditingPlot(null);
     setIsDrawing(false);
     setDrawnPolygon([]);
     setPolygonArea(0);
@@ -187,6 +268,8 @@ export const PolygonDrawingScreen = () => {
   };
 
   const finishDrawing = () => {
+    console.log('💾 Attempting to save polygon...');
+    
     if (drawnPolygon.length < 3) {
       Alert.alert('Error', 'Polygon must have at least 3 points');
       return;
@@ -198,39 +281,42 @@ export const PolygonDrawingScreen = () => {
       return;
     }
 
+    // STRICT: Validation must pass to save
     if (!validationResult.isValid) {
+      console.log('❌ Validation failed, cannot save');
       Alert.alert(
         'Validation Failed',
-        `${validationResult.message}\n\nDifference: ${validationResult.differencePercent.toFixed(1)}%\nTolerance: ${validationResult.tolerancePercent}%`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Save Anyway',
-            style: 'destructive',
-            onPress: () => {
-              const geoJsonString = createPolygonGeoJSON(drawnPolygon);
-              if (selectedTask) {
-                completeTaskMutation.mutate({
-                  taskId: selectedTask.id,
-                  polygonGeoJson: geoJsonString,
-                  notes: `Polygon drawn with area: ${polygonArea}m² (Validation overridden)`,
-                });
-              }
-            },
-          },
-        ]
+        `${validationResult.message}\n\nDrawn Area: ${validationResult.drawnAreaHa} ha\nPlot Area: ${validationResult.plotAreaHa} ha\nDifference: ${validationResult.differencePercent.toFixed(1)}%\nMax Allowed: ${validationResult.tolerancePercent}%\n\nPlease redraw the polygon with correct area.`,
+        [{ text: 'OK', style: 'default' }]
       );
       return;
     }
 
-    // Validation passed
-    const geoJsonString = createPolygonGeoJSON(drawnPolygon);
-
+    // Validation passed - proceed with save
+    console.log('✅ Validation passed, proceeding with save');
+    
     if (selectedTask) {
+      // Task drawing flow
+      console.log('📋 Completing task:', selectedTask.id);
+      const geoJsonString = createPolygonGeoJSON(drawnPolygon);
       completeTaskMutation.mutate({
         taskId: selectedTask.id,
         polygonGeoJson: geoJsonString,
-        notes: `Polygon drawn with area: ${polygonArea}m² (Validated)`,
+        notes: `Polygon drawn with area: ${validationResult.drawnAreaHa}ha (${polygonArea}m²)`,
+      });
+    } else if (editingPlot) {
+      // Plot editing flow
+      console.log('✏️ Updating plot:', editingPlot.plotId);
+      const wktPolygon = createPolygonWKT(drawnPolygon);
+      console.log('📍 WKT Polygon:', wktPolygon.substring(0, 100) + '...');
+      updatePlotMutation.mutate({
+        plotId: editingPlot.plotId,
+        farmerId: editingPlot.farmerId,
+        boundary: wktPolygon,
+        area: editingPlot.area,
+        status: 0, // Active
+        soThua: editingPlot.soThua,
+        soTo: editingPlot.soTo,
       });
     }
   };
@@ -335,12 +421,13 @@ export const PolygonDrawingScreen = () => {
         />
 
         {/* Drawing Controls */}
-        {isDrawing && selectedTask && (
+        {isDrawing && (selectedTask || editingPlot) && (
           <DrawingControls
             task={selectedTask}
+            editingPlot={editingPlot}
             drawnPolygon={drawnPolygon}
             polygonArea={polygonArea}
-            isPending={completeTaskMutation.isPending}
+            isPending={completeTaskMutation.isPending || updatePlotMutation.isPending}
             isValidating={isValidating}
             validationResult={validationResult}
             onCancel={cancelDrawing}
@@ -375,12 +462,14 @@ export const PolygonDrawingScreen = () => {
         completedPlots={completedPlots}
         focusedTaskId={focusedTaskId}
         selectedTaskId={selectedTask?.id || null}
+        editingPlotId={editingPlot?.plotId || null}
         focusedPlotId={focusedPlotId}
         onToggle={toggleBottomSheet}
         onTabChange={setActiveTab}
         onTaskFocus={handleTaskFocus}
         onTaskStartDrawing={startDrawingForTask}
         onPlotFocus={handlePlotFocus}
+        onPlotEdit={startEditingPlot}
       />
     </SafeAreaView>
   );

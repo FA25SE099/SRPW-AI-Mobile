@@ -8,10 +8,11 @@ import { View, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-nat
 import { LatLng } from 'react-native-maps';
 import { colors, spacing, borderRadius } from '../../theme';
 import { Card, BodySemibold, BodySmall, Body, Button } from '../ui';
-import { PolygonTask, ValidatePolygonAreaResponse } from '../../libs/supervisor';
+import { PolygonTask, PlotDTO, ValidatePolygonAreaResponse } from '../../libs/supervisor';
 
 type DrawingControlsProps = {
-  task: PolygonTask;
+  task?: PolygonTask | null;
+  editingPlot?: PlotDTO | null;
   drawnPolygon: LatLng[];
   polygonArea: number;
   isPending: boolean;
@@ -24,6 +25,7 @@ type DrawingControlsProps = {
 
 export const DrawingControls: React.FC<DrawingControlsProps> = ({
   task,
+  editingPlot,
   drawnPolygon,
   polygonArea,
   isPending,
@@ -44,15 +46,25 @@ export const DrawingControls: React.FC<DrawingControlsProps> = ({
     return validationResult.isValid ? '✅' : '⚠️';
   };
 
+  const isEditMode = !!editingPlot;
+  const plotInfo = isEditMode ? editingPlot : task;
+
   return (
     <Card variant="elevated" style={styles.card}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <BodySemibold>Plot {task.soThua}/{task.soTo}</BodySemibold>
+          <View style={styles.headerRow}>
+            {isEditMode && (
+              <BodySmall color={colors.warning || '#FF9500'} style={styles.modeLabel}>
+                ✏️ Editing
+              </BodySmall>
+            )}
+            <BodySemibold>Plot {plotInfo?.soThua}/{plotInfo?.soTo}</BodySemibold>
+          </View>
           {drawnPolygon.length > 0 && (
             <BodySmall color={colors.textSecondary}>
               {drawnPolygon.length} points •{' '}
-              {polygonArea > 0 ? `${polygonArea.toLocaleString()} m²` : 'Calculating...'}
+              {/* {polygonArea > 0 ? `${polygonArea.toLocaleString()} m²` : 'Calculating...'} */}
             </BodySmall>
           )}
         </View>
@@ -147,19 +159,27 @@ export const DrawingControls: React.FC<DrawingControlsProps> = ({
             size="sm"
             onPress={onFinish}
             loading={isPending}
-            disabled={isPending || isValidating}
-            style={[
-              styles.actionButton, 
-              styles.saveButton,
-              (!validationResult?.isValid && validationResult) && styles.saveButtonWarning
-            ]}
+            disabled={
+              isPending || 
+              isValidating || 
+              !validationResult || 
+              !validationResult.isValid
+            }
+            style={styles.saveButton}
           >
             <BodySmall color={colors.white}>
-              {validationResult?.isValid ? 'Save' : 'Save Anyway'}
+              Save
             </BodySmall>
           </Button>
         )}
       </View>
+      
+      {/* Show message when save is disabled */}
+      {drawnPolygon.length >= 3 && validationResult && !validationResult.isValid && (
+        <BodySmall color={colors.error} style={styles.disabledMessage}>
+          ⚠️ Validation must pass to save. Please redraw polygon.
+        </BodySmall>
+      )}
     </Card>
   );
 };
@@ -181,6 +201,15 @@ const styles = StyleSheet.create({
   },
   headerLeft: {
     flex: 1,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  modeLabel: {
+    fontSize: 11,
+    fontWeight: '600',
   },
   closeButton: {
     fontSize: 20,
@@ -248,10 +277,19 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   saveButton: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: colors.success,
   },
-  saveButtonWarning: {
-    backgroundColor: colors.warning || '#FF9500',
+  disabledMessage: {
+    marginTop: spacing.xs,
+    fontSize: 11,
+    textAlign: 'center',
+    fontWeight: '600',
   },
 });
 

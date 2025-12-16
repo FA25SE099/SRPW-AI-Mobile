@@ -371,12 +371,13 @@ export type ValidatePolygonAreaResponse = {
 
 /**
  * Validate polygon area against plot area
+ * Note: API client unwraps Result<T> wrapper automatically
  */
 export const validatePolygonArea = async ({
   plotId,
   polygonGeoJson,
   tolerancePercent = 10,
-}: ValidatePolygonAreaInput): Promise<ValidatePolygonAreaResponse> => {
+}: ValidatePolygonAreaInput): Promise<NonNullable<ValidatePolygonAreaResponse['data']>> => {
   const response = await api.post<ValidatePolygonAreaResponse>(
     '/Supervisor/polygon/validate-area',
     {
@@ -385,6 +386,49 @@ export const validatePolygonArea = async ({
       tolerancePercent,
     }
   );
-  return response;
+  // API client already unwrapped the Result<T>, so response IS the data
+  return response as any;
+};
+
+// Update Plot Types
+export type UpdatePlotInput = {
+  plotId: string;
+  farmerId: string;
+  groupId?: string | null;
+  boundary?: string; // WKT Polygon format
+  soThua?: number;
+  soTo?: number;
+  area: number;
+  soilType?: string | null;
+  coordinate?: string | null; // WKT Point format
+  status: 0 | 1; // 0 = Active, 1 = PendingPolygon
+};
+
+export type UpdatePlotResponse = {
+  succeeded: boolean;
+  message: string;
+  data: {
+    plotId: string;
+    farmerId: string;
+    groupId?: string;
+    boundary: string;
+    soThua?: number;
+    soTo?: number;
+    area: number;
+    soilType?: string;
+    coordinate?: string;
+    status: number;
+  } | null;
+  errors: string[] | null;
+};
+
+/**
+ * Update plot information including boundary
+ * Note: API client unwraps Result<T> wrapper automatically
+ */
+export const updatePlot = async (data: UpdatePlotInput): Promise<NonNullable<UpdatePlotResponse['data']>> => {
+  const response = await api.put<UpdatePlotResponse>('/Plot', data);
+  // API client already unwrapped the Result<T>, so response IS the data
+  return response as any;
 };
 
