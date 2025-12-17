@@ -809,3 +809,85 @@ export type PestDetectionResponse = {
   detectedPests: DetectedPest[];
   imageInfo: PestDetectionImageInfo;
 };
+
+// Standard Plan Types
+export type StandardPlan = {
+  id: string;
+  name: string;
+  description?: string;
+  riceVarietyId?: string;
+  riceVarietyName?: string;
+  season?: string;
+  totalDuration?: number;
+  isActive: boolean;
+  createdAt?: string;
+};
+
+export type MaterialCostItem = {
+  materialId: string;
+  materialName: string;
+  unit: string;
+  quantityPerHa: number;
+  totalQuantityNeeded: number;
+  amountPerMaterial: number;
+  packagesNeeded: number;
+  actualQuantity: number;
+  pricePerMaterial: number;
+  totalCost: number;
+  costPerHa: number;
+  priceValidFrom?: string;
+};
+
+export type StandardPlanMaterialCostRequest = {
+  plotId?: string;
+  area?: number;
+  standardPlanId: string;
+};
+
+export type StandardPlanMaterialCostResponse = {
+  area: number;
+  totalCostPerHa: number;
+  totalCostForArea: number;
+  materialCostItems: MaterialCostItem[];
+  priceWarnings: string[];
+};
+
+export type StandardPlanProfitAnalysisRequest = {
+  plotId?: string;
+  area?: number;
+  standardPlanId: string;
+  pricePerKgRice: number;
+  expectedYieldPerHa: number;
+  otherServiceCostPerHa?: number;
+};
+
+export type MaterialCostDetail = {
+  materialId: string;
+  materialName: string;
+  unit: string;
+  quantityPerHa: number;
+  totalQuantityForArea: number;
+  packagesNeeded: number;
+  totalCost: number;
+  costPerHa: number;
+};
+
+export type StandardPlanProfitAnalysisResponse = {
+  area: number;
+  pricePerKgRice: number;
+  expectedYieldPerHa: number;
+  expectedRevenuePerHa: number;
+  materialCostPerHa: number;
+  otherServiceCostPerHa: number;
+  totalCostPerHa: number;
+  profitPerHa: number;
+  profitMarginPerHa: number;
+  expectedRevenueForArea: number;
+  materialCostForArea: number;
+  otherServiceCostForArea: number;
+  totalCostForArea: number;
+  profitForArea: number;
+  profitMarginForArea: number;
+  materialCostDetails: MaterialCostDetail[];
+  warnings: string[];
+};

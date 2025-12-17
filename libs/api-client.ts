@@ -34,6 +34,17 @@ async function authRequestInterceptor(config: InternalAxiosRequestConfig) {
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
 
+  // Special handling for FormData - let axios set the proper boundary
+  // Remove any Content-Type that was manually set for FormData
+  if (config.data instanceof FormData && config.headers) {
+    // Axios will automatically set the correct Content-Type with boundary
+    // We must delete any manual Content-Type to avoid boundary issues
+    delete config.headers['Content-Type'];
+  } else if (config.data && config.headers && !config.headers['Content-Type']) {
+    // For JSON data, ensure Content-Type is set
+    config.headers['Content-Type'] = 'application/json';
+  }
+
   config.withCredentials = true;
   
   // Log all API requests
@@ -48,6 +59,16 @@ async function authRequestInterceptor(config: InternalAxiosRequestConfig) {
 
 export const api = Axios.create({
   baseURL: env.API_URL,
+  timeout: 120000, // 2 minutes default timeout for all requests
+  // Android-specific fixes for FormData
+  transformRequest: [(data, headers) => {
+    // For FormData, return as-is and let axios handle it natively
+    if (data instanceof FormData) {
+      return data;
+    }
+    // For other data, use default transformation
+    return typeof data === 'string' ? data : JSON.stringify(data);
+  }],
 });
 
 api.interceptors.request.use(authRequestInterceptor);

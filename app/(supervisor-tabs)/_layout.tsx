@@ -61,6 +61,13 @@ export default function SupervisorTabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="economics"
+        options={{
+          title: 'Economics',
+          tabBarIcon: () => <Text>💰</Text>,
+        }}
+      />
+      <Tabs.Screen
         name="alerts"
         options={{
           title: 'Alerts',
