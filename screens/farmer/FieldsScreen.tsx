@@ -16,8 +16,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueries } from '@tanstack/react-query';
-import MapView, { Marker, Polygon as MapPolygon, Region} from 'react-native-maps';
 import { colors, spacing, borderRadius, shadows } from '../../theme';
+import { Coordinate } from '../../types/coordinates';
 import { scale, moderateScale, getFontSize, getSpacing, isTablet, verticalScale } from '../../utils/responsive';
 import {
   Container,
@@ -30,6 +30,9 @@ import {
   Spacer,
   Button,
   Spinner,
+  MapboxMap,
+  PolygonData,
+  MarkerData,
 } from '../../components/ui';
 import { FarmerPlot } from '../../types/api';
 import { getCurrentFarmerPlots, getPlotCultivationPlans } from '../../libs/farmer';
@@ -197,10 +200,17 @@ export const FieldsScreen = () => {
   const router = useRouter();
   const { data: user } = useUser();
   const { width: screenWidth } = useWindowDimensions();
-  const mapRef = useRef<MapView | null>(null);
-  const fullscreenMapRef = useRef<MapView | null>(null);
+  const mapRef = useRef<any>(null);
+  const fullscreenMapRef = useRef<any>(null);
+  const cameraRef = useRef<any>(null);
+  const fullscreenCameraRef = useRef<any>(null);
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
-  const [pendingRegion, setPendingRegion] = useState<Region | null>(null);
+  const [pendingRegion, setPendingRegion] = useState<{
+    latitude: number;
+    longitude: number;
+    latitudeDelta: number;
+    longitudeDelta: number;
+  } | null>(null);
   const [addresses, setAddresses] = useState<{ [plotId: string]: string }>({});
   const {
     data: plots,
@@ -329,6 +339,27 @@ export const FieldsScreen = () => {
     return DEFAULT_CENTER;
   }, [pointMarkers, polygonOverlays]);
 
+  // Convert to Mapbox format
+  const mapboxPolygons = useMemo<PolygonData[]>(() => {
+    return polygonOverlays.map((polygon) => ({
+      id: polygon.plotId,
+      coordinates: polygon.coordinates,
+      strokeColor: '#6C5CE7',
+      fillColor: 'rgba(108, 92, 231, 0.25)',
+      strokeWidth: 2,
+    }));
+  }, [polygonOverlays]);
+
+  const mapboxMarkers = useMemo<MarkerData[]>(() => {
+    return pointMarkers.map((marker) => ({
+      id: marker.plotId,
+      coordinate: marker.coordinate,
+      title: marker.groupName,
+      description: marker.address,
+      color: colors.primary,
+    }));
+  }, [pointMarkers]);
+
   const totalAreaHa = useMemo(() => {
     if (!plots || plots.length === 0) return 0;
     return plots.reduce((sum, plot) => sum + (plot.area || 0), 0);
@@ -365,23 +396,37 @@ export const FieldsScreen = () => {
     const coordinate = parsePointWkt(plot.coordinate);
     if (!coordinate) return;
 
-    const region: Region = {
+    const region = {
       latitude: coordinate.latitude,
       longitude: coordinate.longitude,
       latitudeDelta: 0.02,
       longitudeDelta: 0.02,
     };
 
-    if (mapRef.current) {
-      mapRef.current.animateToRegion(region, 500);
+    const center = {
+      longitude: region.longitude,
+      latitude: region.latitude,
+    };
+    const zoomLevel = Math.max(8, Math.min(20, Math.log2(360 / Math.max(region.latitudeDelta, 0.001))));
+
+    if (cameraRef.current) {
+      cameraRef.current.setCamera({
+        centerCoordinate: [center.longitude, center.latitude],
+        zoomLevel,
+        animationDuration: 500,
+      });
     }
 
     if (expand) {
       setPendingRegion(region);
       setIsMapFullscreen(true);
       requestAnimationFrame(() => {
-        if (fullscreenMapRef.current) {
-          fullscreenMapRef.current.animateToRegion(region, 500);
+        if (fullscreenCameraRef.current) {
+          fullscreenCameraRef.current.setCamera({
+            centerCoordinate: [center.longitude, center.latitude],
+            zoomLevel,
+            animationDuration: 500,
+          });
         }
       });
     }
@@ -432,36 +477,14 @@ export const FieldsScreen = () => {
           >
             <Body color={colors.white}>Full Screen</Body>
           </TouchableOpacity>
-          <MapView
-            ref={mapRef}
-            style={styles.map}
+          <MapboxMap
+            mapRef={mapRef}
+            cameraRef={cameraRef}
             initialRegion={mapRegion}
-            mapType="hybrid"
-            showsBuildings={true}
-            showsPointsOfInterest={true}
-            showsTraffic={false}
-            showsCompass={true}
-            showsScale={true}
-          >
-            {polygonOverlays.map((polygon) => (
-              <MapPolygon
-                key={polygon.plotId}
-                coordinates={polygon.coordinates}
-                strokeColor="#6C5CE7"
-                fillColor="rgba(108, 92, 231, 0.25)"
-                strokeWidth={2}
-              />
-            ))}
-
-            {pointMarkers.map((marker) => (
-              <Marker
-                key={marker.plotId}
-                coordinate={marker.coordinate}
-                title={marker.groupName}
-                description={marker.address}
-              />
-            ))}
-          </MapView>
+            polygons={mapboxPolygons}
+            markers={mapboxMarkers}
+            style={styles.map}
+          />
         </Card>
 
         <Modal visible={isMapFullscreen} animationType="slide">
@@ -478,44 +501,31 @@ export const FieldsScreen = () => {
                 size="sm"
                 onPress={() => {
                   const target = mapRegion;
-                  if (fullscreenMapRef.current) {
-                    fullscreenMapRef.current.animateToRegion(target, 500);
+                  if (fullscreenCameraRef.current) {
+                    const center = {
+                      longitude: target.longitude,
+                      latitude: target.latitude,
+                    };
+                    const zoomLevel = Math.max(8, Math.min(20, Math.log2(360 / Math.max(target.latitudeDelta, 0.001))));
+                    fullscreenCameraRef.current.setCamera({
+                      centerCoordinate: [center.longitude, center.latitude],
+                      zoomLevel,
+                      animationDuration: 500,
+                    });
                   }
                 }}
               >
                 Reset View
               </Button>
             </View>
-            <MapView
-              ref={fullscreenMapRef}
-              style={styles.fullscreenMap}
+            <MapboxMap
+              mapRef={fullscreenMapRef}
+              cameraRef={fullscreenCameraRef}
               initialRegion={mapRegion}
-              mapType="hybrid"
-              showsBuildings={true}
-              showsPointsOfInterest={true}
-              showsTraffic={false}
-              showsCompass={true}
-              showsScale={true}
-            >
-              {polygonOverlays.map((polygon) => (
-                <MapPolygon
-                  key={polygon.plotId}
-                  coordinates={polygon.coordinates}
-                  strokeColor="#6C5CE7"
-                  fillColor="rgba(108, 92, 231, 0.25)"
-                  strokeWidth={2}
-                />
-              ))}
-
-              {pointMarkers.map((marker) => (
-                <Marker
-                  key={marker.plotId}
-                  coordinate={marker.coordinate}
-                  title={marker.groupName}
-                  description={marker.address}
-                />
-              ))}
-            </MapView>
+              polygons={mapboxPolygons}
+              markers={mapboxMarkers}
+              style={styles.fullscreenMap}
+            />
           </SafeAreaView>
         </Modal>
 

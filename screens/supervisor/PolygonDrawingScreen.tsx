@@ -8,12 +8,12 @@ import React, { useState, useRef, useMemo } from 'react';
 import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import MapView, { Region, LatLng } from 'react-native-maps';
+import Mapbox from '@rnmapbox/maps';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { colors, spacing } from '../../theme';
 import { H3, Body, BodySmall, BodySemibold, Spinner } from '../../components/ui';
 import {
-  PolygonMap,
+  PolygonMapbox,
   DrawingControls,
   TaskBottomSheet,
 } from '../../components/supervisor';
@@ -33,15 +33,17 @@ import {
   createPolygonGeoJSON,
   createPolygonWKT,
 } from '../../utils/polygon-utils';
+import { Coordinate } from '../../types/coordinates';
 
 export const PolygonDrawingScreen = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const mapRef = useRef<MapView | null>(null);
+  const mapRef = useRef<Mapbox.MapView | null>(null);
+  const cameraRef = useRef<Mapbox.Camera | null>(null);
 
   const [selectedTask, setSelectedTask] = useState<PolygonTask | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [drawnPolygon, setDrawnPolygon] = useState<LatLng[]>([]);
+  const [drawnPolygon, setDrawnPolygon] = useState<Coordinate[]>([]);
   const [polygonArea, setPolygonArea] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<'tasks' | 'completed'>('tasks');
   const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null);
@@ -143,7 +145,7 @@ export const PolygonDrawingScreen = () => {
       .filter((coord): coord is { latitude: number; longitude: number } => coord !== null);
   }, [plots]);
 
-  const initialRegion: Region = plotCenters.length > 0
+  const initialRegion = plotCenters.length > 0
     ? {
         latitude: plotCenters[0].latitude,
         longitude: plotCenters[0].longitude,
@@ -157,7 +159,7 @@ export const PolygonDrawingScreen = () => {
         longitudeDelta: 0.1,
       };
 
-  const handleMapPress = (event: any) => {
+  const handleMapPress = (coordinate: Coordinate) => {
     // Allow drawing for both task AND editing modes
     if (!isDrawing || (!selectedTask && !editingPlot)) {
       console.log('⚠️ Map press ignored:', { isDrawing, hasTask: !!selectedTask, hasEditingPlot: !!editingPlot });
@@ -165,7 +167,6 @@ export const PolygonDrawingScreen = () => {
     }
 
     console.log('📍 Map pressed, adding point');
-    const { coordinate } = event.nativeEvent;
     const newPolygon = [...drawnPolygon, coordinate];
     setDrawnPolygon(newPolygon);
 
@@ -181,7 +182,7 @@ export const PolygonDrawingScreen = () => {
     }
   };
 
-  const validatePolygon = async (polygon: LatLng[]) => {
+  const validatePolygon = async (polygon: Coordinate[]) => {
     const plotId = selectedTask?.plotId || editingPlot?.plotId;
     if (!plotId || polygon.length < 3) return;
 
@@ -215,17 +216,14 @@ export const PolygonDrawingScreen = () => {
     setBottomSheetExpanded(false);
 
     const plot = plots.find((p) => p.plotId === task.plotId);
-    if (plot && mapRef.current) {
+    if (plot && cameraRef.current) {
       const coord = getCoordinatesFromGeoJSON(plot.coordinateGeoJson || '');
       if (coord) {
-        mapRef.current.animateToRegion(
-          {
-            ...coord,
-            latitudeDelta: 0.005,
-            longitudeDelta: 0.005,
-          },
-          1000,
-        );
+        cameraRef.current.setCamera({
+          centerCoordinate: [coord.longitude, coord.latitude],
+          zoomLevel: 16,
+          animationDuration: 1000,
+        });
       }
     }
   };
@@ -241,17 +239,14 @@ export const PolygonDrawingScreen = () => {
     setIsValidating(false);
     setBottomSheetExpanded(false);
 
-    if (mapRef.current) {
+    if (cameraRef.current) {
       const coord = getCoordinatesFromGeoJSON(plot.coordinateGeoJson || '');
       if (coord) {
-        mapRef.current.animateToRegion(
-          {
-            ...coord,
-            latitudeDelta: 0.005,
-            longitudeDelta: 0.005,
-          },
-          1000,
-        );
+        cameraRef.current.setCamera({
+          centerCoordinate: [coord.longitude, coord.latitude],
+          zoomLevel: 16,
+          animationDuration: 1000,
+        });
       }
     }
   };
@@ -324,34 +319,28 @@ export const PolygonDrawingScreen = () => {
   const handleTaskFocus = (task: PolygonTask) => {
     setFocusedTaskId(task.id);
     const plot = plots.find((p) => p.plotId === task.plotId);
-    if (plot && mapRef.current) {
+    if (plot && cameraRef.current) {
       const coord = getCoordinatesFromGeoJSON(plot.coordinateGeoJson || '');
       if (coord) {
-        mapRef.current.animateToRegion(
-          {
-            ...coord,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          },
-          1000,
-        );
+        cameraRef.current.setCamera({
+          centerCoordinate: [coord.longitude, coord.latitude],
+          zoomLevel: 15,
+          animationDuration: 1000,
+        });
       }
     }
   };
 
   const handlePlotFocus = (plot: PlotDTO) => {
     setFocusedPlotId(plot.plotId);
-    if (mapRef.current) {
+    if (cameraRef.current) {
       const coord = getCoordinatesFromGeoJSON(plot.coordinateGeoJson || '');
       if (coord) {
-        mapRef.current.animateToRegion(
-          {
-            ...coord,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          },
-          1000,
-        );
+        cameraRef.current.setCamera({
+          centerCoordinate: [coord.longitude, coord.latitude],
+          zoomLevel: 15,
+          animationDuration: 1000,
+        });
       }
     }
   };
@@ -410,8 +399,9 @@ export const PolygonDrawingScreen = () => {
 
       {/* Full Screen Map */}
       <View style={styles.mapContainer}>
-        <PolygonMap
+        <PolygonMapbox
           mapRef={mapRef}
+          cameraRef={cameraRef}
           initialRegion={initialRegion}
           plots={plots}
           tasks={tasks}

@@ -31,10 +31,17 @@
       "bundler": "metro"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "@rnmapbox/maps",
+        {
+          "RNMapboxMapsDownloadToken": "sk.eyJ1IjoiZHVjbmd1eWVuMTIwNDA0IiwiYSI6ImNtamF4d2RmOTA1ajczY3F4dHNqbXhkOGwifQ.1ytcAiJBgUe-d2MNShpoZw"
+        }
+      ]
     ],
     "extra": {
-      "apiUrl": "https://4bldd7d2-5100.asse.devtunnels.ms/api"
+      "apiUrl": "https://riceproduction-hef0e2b3gbc5akay.southeastasia-01.azurewebsites.net/api",
+      "mapboxAccessToken": "pk.eyJ1IjoiZHVjbmd1eWVuMTIwNDA0IiwiYSI6ImNtamF4b3RuNDA3N3gzZnF4Z2RiZGNudGgifQ.frZ1ll3lizDPgi9DPb4kEw"
     }
   }
 }

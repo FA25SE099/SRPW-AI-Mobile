@@ -16,7 +16,6 @@ import {
   Image,
 } from 'react-native';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
-import MapView, { Marker, Polygon as MapPolygon, Polyline, Region } from 'react-native-maps';
 import dayjs from 'dayjs';
 import { useQuery } from '@tanstack/react-query';
 import { colors, spacing, borderRadius, shadows } from '../../theme';
@@ -32,7 +31,12 @@ import {
   Spacer,
   Button,
   Spinner,
+  MapboxMap,
+  PolygonData,
+  MarkerData,
+  PolylineData,
 } from '../../components/ui';
+import { Coordinate } from '../../types/coordinates';
 import { getUavOrderDetail } from '../../libs/uav';
 import { UavOrderDetail } from '../../types/api';
 
@@ -47,8 +51,10 @@ export const UavOrderDetailScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
   const orderId = params.orderId as string;
-  const mapRef = useRef<MapView | null>(null);
-  const fullscreenMapRef = useRef<MapView | null>(null);
+  const mapRef = useRef<any>(null);
+  const fullscreenMapRef = useRef<any>(null);
+  const cameraRef = useRef<any>(null);
+  const fullscreenCameraRef = useRef<any>(null);
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
   const [expandedProofs, setExpandedProofs] = useState<Record<string, boolean>>({});
   const [focusedPlotId, setFocusedPlotId] = useState<string | null>(null);
@@ -94,6 +100,46 @@ export const UavOrderDetailScreen = () => {
       return DEFAULT_CENTER;
     }
     return getRegionFromPoints(points);
+  }, [assignmentPolygons, focusedPlotId]);
+
+  // Convert to Mapbox format
+  const mapboxPolygons = useMemo<PolygonData[]>(() => {
+    return assignmentPolygons.map((polygon) => ({
+      id: polygon.plotId,
+      coordinates: polygon.coordinates,
+      strokeColor:
+        focusedPlotId && focusedPlotId === polygon.plotId
+          ? colors.primary
+          : getStatusColor(polygon.status),
+      fillColor:
+        focusedPlotId && focusedPlotId === polygon.plotId
+          ? `${colors.primary}40`
+          : `${getStatusColor(polygon.status)}30`,
+      strokeWidth: focusedPlotId && focusedPlotId === polygon.plotId ? 3 : 2,
+    }));
+  }, [assignmentPolygons, focusedPlotId]);
+
+  const mapboxPolylines = useMemo<PolylineData[]>(() => {
+    if (routeCoordinates.length === 0) return [];
+    return [
+      {
+        id: 'route',
+        coordinates: routeCoordinates,
+        strokeColor: colors.primary,
+        strokeWidth: 3,
+      },
+    ];
+  }, [routeCoordinates]);
+
+  const mapboxMarkers = useMemo<MarkerData[]>(() => {
+    if (assignmentPolygons.length === 0) return [];
+    return [
+      {
+        id: 'first-plot',
+        coordinate: assignmentPolygons[0].coordinates[0],
+        title: assignmentPolygons[0].plotName,
+      },
+    ];
   }, [assignmentPolygons]);
 
   if (isLoading || !order) {
@@ -163,11 +209,25 @@ export const UavOrderDetailScreen = () => {
       return;
     }
     const region = getRegionFromPoints(polygon.coordinates);
-    if (mapRef.current) {
-      mapRef.current.animateToRegion(region, 500);
+    const center = {
+      longitude: region.longitude,
+      latitude: region.latitude,
+    };
+    const zoomLevel = Math.max(8, Math.min(20, Math.log2(360 / Math.max(region.latitudeDelta, 0.001))));
+    
+    if (cameraRef.current) {
+      cameraRef.current.setCamera({
+        centerCoordinate: [center.longitude, center.latitude],
+        zoomLevel,
+        animationDuration: 500,
+      });
     }
-    if (fullscreenMapRef.current) {
-      fullscreenMapRef.current.animateToRegion(region, 500);
+    if (fullscreenCameraRef.current) {
+      fullscreenCameraRef.current.setCamera({
+        centerCoordinate: [center.longitude, center.latitude],
+        zoomLevel,
+        animationDuration: 500,
+      });
     }
   };
 
@@ -246,47 +306,16 @@ export const UavOrderDetailScreen = () => {
             >
               <Body color={colors.white}>Full Screen</Body>
             </TouchableOpacity>
-            <MapView
-              ref={mapRef}
-              style={styles.map}
+            <MapboxMap
+              mapRef={mapRef}
+              cameraRef={cameraRef}
               initialRegion={mapRegion}
-              mapType="hybrid"
-              showsBuildings={true}
-              showsPointsOfInterest={true}
-              showsCompass={true}
-              showsScale={true}
-            >
-              {assignmentPolygons.map((polygon) => (
-                <MapPolygon
-                  key={polygon.plotId}
-                  coordinates={polygon.coordinates}
-                  strokeColor={
-                    focusedPlotId && focusedPlotId === polygon.plotId
-                      ? colors.primary
-                      : getStatusColor(polygon.status)
-                  }
-                  fillColor={
-                    focusedPlotId && focusedPlotId === polygon.plotId
-                      ? `${colors.primary}40`
-                      : `${getStatusColor(polygon.status)}30`
-                  }
-                  strokeWidth={focusedPlotId && focusedPlotId === polygon.plotId ? 3 : 2}
-                />
-              ))}
-              {routeCoordinates.length > 0 && (
-                <Polyline
-                  coordinates={routeCoordinates}
-                  strokeColor={colors.primary}
-                  strokeWidth={3}
-                />
-              )}
-              {assignmentPolygons.length > 0 && (
-                <Marker
-                  coordinate={assignmentPolygons[0].coordinates[0]}
-                  title={assignmentPolygons[0].plotName}
-                />
-              )}
-            </MapView>
+              polygons={mapboxPolygons}
+              markers={mapboxMarkers}
+              polylines={mapboxPolylines}
+              focusedId={focusedPlotId}
+              style={styles.map}
+            />
           </Card>
 
           <Spacer size="md" />
@@ -503,49 +532,33 @@ export const UavOrderDetailScreen = () => {
                 variant="outline"
                 size="sm"
                 onPress={() => {
-                  if (fullscreenMapRef.current) {
-                    fullscreenMapRef.current.animateToRegion(mapRegion, 500);
+                  if (fullscreenCameraRef.current) {
+                    const center = {
+                      longitude: mapRegion.longitude,
+                      latitude: mapRegion.latitude,
+                    };
+                    const zoomLevel = Math.max(8, Math.min(20, Math.log2(360 / Math.max(mapRegion.latitudeDelta, 0.001))));
+                    fullscreenCameraRef.current.setCamera({
+                      centerCoordinate: [center.longitude, center.latitude],
+                      zoomLevel,
+                      animationDuration: 500,
+                    });
                   }
                 }}
               >
                 Reset View
               </Button>
             </View>
-            <MapView
-              ref={fullscreenMapRef}
-              style={styles.fullscreenMap}
+            <MapboxMap
+              mapRef={fullscreenMapRef}
+              cameraRef={fullscreenCameraRef}
               initialRegion={mapRegion}
-              mapType="hybrid"
-              showsBuildings={true}
-              showsPointsOfInterest={true}
-              showsCompass={true}
-              showsScale={true}
-            >
-              {assignmentPolygons.map((polygon) => (
-                <MapPolygon
-                  key={`full-${polygon.plotId}`}
-                  coordinates={polygon.coordinates}
-                  strokeColor={
-                    focusedPlotId && focusedPlotId === polygon.plotId
-                      ? colors.primary
-                      : getStatusColor(polygon.status)
-                  }
-                  fillColor={
-                    focusedPlotId && focusedPlotId === polygon.plotId
-                      ? `${colors.primary}40`
-                      : `${getStatusColor(polygon.status)}30`
-                  }
-                  strokeWidth={focusedPlotId && focusedPlotId === polygon.plotId ? 3 : 2}
-                />
-              ))}
-              {routeCoordinates.length > 0 && (
-                <Polyline
-                  coordinates={routeCoordinates}
-                  strokeColor={colors.primary}
-                  strokeWidth={3}
-                />
-              )}
-            </MapView>
+              polygons={mapboxPolygons}
+              markers={mapboxMarkers}
+              polylines={mapboxPolylines}
+              focusedId={focusedPlotId}
+              style={styles.fullscreenMap}
+            />
           </SafeAreaView>
         </Modal>
       </Container>
@@ -764,9 +777,7 @@ const styles = StyleSheet.create({
   },
 });
 
-type LatLng = { latitude: number; longitude: number };
-
-const parseWktPolygon = (wkt?: string | null): LatLng[] => {
+const parseWktPolygon = (wkt?: string | null): Coordinate[] => {
   if (!wkt) return [];
   const match = wkt.match(/\(\((.+)\)\)/);
   if (!match) return [];
@@ -779,7 +790,7 @@ const parseWktPolygon = (wkt?: string | null): LatLng[] => {
     });
 };
 
-const parseWktLineString = (wkt?: string | null): LatLng[] => {
+const parseWktLineString = (wkt?: string | null): Coordinate[] => {
   if (!wkt) return [];
   const match = wkt.match(/\((.+)\)/);
   if (!match) return [];
@@ -792,7 +803,12 @@ const parseWktLineString = (wkt?: string | null): LatLng[] => {
     });
 };
 
-const getRegionFromPoints = (points: LatLng[]): Region => {
+const getRegionFromPoints = (points: Coordinate[]): {
+  latitude: number;
+  longitude: number;
+  latitudeDelta: number;
+  longitudeDelta: number;
+} => {
   if (points.length === 0) {
     return DEFAULT_CENTER;
   }
