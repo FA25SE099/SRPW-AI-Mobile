@@ -7,7 +7,7 @@
     "orientation": "portrait",
     "icon": "./assets/icons/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/icons/splash-icon.png",
       "resizeMode": "contain",
@@ -31,16 +31,14 @@
       "bundler": "metro"
     },
     "plugins": [
-      "expo-router",
-      [
-        "@rnmapbox/maps",
-        {
-          "RNMapboxMapsDownloadToken": "sk.eyJ1IjoiZHVjbmd1eWVuMTIwNDA0IiwiYSI6ImNtamF4d2RmOTA1ajczY3F4dHNqbXhkOGwifQ.1ytcAiJBgUe-d2MNShpoZw"
-        }
-      ]
+      "expo-router"
     ],
     "extra": {
-      "apiUrl": "https://riceproduction-hef0e2b3gbc5akay.southeastasia-01.azurewebsites.net/api",
+      "apiUrl": "https://4bldd7d2-5100.asse.devtunnels.ms/api",
+      "router": {},
+      "eas": {
+        "projectId": "5cce9704-e29b-495f-b7a4-e39106109240"
+      },
       "mapboxAccessToken": "pk.eyJ1IjoiZHVjbmd1eWVuMTIwNDA0IiwiYSI6ImNtamF4b3RuNDA3N3gzZnF4Z2RiZGNudGgifQ.frZ1ll3lizDPgi9DPb4kEw"
     }
   }
