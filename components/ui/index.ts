@@ -12,6 +12,8 @@ export { Badge } from './Badge';
 export { Spinner } from './Spinner';
 export { Avatar } from './Avatar';
 export { Spacer } from './Spacer';
+export { MapboxMap } from './MapboxMap';
+export type { PolygonData, MarkerData, PolylineData } from './MapboxMap';
 
 export {
   H1,

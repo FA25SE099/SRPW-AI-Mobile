@@ -5,15 +5,15 @@
 
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { LatLng } from 'react-native-maps';
 import { colors, spacing, borderRadius } from '../../theme';
 import { Card, BodySemibold, BodySmall, Body, Button } from '../ui';
 import { PolygonTask, PlotDTO, ValidatePolygonAreaResponse } from '../../libs/supervisor';
+import { Coordinate } from '../../types/coordinates';
 
 type DrawingControlsProps = {
   task?: PolygonTask | null;
   editingPlot?: PlotDTO | null;
-  drawnPolygon: LatLng[];
+  drawnPolygon: Coordinate[];
   polygonArea: number;
   isPending: boolean;
   isValidating: boolean;
