@@ -7,7 +7,6 @@ module.exports = {
     orientation: "portrait",
     icon: "./assets/icons/icon.png",
     userInterfaceStyle: "light",
-    newArchEnabled: true,
     splash: {
       image: "./assets/icons/splash-icon.png",
       resizeMode: "contain",
@@ -31,7 +30,13 @@ module.exports = {
       bundler: "metro"
     },
     plugins: [
-      "expo-router"
+      "expo-router",
+      [
+        "@rnmapbox/maps",
+        {
+          "RNMapboxMapsImpl": "mapbox"
+        }
+      ]
     ],
     extra: {
       apiUrl: "https://4bldd7d2-5100.asse.devtunnels.ms/api",

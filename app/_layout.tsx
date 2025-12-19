@@ -1,13 +1,11 @@
-/**
- * Root Layout
- * App-wide configuration and providers
- */
-
 import React, { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { loadFonts } from '../theme/fonts';
 import { Spinner } from '../components/ui';
+import Mapbox from '@rnmapbox/maps';
+
+Mapbox.setAccessToken('pk.eyJ1IjoiZHVjbmd1eWVuMTIwNDA0IiwiYSI6ImNtamF4b3RuNDA3N3gzZnF4Z2RiZGNudGgifQ.frZ1ll3lizDPgi9DPb4kEw');
 
 // Create a query client
 const queryClient = new QueryClient({
@@ -19,7 +17,7 @@ const queryClient = new QueryClient({
   },
 });
 
-export default function RootLayout() {
+function AppContent() {
   const [fontsLoaded, setFontsLoaded] = useState(false);
 
   useEffect(() => {
@@ -39,19 +37,24 @@ export default function RootLayout() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="auth/onboarding" />
-        <Stack.Screen name="auth/login" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="(farmer-tabs)" />
-        <Stack.Screen name="(uav-tabs)" />
-        <Stack.Screen name="(supervisor-tabs)" />
-        <Stack.Screen name="supervisor" />
-        <Stack.Screen name="add-project" />
-      </Stack>
-    </QueryClientProvider>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="index" />
+      <Stack.Screen name="auth/onboarding" />
+      <Stack.Screen name="auth/login" />
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="(farmer-tabs)" />
+      <Stack.Screen name="(uav-tabs)" />
+      <Stack.Screen name="(supervisor-tabs)" />
+      <Stack.Screen name="supervisor" />
+      <Stack.Screen name="add-project" />
+    </Stack>
   );
 }
 
+export default function RootLayout() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AppContent />
+    </QueryClientProvider>
+  );
+}

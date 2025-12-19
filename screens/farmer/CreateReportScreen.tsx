@@ -138,12 +138,17 @@ export const CreateReportScreen = () => {
         aiDetectionResult: aiDetectionSummary,
       };
 
-      // Prepare image files
-      const imageFiles = images.map((img, index) => ({
-        uri: img.uri,
-        type: img.type || 'image/jpeg',
-        name: img.name || `report_${index}.jpg`,
-      }));
+      // Prepare image files with robust MIME type inference
+      const imageFiles = images.map((img) => {
+        const fileName = img.name || img.uri.split('/').pop() || `report_${Date.now()}.jpg`;
+        const fileType = fileName.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+        
+        return {
+          uri: img.uri,
+          type: fileType,
+          name: fileName,
+        };
+      });
 
       return createEmergencyReport(request, imageFiles);
     },
@@ -181,11 +186,18 @@ export const CreateReportScreen = () => {
     });
 
     if (!result.canceled && result.assets) {
-      const newImages = result.assets.map((asset) => ({
-        uri: asset.uri,
-        type: asset.type || 'image/jpeg',
-        name: asset.fileName || `report_${Date.now()}.jpg`,
-      }));
+      const newImages = result.assets.map((asset) => {
+        const uri = asset.uri;
+        const fileName = asset.fileName || uri.split('/').pop() || `report_${Date.now()}.jpg`;
+        // Infer MIME type from file extension for robustness on Android
+        const fileType = fileName.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+        
+        return {
+          uri: uri,
+          type: fileType,
+          name: fileName,
+        };
+      });
       setImages([...images, ...newImages]);
       
       // If alert type is Pest and we just added the first image, auto-detect
@@ -210,10 +222,15 @@ export const CreateReportScreen = () => {
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
       const asset = result.assets[0];
+      const uri = asset.uri;
+      const fileName = asset.fileName || uri.split('/').pop() || `report_${Date.now()}.jpg`;
+      // Infer MIME type from file extension for robustness on Android
+      const fileType = fileName.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+      
       const newImage = {
-        uri: asset.uri,
-        type: asset.type || 'image/jpeg',
-        name: asset.fileName || `report_${Date.now()}.jpg`,
+        uri: uri,
+        type: fileType,
+        name: fileName,
       };
       setImages([...images, newImage]);
       

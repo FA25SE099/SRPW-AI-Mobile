@@ -1,5 +1,5 @@
 import Axios, { InternalAxiosRequestConfig, AxiosError } from 'axios';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 
 import { env } from '@/configs/env';
 import { tokenStorage } from './token-storage';
@@ -34,12 +34,21 @@ async function authRequestInterceptor(config: InternalAxiosRequestConfig) {
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
 
-  // Special handling for FormData - let axios set the proper boundary
-  // Remove any Content-Type that was manually set for FormData
+  // Special handling for FormData
   if (config.data instanceof FormData && config.headers) {
-    // Axios will automatically set the correct Content-Type with boundary
-    // We must delete any manual Content-Type to avoid boundary issues
+    // On Android, axios needs special handling for FormData
+    // Delete Content-Type to let axios/XMLHttpRequest set it with proper boundary
     delete config.headers['Content-Type'];
+    
+    // Log FormData contents for debugging (Android specific issue tracking)
+    if (Platform.OS === 'android') {
+      console.log('📦 [API] Request data (FormData with Blobs)');
+      // @ts-ignore - FormData has getParts on React Native
+      const parts = config.data.getParts?.() || [];
+      parts.forEach((part: any) => {
+        console.log(`  - ${part.fieldName}: ${part.string || `[${part.headers?.['content-type'] || 'file'}]`}`);
+      });
+    }
   } else if (config.data && config.headers && !config.headers['Content-Type']) {
     // For JSON data, ensure Content-Type is set
     config.headers['Content-Type'] = 'application/json';
@@ -50,7 +59,7 @@ async function authRequestInterceptor(config: InternalAxiosRequestConfig) {
   // Log all API requests
   const fullUrl = `${config.baseURL}${config.url}`;
   console.log(`🌐 [API] ${config.method?.toUpperCase()} ${fullUrl}`);
-  if (config.data && !config.url?.includes('login')) {
+  if (config.data && !config.url?.includes('login') && !(config.data instanceof FormData)) {
     console.log('📦 [API] Request data:', config.data);
   }
   
@@ -60,15 +69,6 @@ async function authRequestInterceptor(config: InternalAxiosRequestConfig) {
 export const api = Axios.create({
   baseURL: env.API_URL,
   timeout: 120000, // 2 minutes default timeout for all requests
-  // Android-specific fixes for FormData
-  transformRequest: [(data, headers) => {
-    // For FormData, return as-is and let axios handle it natively
-    if (data instanceof FormData) {
-      return data;
-    }
-    // For other data, use default transformation
-    return typeof data === 'string' ? data : JSON.stringify(data);
-  }],
 });
 
 api.interceptors.request.use(authRequestInterceptor);

@@ -1,4 +1,8 @@
+import { Platform } from 'react-native';
+import * as FileSystem from 'expo-file-system';
 import { api } from './api-client';
+import { env } from '@/configs/env';
+import { tokenStorage } from './token-storage';
 import {
   FarmerPlot,
   PlotCultivationPlan,
@@ -144,8 +148,9 @@ export const createFarmLog = async (
 
   // Add images
   images.forEach((image) => {
+    const uri = Platform.OS === 'android' ? image.uri.replace('file://', '') : image.uri;
     formData.append('ProofImages', {
-      uri: image.uri,
+      uri,
       type: image.type,
       name: image.name,
     } as any);
@@ -192,42 +197,41 @@ export const createEmergencyReport = async (
   formData.append('AlertType', request.alertType);
   formData.append('Title', request.title);
   formData.append('Description', request.description);
-  // ASP.NET enum binder accepts the enum name (e.g. "Low", "Medium")
   formData.append('Severity', request.severity);
 
-  // Add AI detection results if available
+  // Add AI detection results if available (flatten the structure for FormData)
   if (request.aiDetectionResult) {
-    // Convert to the backend's expected format (PascalCase properties)
-    const aiDetectionForBackend = {
-      HasPest: request.aiDetectionResult.hasPest,
-      TotalDetections: request.aiDetectionResult.totalDetections,
-      DetectedPests: request.aiDetectionResult.detectedPests.map(pest => ({
-        PestName: pest.pestName,
-        Confidence: pest.confidence,
-        ConfidenceLevel: pest.confidenceLevel,
-      })),
-      AverageConfidence: request.aiDetectionResult.averageConfidence,
-      ImageInfo: request.aiDetectionResult.imageInfo ? {
-        Width: request.aiDetectionResult.imageInfo.width,
-        Height: request.aiDetectionResult.imageInfo.height,
-      } : null,
-    };
+    formData.append('AiDetectionResult.HasPest', String(request.aiDetectionResult.hasPest));
+    formData.append('AiDetectionResult.TotalDetections', String(request.aiDetectionResult.totalDetections));
+    formData.append('AiDetectionResult.AverageConfidence', String(request.aiDetectionResult.averageConfidence));
     
-    // Serialize as JSON for complex object in FormData
-    formData.append('AiDetectionResult', JSON.stringify(aiDetectionForBackend));
+    if (request.aiDetectionResult.imageInfo) {
+      formData.append('AiDetectionResult.ImageInfo.Width', String(request.aiDetectionResult.imageInfo.width));
+      formData.append('AiDetectionResult.ImageInfo.Height', String(request.aiDetectionResult.imageInfo.height));
+    }
+    
+    // Add detected pests as JSON string (FormData limitation)
+    request.aiDetectionResult.detectedPests.forEach((pest, index) => {
+      formData.append(`AiDetectionResult.DetectedPests[${index}].PestName`, pest.pestName);
+      formData.append(`AiDetectionResult.DetectedPests[${index}].Confidence`, String(pest.confidence));
+      formData.append(`AiDetectionResult.DetectedPests[${index}].ConfidenceLevel`, pest.confidenceLevel);
+    });
   }
 
   // Add images
-  images.forEach((image) => {
+  for (const image of images) {
     formData.append('Images', {
       uri: image.uri,
       type: image.type,
       name: image.name,
     } as any);
+  }
+
+  // Use the correct endpoint: /Farmer/create-report
+  const response = await api.post<string>('/Farmer/create-report', formData, {
+    timeout: 120000,
   });
-
-  const response = await api.post<string>('/Farmer/create-report', formData);
-
+  
   return response as unknown as string;
 };
 
@@ -236,7 +240,7 @@ export const detectPestInImage = async (
 ): Promise<PestDetectionResponse> => {
   const formData = new FormData();
 
-  // Backend now expects 'files' (IFormFileCollection) instead of 'file'
+  // Backend expects 'files' (IFormFileCollection)
   formData.append('files', {
     uri: imageFile.uri,
     type: imageFile.type,
@@ -248,7 +252,7 @@ export const detectPestInImage = async (
     timeout: 240000, // 4 minutes timeout for AI processing
   });
 
-  // Backend now returns an array of results, we take the first one
+  // Backend returns an array of results, we take the first one
   const results = response as unknown as PestDetectionResponse[];
   
   if (!results || results.length === 0) {
