@@ -43,6 +43,7 @@ import {
 } from '../../types/api';
 import { createEmergencyReport, getPlotCultivationPlans, detectPestInImage } from '../../libs/farmer';
 import { useUser } from '../../libs/auth';
+import { uploadFile } from '../../libs/api-client';
 
 const ALERT_TYPES: AlertType[] = ['Pest', 'Weather', 'Disease', 'Other'];
 const SEVERITY_LEVELS: Severity[] = ['Low', 'Medium', 'High', 'Critical'];
@@ -131,26 +132,31 @@ export const CreateReportScreen = () => {
         };
       }
 
-      const request: CreateEmergencyReportRequest = {
-        ...formData,
-        title: formData.title.trim(),
-        description: formData.description.trim(),
-        aiDetectionResult: aiDetectionSummary,
-      };
+      const data = new FormData();
+      if (formData.plotCultivationId) data.append('PlotCultivationId', formData.plotCultivationId);
+      if (formData.groupId) data.append('GroupId', formData.groupId);
+      if (formData.clusterId) data.append('ClusterId', formData.clusterId);
+      data.append('AlertType', formData.alertType);
+      data.append('Title', formData.title.trim());
+      data.append('Description', formData.description.trim());
+      data.append('Severity', formData.severity);
 
-      // Prepare image files with robust MIME type inference
-      const imageFiles = images.map((img) => {
+      if (aiDetectionSummary) {
+        data.append('AiDetectionResult', JSON.stringify(aiDetectionSummary));
+      }
+
+      images.forEach((img) => {
         const fileName = img.name || img.uri.split('/').pop() || `report_${Date.now()}.jpg`;
         const fileType = fileName.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
-        
-        return {
+
+        data.append('Images', {
           uri: img.uri,
           type: fileType,
           name: fileName,
-        };
+        } as any);
       });
 
-      return createEmergencyReport(request, imageFiles);
+      return uploadFile('/Farmer/create-report', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alerts'] });
@@ -1044,4 +1050,3 @@ const styles = StyleSheet.create({
     borderRadius: moderateScale(borderRadius.md),
   },
 });
-

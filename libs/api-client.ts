@@ -35,10 +35,21 @@ async function authRequestInterceptor(config: InternalAxiosRequestConfig) {
   }
 
   // Special handling for FormData
-  if (config.data instanceof FormData && config.headers) {
-    // On Android, axios needs special handling for FormData
-    // Delete Content-Type to let axios/XMLHttpRequest set it with proper boundary
-    delete config.headers['Content-Type'];
+  if (config.data instanceof FormData) {
+    // Force Axios to not transform FormData
+    config.transformRequest = (data) => data;
+
+    if (config.headers) {
+      // On Android, axios needs special handling for FormData
+      // Delete Content-Type to let axios/XMLHttpRequest set it with proper boundary
+      if (typeof (config.headers as any).delete === 'function') {
+        (config.headers as any).delete('Content-Type');
+        (config.headers as any).delete('content-type');
+      } else {
+        delete config.headers['Content-Type'];
+        delete config.headers['content-type'];
+      }
+    }
     
     // Log FormData contents for debugging (Android specific issue tracking)
     if (Platform.OS === 'android') {
@@ -233,3 +244,47 @@ api.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+
+/**
+ * Alternative file upload method using XMLHttpRequest.
+ * Use this if Axios fails with "Network Error" on Android when sending FormData.
+ */
+export const uploadFile = async (endpoint: string, formData: FormData) => {
+  const token = await tokenStorage.getAccessToken();
+  const url = `${env.API_URL}${endpoint}`;
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url);
+
+    if (token) {
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    }
+    xhr.setRequestHeader('Accept', 'application/json');
+
+    xhr.onreadystatechange = () => {
+      if (xhr.readyState !== 4) return;
+
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const response = JSON.parse(xhr.responseText);
+          resolve(response);
+        } catch (e) {
+          resolve(xhr.responseText);
+        }
+      } else {
+        let errorMessage = 'Network request failed';
+        try {
+          const errorJson = JSON.parse(xhr.responseText);
+          // Handle ASP.NET Core ProblemDetails or standard API error format
+          errorMessage = errorJson.detail || errorJson.title || errorJson.message || errorMessage;
+        } catch (e) {
+          errorMessage = xhr.responseText || errorMessage;
+        }
+        reject(new Error(errorMessage));
+      }
+    };
+
+    xhr.send(formData);
+  });
+};

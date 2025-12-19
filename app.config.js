@@ -32,9 +32,21 @@ module.exports = {
     plugins: [
       "expo-router",
       [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "buildToolsVersion": "35.0.0",
+            "newArchEnabled": true
+          }
+        }
+      ],
+      [
         "@rnmapbox/maps",
         {
-          "RNMapboxMapsImpl": "mapbox"
+          "RNMapboxMapsImpl": "mapbox",
+          "MAPBOX_DOWNLOADS_TOKEN": "sk.eyJ1IjoiZHVjbmd1eWVuMTIwNDA0IiwiYSI6ImNtamF4d2RmOTA1ajczY3F4dHNqbXhkOGwifQ.1ytcAiJBgUe-d2MNShpoZw"
         }
       ]
     ],
