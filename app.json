@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.myapp"
+      "bundleIdentifier": "com.srpw.test"
     },
     "android": {
       "adaptiveIcon": {
@@ -32,6 +32,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-dev-client",
       [
         "@rnmapbox/maps",
         {

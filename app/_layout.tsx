@@ -8,6 +8,24 @@ import { Stack } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { loadFonts } from '../theme/fonts';
 import { Spinner } from '../components/ui';
+import { env } from '../configs/env';
+
+// Initialize Mapbox once at app startup
+let mapboxInitialized = false;
+const initializeMapbox = () => {
+  if (mapboxInitialized) return;
+  
+  try {
+    const Mapbox = require('@rnmapbox/maps');
+    if (Mapbox && Mapbox.setAccessToken && env.MAPBOX_TOKEN) {
+      Mapbox.setAccessToken(env.MAPBOX_TOKEN);
+      mapboxInitialized = true;
+      console.log('[Mapbox] Initialized successfully');
+    }
+  } catch (error) {
+    console.warn('[Mapbox] Native module not available:', error);
+  }
+};
 
 // Create a query client
 const queryClient = new QueryClient({
@@ -23,6 +41,9 @@ export default function RootLayout() {
   const [fontsLoaded, setFontsLoaded] = useState(false);
 
   useEffect(() => {
+    // Initialize Mapbox once when app starts
+    initializeMapbox();
+    
     loadFonts()
       .then(() => setFontsLoaded(true))
       .catch((error) => {

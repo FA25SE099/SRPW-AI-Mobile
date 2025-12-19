@@ -8,17 +8,12 @@ import { View, StyleSheet, Text } from 'react-native';
 import { colors } from '../../theme';
 import { PlotDTO, PolygonTask, PlotStatus } from '../../libs/supervisor';
 import { parsePolygonWkt, getCoordinatesFromGeoJSON } from '../../utils/polygon-utils';
-import { env } from '../../configs/env';
 
 // Conditionally import Mapbox - only if native module is available
+// DO NOT initialize here - it's initialized in app/_layout.tsx
 let Mapbox: typeof import('@rnmapbox/maps') | null = null;
 try {
-  const mapboxModule = require('@rnmapbox/maps');
-  Mapbox = mapboxModule;
-  // Initialize Mapbox token if module loaded successfully
-  if (Mapbox && Mapbox.setAccessToken && env.MAPBOX_TOKEN) {
-    Mapbox.setAccessToken(env.MAPBOX_TOKEN);
-  }
+  Mapbox = require('@rnmapbox/maps');
 } catch (error) {
   console.warn('Mapbox native module not available. Rebuild required:', error);
 }

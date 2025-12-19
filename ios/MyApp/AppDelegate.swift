@@ -56,13 +56,35 @@ class ReactNativeDelegate: ExpoReactNativeFactoryDelegate {
   // Extension point for config-plugins
 
   override func sourceURL(for bridge: RCTBridge) -> URL? {
-    // needed to return the correct URL for expo-dev-client.
-    bridge.bundleURL ?? bundleURL()
+    // First try to use the bundle URL from the bridge (set by deep link)
+    if let bundleURL = bridge.bundleURL {
+      return bundleURL
+    }
+    
+    // Fallback to bundleURL() which will try to get Metro URL
+    return bundleURL()
   }
 
   override func bundleURL() -> URL? {
 #if DEBUG
-    return RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: ".expo/.virtual-metro-entry")
+    // Try to get Metro URL from RCTBundleURLProvider
+    if let metroURL = RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: ".expo/.virtual-metro-entry") {
+      return metroURL
+    }
+    
+    // Fallback: Try to construct a default Metro URL
+    // This helps when app launches without deep link
+    let bundleRoot = ".expo/.virtual-metro-entry"
+    let localhost = "localhost"
+    let port = 8081
+    
+    // Try localhost first
+    if let url = URL(string: "http://\(localhost):\(port)/\(bundleRoot).bundle?platform=ios&dev=true&minify=false") {
+      return url
+    }
+    
+    // If that fails, return nil (will show error screen)
+    return nil
 #else
     return Bundle.main.url(forResource: "main", withExtension: "jsbundle")
 #endif
