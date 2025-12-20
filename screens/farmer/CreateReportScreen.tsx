@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { colors, spacing, borderRadius, shadows } from '../../theme';
@@ -101,13 +102,13 @@ export const CreateReportScreen = () => {
     mutationFn: async () => {
       // Validation
       if (!formData.plotCultivationId && !formData.groupId && !formData.clusterId) {
-        throw new Error('Please select at least one affected entity (cultivation, group, or cluster)');
+        throw new Error('Vui lòng chọn ít nhất một đối tượng bị ảnh hưởng (canh tác, nhóm hoặc cụm)');
       }
       if (!formData.title.trim()) {
-        throw new Error('Please provide a title');
+        throw new Error('Vui lòng cung cấp tiêu đề');
       }
       if (!formData.description.trim()) {
-        throw new Error('Please provide a description');
+        throw new Error('Vui lòng cung cấp mô tả');
       }
 
       // Prepare AI detection summary if available
@@ -162,8 +163,8 @@ export const CreateReportScreen = () => {
       queryClient.invalidateQueries({ queryKey: ['alerts'] });
       queryClient.invalidateQueries({ queryKey: ['farmer-plots'] });
       Alert.alert(
-        'Report Submitted',
-        'Your emergency report has been submitted successfully. ' +
+        'Đã gửi báo cáo',
+        'Báo cáo khẩn cấp của bạn đã được gửi thành công. ' +
         (images.length > 0 ? 'Images will be analyzed by AI.' : ''),
         [
           {
@@ -174,7 +175,7 @@ export const CreateReportScreen = () => {
       );
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.message || 'Failed to submit report');
+      Alert.alert('Lỗi', error.message || 'Không thể gửi báo cáo');
     },
   });
 
@@ -216,7 +217,7 @@ export const CreateReportScreen = () => {
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Please grant camera permissions to take photos.');
+      Alert.alert('Cần quyền truy cập', 'Vui lòng cấp quyền camera để chụp ảnh.');
       return;
     }
 
@@ -249,19 +250,19 @@ export const CreateReportScreen = () => {
 
   const showImagePickerOptions = () => {
     Alert.alert(
-      'Add Image',
-      'Choose an option',
+      'Thêm ảnh',
+      'Chọn một tùy chọn',
       [
         {
-          text: 'Take Photo',
+          text: 'Chụp ảnh',
           onPress: takePhoto,
         },
         {
-          text: 'Choose from Gallery',
+          text: 'Chọn từ thư viện',
           onPress: pickImage,
         },
         {
-          text: 'Cancel',
+          text: 'Hủy',
           style: 'cancel',
         },
       ],
@@ -284,8 +285,8 @@ export const CreateReportScreen = () => {
     
     // Show info about processing time
     Alert.alert(
-      'AI Analysis Started',
-      'Analyzing your image for pests. This may take 1-3 minutes. Please wait...',
+      'Bắt đầu phân tích AI',
+      'Đang phân tích ảnh của bạn để tìm sâu bệnh. Quá trình này có thể mất 1-3 phút. Vui lòng đợi...',
       [{ text: 'OK' }],
     );
     
@@ -315,19 +316,19 @@ export const CreateReportScreen = () => {
       } else {
         // No pests found
         Alert.alert(
-          'Analysis Complete',
-          'No pests detected in the image. You can still submit your report if needed.',
+          'Phân tích hoàn tất',
+          'Không phát hiện sâu bệnh trong ảnh. Bạn vẫn có thể gửi báo cáo nếu cần.',
           [{ text: 'OK' }],
         );
       }
     } catch (error: any) {
       console.warn('Pest detection failed:', error);
       const errorMessage = error.code === 'ECONNABORTED' 
-        ? 'The analysis took too long and timed out. Please try with a smaller image or submit your report manually.'
-        : 'Could not analyze the image automatically. You can still submit your report manually.';
+        ? 'Phân tích mất quá nhiều thời gian và đã hết thời gian chờ. Vui lòng thử với ảnh nhỏ hơn hoặc gửi báo cáo thủ công.'
+        : 'Không thể phân tích ảnh tự động. Bạn vẫn có thể gửi báo cáo thủ công.';
       
       Alert.alert(
-        'Analysis Failed',
+        'Phân tích thất bại',
         errorMessage,
         [{ text: 'OK' }],
       );
@@ -364,7 +365,7 @@ export const CreateReportScreen = () => {
               <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                 <Body>←</Body>
               </TouchableOpacity>
-              <H3 style={styles.headerTitle}>Report Issue</H3>
+              <H3 style={styles.headerTitle}>Báo cáo vấn đề</H3>
               <View style={styles.headerRight} />
             </View>
 
@@ -372,14 +373,14 @@ export const CreateReportScreen = () => {
 
             {/* Form */}
             <Card variant="elevated" style={styles.formCard}>
-              <H4>Report Details</H4>
+              <H4>Chi tiết báo cáo</H4>
               <Spacer size="md" />
 
               {/* Cultivation Selector */}
               {cultivations.length > 0 && (
                 <>
                   <BodySmall color={colors.textSecondary}>
-                    Affected Cultivation (Required)
+                    Canh tác bị ảnh hưởng (Bắt buộc)
                   </BodySmall>
                   <Spacer size="xs" />
                   <TouchableOpacity
@@ -391,7 +392,7 @@ export const CreateReportScreen = () => {
                         ? cultivations.find(
                             (c) => c.plotCultivationId === formData.plotCultivationId,
                           )?.productionPlanName || 'Select Cultivation'
-                        : 'Select Cultivation'}
+                        : 'Chọn kế hoạch canh tác'}
                     </Body>
                     <Body>{showCultivationPicker ? '▲' : '▼'}</Body>
                   </TouchableOpacity>
@@ -430,7 +431,7 @@ export const CreateReportScreen = () => {
               )}
 
               {/* Alert Type */}
-              <BodySmall color={colors.textSecondary}>Alert Type</BodySmall>
+              <BodySmall color={colors.textSecondary}>Loại cảnh báo</BodySmall>
               <Spacer size="xs" />
               <TouchableOpacity
                 style={styles.picker}
@@ -461,7 +462,7 @@ export const CreateReportScreen = () => {
               <Spacer size="md" />
 
               {/* Severity */}
-              <BodySmall color={colors.textSecondary}>Severity Level</BodySmall>
+              <BodySmall color={colors.textSecondary}>Mức độ nghiêm trọng</BodySmall>
               <Spacer size="xs" />
               <TouchableOpacity
                 style={styles.picker}
@@ -513,7 +514,7 @@ export const CreateReportScreen = () => {
               <Input
                 value={formData.title}
                 onChangeText={(title) => setFormData({ ...formData, title })}
-                placeholder="Brief title of the issue"
+                placeholder="Tiêu đề ngắn gọn của vấn đề"
               />
               <Spacer size="md" />
 
@@ -523,7 +524,7 @@ export const CreateReportScreen = () => {
               <Input
                 value={formData.description}
                 onChangeText={(description) => setFormData({ ...formData, description })}
-                placeholder="Detailed description of the problem"
+                placeholder="Mô tả chi tiết về vấn đề"
                 multiline
                 numberOfLines={4}
                 style={styles.textArea}
@@ -532,15 +533,16 @@ export const CreateReportScreen = () => {
 
               {/* Images */}
               <BodySmall color={colors.textSecondary}>
-                Images {formData.alertType === 'Pest' ? '(Recommended - AI will help identify pests)' : '(Optional)'}
+                Ảnh {formData.alertType === 'Pest' ? '(Khuyến nghị - AI sẽ giúp nhận diện sâu bệnh)' : '(Tùy chọn)'}
               </BodySmall>
               <Spacer size="xs" />
               <Button 
                 variant="outline" 
                 onPress={showImagePickerOptions}
                 disabled={isDetectingPest}
+                style={{ borderColor: greenTheme.primary, backgroundColor: greenTheme.primaryLighter }}
               >
-                {isDetectingPest ? 'Analyzing (may take 1-3 min)...' : 'Add Images'}
+                {isDetectingPest ? 'Đang phân tích (có thể mất 1-3 phút)...' : 'Thêm ảnh'}
               </Button>
               <Spacer size="sm" />
 
@@ -549,18 +551,18 @@ export const CreateReportScreen = () => {
                 <Card variant="elevated" style={styles.detectionCard}>
                   <View style={styles.detectionHeader}>
                     <View style={styles.detectionIconContainer}>
-                      <Body style={styles.detectionIcon}>🔍</Body>
+                      <Ionicons name="search" size={24} color={greenTheme.cardBackground} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <H4 style={styles.detectionTitle}>AI Pest Detection Complete</H4>
+                      <H4 style={styles.detectionTitle}>Hoàn tất nhận diện sâu bệnh AI</H4>
                       <Body color={colors.textPrimary} style={styles.detectionSubtitle}>
-                        Found {pestDetectionResults.totalDetections} instance(s) - See labels on image below
+                        Tìm thấy {pestDetectionResults.totalDetections} trường hợp - Xem nhãn trên ảnh bên dưới
                       </Body>
                     </View>
                   </View>
                   <Spacer size="md" />
                   <View style={styles.pestsListContainer}>
-                    <BodySemibold style={styles.pestListTitle}>Detected Pests:</BodySemibold>
+                    <BodySemibold style={styles.pestListTitle}>Sâu bệnh đã phát hiện:</BodySemibold>
                     <Spacer size="xs" />
                     <View style={styles.pestNamesWrapper}>
                       {[...new Set(pestDetectionResults.detectedPests.map(p => p.pestName))].map((pestName, idx) => (
@@ -586,13 +588,21 @@ export const CreateReportScreen = () => {
                   {/* First image with detection - show larger */}
                   {pestDetectionResults && pestDetectionResults.hasPest && (
                     <View style={styles.annotatedImageContainer}>
-                      <Body color={colors.textPrimary} style={styles.annotatedImageLabel}>
-                        📍 Detected pests marked on image
-                      </Body>
-                      <BodySmall color={colors.textSecondary} style={{ marginTop: spacing.xs }}>
-                        Tap on any box to view pest details
+                      <View style={styles.imageHeader}>
+                        <View style={styles.imageHeaderLeft}>
+                          <Ionicons name="location" size={20} color={greenTheme.primary} />
+                          <BodySemibold style={styles.annotatedImageLabel}>
+                            Ảnh đã phân tích AI
+                          </BodySemibold>
+                        </View>
+                        <BodySmall color={colors.textSecondary} style={styles.pestCountBadge}>
+                          {pestDetectionResults.totalDetections} phát hiện
+                        </BodySmall>
+                      </View>
+                      <BodySmall color={colors.textSecondary} style={styles.imageHint}>
+                        Chạm vào hộp màu để xem chi tiết sâu bệnh
                       </BodySmall>
-                      <Spacer size="sm" />
+                      <Spacer size="md" />
                       <View style={styles.largeImageWrapper}>
                         <Image 
                           source={{ uri: images[0].uri }} 
@@ -641,8 +651,8 @@ export const CreateReportScreen = () => {
                               const scaleX = annotatedImageDimensions.width / pestDetectionResults.imageInfo.width;
                               const scaleY = annotatedImageDimensions.height / pestDetectionResults.imageInfo.height;
                               
-                              const borderColor = pest.confidenceLevel === 'High' ? '#FF5252' : 
-                                                 pest.confidenceLevel === 'Medium' ? '#FFA726' : '#FFEB3B';
+                              const borderColor = pest.confidenceLevel === 'High' ? '#EF4444' : 
+                                                 pest.confidenceLevel === 'Medium' ? '#F59E0B' : '#EAB308';
                               
                               const boxLeft = pest.location.x1 * scaleX;
                               const boxTop = pest.location.y1 * scaleY;
@@ -654,7 +664,7 @@ export const CreateReportScreen = () => {
                               return (
                                 <TouchableOpacity 
                                   key={pestIndex}
-                                  activeOpacity={0.7}
+                                  activeOpacity={0.8}
                                   onPress={() => setSelectedPestIndex(isSelected ? null : pestIndex)}
                                   style={{
                                     position: 'absolute',
@@ -664,55 +674,71 @@ export const CreateReportScreen = () => {
                                     height: boxHeight,
                                   }}
                                 >
-                                  {/* Bounding box */}
+                                  {/* Bounding box - always visible */}
                                   <View style={{
                                     width: '100%',
                                     height: '100%',
-                                    borderWidth: isSelected ? 4 : 3,
+                                    borderWidth: isSelected ? 4 : 2.5,
                                     borderColor: borderColor,
-                                    borderRadius: 6,
-                                    backgroundColor: isSelected ? `${borderColor}30` : `${borderColor}15`,
+                                    borderRadius: 8,
+                                    backgroundColor: isSelected ? `${borderColor}25` : `${borderColor}10`,
                                     shadowColor: borderColor,
                                     shadowOffset: { width: 0, height: 2 },
-                                    shadowOpacity: isSelected ? 1 : 0.8,
-                                    shadowRadius: isSelected ? 6 : 4,
-                                    elevation: isSelected ? 8 : 5,
+                                    shadowOpacity: isSelected ? 0.9 : 0.6,
+                                    shadowRadius: isSelected ? 8 : 4,
+                                    elevation: isSelected ? 10 : 6,
                                   }} />
                                   
-                                  {/* Label on top of the box (shown only when selected) */}
+                                  {/* Label - only shown when box is tapped/selected */}
                                   {isSelected && (
                                     <View style={{
                                       position: 'absolute',
-                                      top: -35,
+                                      top: -50,
                                       left: 0,
                                       backgroundColor: borderColor,
-                                      paddingHorizontal: 10,
-                                      paddingVertical: 5,
-                                      borderRadius: 6,
+                                      paddingHorizontal: 12,
+                                      paddingVertical: 8,
+                                      borderRadius: 10,
                                       shadowColor: '#000',
-                                      shadowOffset: { width: 0, height: 2 },
+                                      shadowOffset: { width: 0, height: 3 },
                                       shadowOpacity: 0.5,
-                                      shadowRadius: 4,
-                                      elevation: 6,
-                                      minWidth: 100,
+                                      shadowRadius: 6,
+                                      elevation: 10,
+                                      minWidth: 140,
+                                      borderWidth: 2,
+                                      borderColor: '#FFFFFF',
                                     }}>
                                       <Text style={{ 
                                         color: '#FFFFFF', 
-                                        fontSize: 13, 
+                                        fontSize: 15, 
                                         fontWeight: '700',
                                         textAlign: 'center',
+                                        letterSpacing: 0.3,
                                       }}>
                                         {pest.pestName}
                                       </Text>
-                                      <Text style={{ 
-                                        color: '#FFFFFF', 
-                                        fontSize: 11,
-                                        fontWeight: '600',
-                                        textAlign: 'center',
-                                        marginTop: 2,
+                                      <View style={{
+                                        flexDirection: 'row',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        marginTop: 4,
+                                        gap: 6,
                                       }}>
-                                        {pest.confidence.toFixed(1)}%
-                                      </Text>
+                                        <View style={{
+                                          width: 8,
+                                          height: 8,
+                                          borderRadius: 4,
+                                          backgroundColor: '#FFFFFF',
+                                        }} />
+                                        <Text style={{ 
+                                          color: '#FFFFFF', 
+                                          fontSize: 13,
+                                          fontWeight: '600',
+                                          textAlign: 'center',
+                                        }}>
+                                          {pest.confidence.toFixed(1)}% {pest.confidenceLevel}
+                                        </Text>
+                                      </View>
                                     </View>
                                   )}
                                 </TouchableOpacity>
@@ -720,13 +746,13 @@ export const CreateReportScreen = () => {
                             })}
                           </View>
                         )}
-              <TouchableOpacity
+                        <TouchableOpacity
                           style={styles.removeImageButton}
                           onPress={() => removeImage(0)}
                         >
-                          <Body style={styles.removeImageText}>✕</Body>
-              </TouchableOpacity>
-          </View>
+                          <Ionicons name="close-circle" size={28} color={colors.white} />
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   )}
                   
@@ -752,7 +778,7 @@ export const CreateReportScreen = () => {
               </TouchableOpacity>
                           {index === 0 && isDetectingPest && (
                             <View style={styles.analyzingOverlay}>
-                              <BodySmall color={colors.white}>Analyzing...</BodySmall>
+                              <BodySmall color={colors.white}>Đang phân tích...</BodySmall>
           </View>
                           )}
                         </View>
@@ -769,8 +795,9 @@ export const CreateReportScreen = () => {
           <Button
               onPress={() => createReportMutation.mutate()}
             disabled={createReportMutation.isPending}
+            style={{ backgroundColor: greenTheme.primary }}
           >
-              {createReportMutation.isPending ? 'Submitting...' : 'Submit Report'}
+              {createReportMutation.isPending ? 'Đang gửi...' : 'Gửi báo cáo'}
           </Button>
 
           <Spacer size="xl" />
@@ -781,33 +808,62 @@ export const CreateReportScreen = () => {
   );
 };
 
+// Green theme colors for farmer-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: getSpacing(spacing.md),
+    backgroundColor: greenTheme.cardBackground,
+    paddingBottom: getSpacing(spacing.sm),
+    borderBottomWidth: 1,
+    borderBottomColor: greenTheme.border,
   },
   backButton: {
     width: scale(40),
     height: scale(40),
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: moderateScale(borderRadius.full),
+    backgroundColor: greenTheme.primaryLighter,
   },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
     fontSize: getFontSize(20),
+    color: greenTheme.primary,
+    fontWeight: '700',
   },
   headerRight: {
     width: scale(40),
   },
   formCard: {
     padding: getSpacing(spacing.lg),
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: moderateScale(borderRadius.lg),
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   picker: {
     flexDirection: 'row',
@@ -815,25 +871,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: getSpacing(spacing.md),
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: greenTheme.border,
     borderRadius: moderateScale(borderRadius.md),
-    backgroundColor: colors.white,
+    backgroundColor: greenTheme.cardBackground,
   },
   pickerOptions: {
     marginTop: getSpacing(spacing.xs),
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: greenTheme.border,
     borderRadius: moderateScale(borderRadius.md),
-    backgroundColor: colors.white,
+    backgroundColor: greenTheme.cardBackground,
     maxHeight: verticalScale(200),
   },
   pickerOption: {
     padding: getSpacing(spacing.md),
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
+    borderBottomColor: greenTheme.border,
   },
   pickerOptionSelected: {
-    backgroundColor: colors.primaryLighter,
+    backgroundColor: greenTheme.primaryLighter,
   },
   severityRow: {
     flexDirection: 'row',
@@ -852,24 +908,50 @@ const styles = StyleSheet.create({
   annotatedImageContainer: {
     marginBottom: getSpacing(spacing.lg),
   },
+  imageHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: getSpacing(spacing.xs),
+  },
+  imageHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: getSpacing(spacing.xs),
+  },
   annotatedImageLabel: {
-    fontSize: getFontSize(16),
+    fontSize: getFontSize(18),
+    fontWeight: '700',
+    color: greenTheme.primary,
+  },
+  pestCountBadge: {
+    backgroundColor: greenTheme.primaryLighter,
+    paddingHorizontal: getSpacing(spacing.sm),
+    paddingVertical: getSpacing(spacing.xs),
+    borderRadius: moderateScale(borderRadius.full),
     fontWeight: '600',
+    color: greenTheme.primary,
+  },
+  imageHint: {
+    fontSize: getFontSize(13),
+    fontStyle: 'italic',
   },
   largeImageWrapper: {
     position: 'relative',
     width: '100%',
-    height: verticalScale(300),
-    borderRadius: moderateScale(borderRadius.lg),
+    minHeight: verticalScale(350),
+    maxHeight: verticalScale(500),
+    borderRadius: moderateScale(borderRadius.xl),
     overflow: 'hidden',
-    backgroundColor: '#000',
-    borderWidth: 2,
-    borderColor: colors.border,
-    ...shadows.lg,
+    backgroundColor: '#1A1A1A',
+    borderWidth: 3,
+    borderColor: greenTheme.primary,
+    ...shadows.xl,
+    elevation: 8,
   },
   largeImage: {
     width: '100%',
-    height: '100%',
+    height: '80%',
   },
   imagesGrid: {
     flexDirection: 'row',
@@ -888,14 +970,21 @@ const styles = StyleSheet.create({
   },
   removeImageButton: {
     position: 'absolute',
-    top: scale(-8),
-    right: scale(-8),
-    backgroundColor: colors.error,
-    borderRadius: scale(12),
-    width: scale(24),
-    height: scale(24),
+    top: getSpacing(spacing.sm),
+    right: getSpacing(spacing.sm),
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: moderateScale(borderRadius.full),
+    width: scale(36),
+    height: scale(36),
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.white,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 6,
   },
   removeImageText: {
     color: colors.white,
@@ -904,11 +993,11 @@ const styles = StyleSheet.create({
   },
   detectionCard: {
     padding: getSpacing(spacing.lg),
-    backgroundColor: '#E8F5E9',
+    backgroundColor: greenTheme.primaryLighter,
     borderRadius: moderateScale(borderRadius.lg),
     marginBottom: getSpacing(spacing.md),
     borderWidth: 2,
-    borderColor: '#4CAF50',
+    borderColor: greenTheme.primaryLight,
   },
   detectionHeader: {
     flexDirection: 'row',
@@ -919,7 +1008,7 @@ const styles = StyleSheet.create({
     width: scale(44),
     height: scale(44),
     borderRadius: scale(22),
-    backgroundColor: '#4CAF50',
+    backgroundColor: greenTheme.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -927,7 +1016,7 @@ const styles = StyleSheet.create({
     fontSize: getFontSize(22),
   },
   detectionTitle: {
-    color: '#2E7D32',
+    color: greenTheme.primary,
     marginBottom: getSpacing(spacing.xs),
     fontSize: getFontSize(16),
   },
@@ -975,12 +1064,12 @@ const styles = StyleSheet.create({
     gap: getSpacing(spacing.xs),
   },
   pestNameChip: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: greenTheme.cardBackground,
     paddingHorizontal: getSpacing(spacing.sm),
     paddingVertical: getSpacing(spacing.xs),
     borderRadius: moderateScale(borderRadius.sm),
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: greenTheme.border,
   },
   pestChipText: {
     fontSize: getFontSize(14),
@@ -989,9 +1078,11 @@ const styles = StyleSheet.create({
   },
   noPestCard: {
     padding: getSpacing(spacing.md),
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: greenTheme.primaryLighter,
     borderRadius: moderateScale(borderRadius.md),
     marginBottom: getSpacing(spacing.sm),
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
   pestItem: {
     paddingVertical: getSpacing(spacing.sm),
@@ -1026,7 +1117,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   confidenceBadge: {
-    backgroundColor: colors.primaryLighter,
+    backgroundColor: greenTheme.primaryLighter,
     paddingHorizontal: getSpacing(spacing.sm),
     paddingVertical: getSpacing(spacing.xs),
     borderRadius: moderateScale(borderRadius.sm),
@@ -1034,7 +1125,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   confidenceText: {
-    color: colors.primary,
+    color: greenTheme.primary,
     fontWeight: '700',
     fontSize: getFontSize(14),
   },

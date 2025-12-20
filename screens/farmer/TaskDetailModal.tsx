@@ -9,6 +9,7 @@ import {
   Image,
   useWindowDimensions,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Body, BodySmall, BodySemibold, H4, Spacer, Button } from '../../components/ui';
 import { colors, spacing, borderRadius, shadows } from '../../theme';
 import { scale, moderateScale, getFontSize, getSpacing, verticalScale } from '../../utils/responsive';
@@ -40,7 +41,7 @@ export const TaskDetailModal = ({ visible, taskId, onClose }: Props) => {
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Spacer size="sm" />
-          <BodySmall color={colors.textSecondary}>Loading task details...</BodySmall>
+          <BodySmall color={colors.textSecondary}>Đang tải chi tiết công việc...</BodySmall>
         </View>
       );
     }
@@ -48,14 +49,14 @@ export const TaskDetailModal = ({ visible, taskId, onClose }: Props) => {
     if (isError || !data) {
       return (
         <View style={styles.centered}>
-          <Body color={colors.error}>Unable to load task details</Body>
+          <Body color={colors.error}>Không thể tải chi tiết công việc</Body>
           <Spacer size="sm" />
           <Button size="sm" onPress={() => refetch()}>
-            Retry
+            Thử lại
           </Button>
           <Spacer size="sm" />
           <Button variant="outline" size="sm" onPress={onClose}>
-            Close
+            Đóng
           </Button>
         </View>
       );
@@ -72,71 +73,71 @@ export const TaskDetailModal = ({ visible, taskId, onClose }: Props) => {
         <H4 style={styles.title}>{detail.taskName}</H4>
 
         <View style={styles.badgeRow}>
-          <View style={[styles.statusBadge, { backgroundColor: colors.primaryLighter }]}>
-            <BodySmall style={[styles.badgeText, { color: colors.primary }]}>
+          <View style={[styles.statusBadge, { backgroundColor: greenTheme.primaryLighter }]}>
+            <BodySmall style={[styles.badgeText, { color: greenTheme.primary }]}>
               {detail.status.replace(/([A-Z])/g, ' $1').trim()}
             </BodySmall>
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: colors.backgroundSecondary }]}>
-            <BodySmall style={styles.badgeText}>Priority: {detail.priority}</BodySmall>
+          <View style={[styles.statusBadge, { backgroundColor: greenTheme.primaryLighter }]}>
+            <BodySmall style={[styles.badgeText, { color: greenTheme.primary }]}>Ưu tiên: {detail.priority}</BodySmall>
           </View>
         </View>
 
         {detail.description && (
           <>
-            <BodySemibold>Description</BodySemibold>
+            <BodySemibold>Mô tả</BodySemibold>
             <Spacer size="xs" />
             <BodySmall color={colors.textSecondary}>{detail.description}</BodySmall>
             <Spacer size="md" />
           </>
         )}
 
-        <BodySemibold>Schedule</BodySemibold>
+        <BodySemibold>Lịch trình</BodySemibold>
         <Spacer size="xs" />
         <View style={styles.infoRow}>
-          <BodySmall color={colors.textSecondary}>Planned:</BodySmall>
+          <BodySmall color={colors.textSecondary}>Dự kiến:</BodySmall>
           <BodySmall>{dayjs(detail.plannedScheduledDate).format('MMM D, YYYY')}</BodySmall>
         </View>
         {detail.actualStartDate && (
           <View style={styles.infoRow}>
-            <BodySmall color={colors.textSecondary}>Actual start:</BodySmall>
+            <BodySmall color={colors.textSecondary}>Bắt đầu thực tế:</BodySmall>
             <BodySmall>{dayjs(detail.actualStartDate).format('MMM D, YYYY')}</BodySmall>
           </View>
         )}
         {detail.actualEndDate && (
           <View style={styles.infoRow}>
-            <BodySmall color={colors.textSecondary}>Actual end:</BodySmall>
+            <BodySmall color={colors.textSecondary}>Kết thúc thực tế:</BodySmall>
             <BodySmall>{dayjs(detail.actualEndDate).format('MMM D, YYYY')}</BodySmall>
           </View>
         )}
 
         <Spacer size="md" />
 
-        <BodySemibold>Costs & Area</BodySemibold>
+        <BodySemibold>Chi phí & Diện tích</BodySemibold>
         <Spacer size="xs" />
         <View style={styles.infoRow}>
-          <BodySmall color={colors.textSecondary}>Est. materials:</BodySmall>
+          <BodySmall color={colors.textSecondary}>Vật liệu dự kiến:</BodySmall>
           <BodySmall>{detail.estimatedMaterialCost.toLocaleString()}₫</BodySmall>
         </View>
         <View style={styles.infoRow}>
-          <BodySmall color={colors.textSecondary}>Actual materials:</BodySmall>
+          <BodySmall color={colors.textSecondary}>Vật liệu thực tế:</BodySmall>
           <BodySmall>{detail.actualMaterialCost.toLocaleString()}₫</BodySmall>
         </View>
         {detail.actualServiceCost > 0 && (
           <View style={styles.infoRow}>
-            <BodySmall color={colors.textSecondary}>Actual service:</BodySmall>
+            <BodySmall color={colors.textSecondary}>Dịch vụ thực tế:</BodySmall>
             <BodySmall>{detail.actualServiceCost.toLocaleString()}₫</BodySmall>
           </View>
         )}
         <View style={styles.infoRow}>
-          <BodySmall color={colors.textSecondary}>Plot area:</BodySmall>
+          <BodySmall color={colors.textSecondary}>Diện tích thửa:</BodySmall>
           <BodySmall>{detail.plotArea?.toFixed(2)} ha</BodySmall>
         </View>
 
         {detail.materials && detail.materials.length > 0 && (
           <>
             <Spacer size="lg" />
-            <BodySemibold>Materials</BodySemibold>
+            <BodySemibold>Vật liệu</BodySemibold>
             <Spacer size="xs" />
             {detail.materials.map((material) => (
               <View key={material.materialId} style={styles.materialCard}>
@@ -210,11 +211,23 @@ export const TaskDetailModal = ({ visible, taskId, onClose }: Props) => {
           <Spacer size="sm" />
           {renderContent()}
           <Spacer size="lg" />
-          <Button onPress={onClose}>Close</Button>
+          <Button onPress={onClose} style={{ backgroundColor: greenTheme.primary }}>Đóng</Button>
         </View>
       </View>
     </Modal>
   );
+};
+
+// Green theme colors for farmer-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
 };
 
 const styles = StyleSheet.create({
@@ -225,16 +238,21 @@ const styles = StyleSheet.create({
   },
   sheet: {
     maxHeight: '85%',
-    backgroundColor: colors.white,
+    backgroundColor: greenTheme.cardBackground,
     borderTopLeftRadius: moderateScale(borderRadius['2xl']),
     borderTopRightRadius: moderateScale(borderRadius['2xl']),
     padding: getSpacing(spacing.lg),
+    borderTopWidth: 3,
+    borderTopColor: greenTheme.primary,
     ...shadows.lg,
   },
   sheetHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingBottom: getSpacing(spacing.sm),
+    borderBottomWidth: 1,
+    borderBottomColor: greenTheme.border,
   },
   contentContainer: {
     paddingBottom: getSpacing(spacing.lg),
@@ -247,6 +265,8 @@ const styles = StyleSheet.create({
   title: {
     marginTop: getSpacing(spacing.xs),
     fontSize: getFontSize(18),
+    color: greenTheme.primary,
+    fontWeight: '700',
   },
   badgeRow: {
     flexDirection: 'row',
@@ -271,16 +291,19 @@ const styles = StyleSheet.create({
   materialCard: {
     padding: getSpacing(spacing.sm),
     borderRadius: moderateScale(borderRadius.md),
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: greenTheme.primaryLighter,
     marginBottom: getSpacing(spacing.sm),
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
   logCard: {
     padding: getSpacing(spacing.sm),
     borderRadius: moderateScale(borderRadius.md),
     borderWidth: 1,
-    borderColor: colors.borderLight,
+    borderColor: greenTheme.border,
     marginBottom: getSpacing(spacing.sm),
     gap: getSpacing(spacing.xs / 2),
+    backgroundColor: greenTheme.primaryLighter,
   },
   photoRow: {
     marginTop: getSpacing(spacing.xs),
@@ -290,7 +313,9 @@ const styles = StyleSheet.create({
     height: scale(72),
     borderRadius: moderateScale(borderRadius.sm),
     marginRight: getSpacing(spacing.xs),
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: greenTheme.primaryLighter,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
 });
 

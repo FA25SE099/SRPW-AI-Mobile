@@ -3,21 +3,16 @@
  * For displaying polygons, markers, and polylines
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import { colors } from '../../theme';
-import { env } from '../../configs/env';
 import { Coordinate } from '../../types/coordinates';
 
 // Conditionally import Mapbox - only if native module is available
+// DO NOT initialize here - it's initialized in app/_layout.tsx
 let Mapbox: typeof import('@rnmapbox/maps') | null = null;
 try {
-  const mapboxModule = require('@rnmapbox/maps');
-  Mapbox = mapboxModule;
-  // Initialize Mapbox token if module loaded successfully
-  if (Mapbox && Mapbox.setAccessToken && env.MAPBOX_TOKEN) {
-    Mapbox.setAccessToken(env.MAPBOX_TOKEN);
-  }
+  Mapbox = require('@rnmapbox/maps');
 } catch (error) {
   console.warn('Mapbox native module not available. Rebuild required:', error);
 }
@@ -59,6 +54,7 @@ type MapboxMapProps = {
   polylines?: PolylineData[];
   focusedId?: string | null;
   onMapPress?: (coordinate: Coordinate) => void;
+  onPolygonPress?: (polygonId: string, coordinate: Coordinate) => void;
   style?: any;
 };
 
@@ -102,8 +98,11 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({
   polylines = [],
   focusedId = null,
   onMapPress,
+  onPolygonPress,
   style,
 }) => {
+  const [mapError, setMapError] = useState<string | null>(null);
+
   useEffect(() => {
     // Update camera when initial region changes
     if (cameraRef.current) {
@@ -118,13 +117,116 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({
     }
   }, [initialRegion, cameraRef]);
 
+  // Suppress Mapbox logger errors for network issues
+  useEffect(() => {
+    if (!Mapbox) return;
+    
+    // Intercept Mapbox logger to suppress network-related errors
+    const originalLog = console.error;
+    const errorInterceptor = (...args: any[]) => {
+      const message = args.join(' ');
+      // Suppress network/tile loading errors as they're usually temporary
+      if (message.includes('MapLoad error') || 
+          message.includes('Failed to load tile') || 
+          message.includes('network connection') ||
+          message.includes('network connection was lost')) {
+        // Silently ignore - Mapbox will retry automatically
+        return;
+      }
+      // Let other errors through
+      originalLog(...args);
+    };
+    
+    // Note: Mapbox uses its own logger, so we can't easily intercept it
+    // Instead, we'll handle errors via the onDidFailLoadingMap callback
+    return () => {
+      // Cleanup if needed
+    };
+  }, []);
+
+  const handleMapError = () => {
+    // Mapbox's onDidFailLoadingMap doesn't pass error details
+    // Network errors are usually temporary and Mapbox retries automatically
+    // We'll just log a note and clear any error state
+    console.log('[Mapbox] Map loading issue detected (will retry automatically)');
+    setMapError(null);
+  };
+
+  const handleMapLoaded = () => {
+    // Clear any previous errors when map loads successfully
+    setMapError(null);
+  };
+
+  // Cleanup on unmount to prevent TurboModule issues
+  useEffect(() => {
+    return () => {
+      // Cleanup refs on unmount
+      if (mapRef.current) {
+        mapRef.current = null;
+      }
+      if (cameraRef.current) {
+        cameraRef.current = null;
+      }
+    };
+  }, [mapRef, cameraRef]);
+
   const handleMapPress = (feature: any) => {
+    // Don't handle map press if we're expecting polygon presses
+    // This prevents MapView from intercepting polygon taps
+    if (onPolygonPress) {
+      return;
+    }
+    
     if (!onMapPress) return;
     const { geometry } = feature;
     if (geometry && geometry.coordinates) {
       const [longitude, latitude] = geometry.coordinates;
       onMapPress({ latitude, longitude });
     }
+  };
+
+  const handlePolygonPress = (event: any) => {
+    if (!onPolygonPress) return;
+    
+    console.log('[MapboxMap] Polygon press event received:', JSON.stringify(event, null, 2));
+    
+    // Mapbox ShapeSource onPress provides event with features array
+    // Event structure: { features: [{ geometry, properties, ... }], point: { x, y }, ... }
+    const features = event?.features || [];
+    if (features.length === 0) {
+      console.warn('[MapboxMap] No features in press event');
+      return;
+    }
+    
+    // Get the first feature (the polygon that was tapped)
+    const feature = features[0];
+    const { geometry, properties } = feature || {};
+    
+    console.log('[MapboxMap] Feature data:', { geometry: geometry?.type, properties });
+    
+    if (!properties?.id) {
+      console.warn('[MapboxMap] No polygon ID found in feature properties:', properties);
+      return;
+    }
+    
+    let coordinate: Coordinate;
+    
+    if (geometry?.type === 'Polygon' && geometry.coordinates?.[0]?.[0]) {
+      // Get center of polygon
+      const coords = geometry.coordinates[0];
+      const centerLng = coords.reduce((sum: number, c: number[]) => sum + c[0], 0) / coords.length;
+      const centerLat = coords.reduce((sum: number, c: number[]) => sum + c[1], 0) / coords.length;
+      coordinate = { latitude: centerLat, longitude: centerLng };
+    } else if (geometry?.coordinates) {
+      const [longitude, latitude] = geometry.coordinates;
+      coordinate = { latitude, longitude };
+    } else {
+      console.warn('[MapboxMap] Invalid geometry:', geometry);
+      return;
+    }
+    
+    console.log('[MapboxMap] Calling onPolygonPress with ID:', properties.id, 'coordinate:', coordinate);
+    onPolygonPress(properties.id, coordinate);
   };
 
   // Show helpful error if Mapbox native module is not available
@@ -179,6 +281,8 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({
         style={styles.map}
         styleURL="mapbox://styles/mapbox/satellite-streets-v12"
         onPress={onMapPress ? handleMapPress : undefined}
+        onMapLoadingError={handleMapError}
+        onDidFinishLoadingMap={handleMapLoaded}
         compassEnabled={true}
         scaleBarEnabled={false}
         logoEnabled={false}
@@ -200,8 +304,9 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({
               type: 'FeatureCollection',
               features: polygonFeatures as any,
             }}
+            onPress={onPolygonPress ? handlePolygonPress : undefined}
           >
-            {/* Fill layer */}
+            {/* Fill layer - must be interactive for taps */}
             <Mapbox.FillLayer
               id="polygons-fill"
               style={{

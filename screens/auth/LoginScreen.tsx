@@ -106,7 +106,7 @@ export const LoginScreen = () => {
               style={styles.logoImage}
               resizeMode="contain"
             />
-            <Text style={styles.logoSubtitle}>Managing your farm made easy</Text>
+            <Text style={styles.logoSubtitle}>Quản lý nông trại của bạn dễ dàng</Text>
           </View>
 
           <Spacer size="xl" />
@@ -114,7 +114,7 @@ export const LoginScreen = () => {
           {/* Form */}
           <View style={styles.form}>
             {/* Email Address Label */}
-            <Text style={styles.label}>Email Address</Text>
+            <Text style={styles.label}>Email</Text>
             
             {/* Input Field */}
             <View style={styles.inputContainer}>
@@ -136,7 +136,7 @@ export const LoginScreen = () => {
             <Spacer size="lg" />
 
             {/* Password Label */}
-            <Text style={styles.label}>Password</Text>
+            <Text style={styles.label}>Mật khẩu</Text>
             
             {/* Password Input */}
             <View style={styles.inputContainer}>
@@ -169,7 +169,7 @@ export const LoginScreen = () => {
 
             {/* Forgot Password */}
             <TouchableOpacity style={styles.forgotPassword}>
-              <Text style={styles.forgotPasswordText}>Forgot your password?</Text>
+              <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
             </TouchableOpacity>
           </View>
 
@@ -184,7 +184,7 @@ export const LoginScreen = () => {
               activeOpacity={0.8}
             >
               <Text style={styles.signInButtonText}>
-                {login.isPending ? 'SIGNING IN...' : 'SIGN IN'}
+                {login.isPending ? 'ĐANG ĐĂNG NHẬP...' : 'ĐĂNG NHẬP'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -193,9 +193,9 @@ export const LoginScreen = () => {
 
           {/* Sign Up Link */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Lost your password? </Text>
+            <Text style={styles.footerText}>Quên mật khẩu? </Text>
             <TouchableOpacity onPress={() => router.push('/auth/register')}>
-              <Text style={styles.signUpText}>Contact Support</Text>
+              <Text style={styles.signUpText}>Liên hệ hỗ trợ</Text>
             </TouchableOpacity>
           </View>
 

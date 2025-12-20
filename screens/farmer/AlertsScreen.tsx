@@ -13,6 +13,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import dayjs from 'dayjs';
 import { colors, spacing, borderRadius, shadows } from '../../theme';
 import { scale, moderateScale, getFontSize, getSpacing, verticalScale } from '../../utils/responsive';
@@ -91,13 +92,13 @@ export const AlertsScreen = () => {
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'pest':
-        return '🐛';
+        return { name: 'bug-outline', library: 'Ionicons' };
       case 'weather':
-        return '🌧️';
+        return { name: 'rainy-outline', library: 'Ionicons' };
       case 'recommendation':
-        return '💡';
+        return { name: 'bulb-outline', library: 'Ionicons' };
       default:
-        return '📢';
+        return { name: 'notifications-outline', library: 'Ionicons' };
     }
   };
 
@@ -114,7 +115,7 @@ export const AlertsScreen = () => {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Body>←</Body>
           </TouchableOpacity>
-          <H3 style={styles.headerTitle}>Alerts & Recommendations</H3>
+          <H3 style={styles.headerTitle}>Cảnh báo & Khuyến nghị</H3>
           <View style={styles.headerRight} />
         </View>
 
@@ -136,7 +137,7 @@ export const AlertsScreen = () => {
             <BodySmall
               color={selectedFilter === 'all' ? colors.white : colors.textPrimary}
             >
-              All
+              Tất cả
             </BodySmall>
           </TouchableOpacity>
           <TouchableOpacity
@@ -149,7 +150,7 @@ export const AlertsScreen = () => {
             <BodySmall
               color={selectedFilter === 'pest' ? colors.white : colors.textPrimary}
             >
-              🐛 Pest
+              Sâu bệnh
             </BodySmall>
           </TouchableOpacity>
           <TouchableOpacity
@@ -162,7 +163,7 @@ export const AlertsScreen = () => {
             <BodySmall
               color={selectedFilter === 'weather' ? colors.white : colors.textPrimary}
             >
-              🌧️ Weather
+              Thời tiết
             </BodySmall>
           </TouchableOpacity>
           <TouchableOpacity
@@ -175,7 +176,7 @@ export const AlertsScreen = () => {
             <BodySmall
               color={selectedFilter === 'recommendation' ? colors.white : colors.textPrimary}
             >
-              💡 Recommendations
+              Khuyến nghị
             </BodySmall>
           </TouchableOpacity>
         </ScrollView>
@@ -195,7 +196,12 @@ export const AlertsScreen = () => {
               >
                 <View style={styles.alertHeader}>
                   <View style={styles.alertIcon}>
-                    <Body>{getTypeIcon(alert.type)}</Body>
+                    {(() => {
+                      const icon = getTypeIcon(alert.type);
+                      return icon.library === 'Ionicons' ? (
+                        <Ionicons name={icon.name as any} size={24} color={colors.primary} />
+                      ) : null;
+                    })()}
                   </View>
                   <View style={styles.alertHeaderInfo}>
                     <View style={styles.alertTitleRow}>
@@ -216,9 +222,12 @@ export const AlertsScreen = () => {
                       </Badge>
                     </View>
                     {alert.fieldName && (
-                      <BodySmall color={colors.textSecondary}>
-                        📍 {alert.fieldName}
-                      </BodySmall>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <Ionicons name="location-outline" size={14} color={colors.textSecondary} />
+                        <BodySmall color={colors.textSecondary}>
+                          {alert.fieldName}
+                        </BodySmall>
+                      </View>
                     )}
                     <BodySmall color={colors.textSecondary}>
                       {dayjs(alert.createdAt).format('MMM D, YYYY h:mm A')}
@@ -231,7 +240,7 @@ export const AlertsScreen = () => {
                   <>
                     <Spacer size="sm" />
                     <View style={styles.alertDetail}>
-                      <BodySmall color={colors.textSecondary}>Pest Type:</BodySmall>
+                      <BodySmall color={colors.textSecondary}>Loại sâu bệnh:</BodySmall>
                       <BodySemibold>{alert.pestType}</BodySemibold>
                     </View>
                   </>
@@ -241,7 +250,7 @@ export const AlertsScreen = () => {
                     <Spacer size="sm" />
                     <View style={styles.treatmentCard}>
                       <BodySmall color={colors.textSecondary} style={styles.treatmentLabel}>
-                        Recommended Treatment:
+                        Điều trị khuyến nghị:
                       </BodySmall>
                       <BodySemibold style={styles.treatmentText}>
                         {alert.recommendedTreatment}
@@ -291,7 +300,7 @@ const styles = StyleSheet.create({
   filterButton: {
     paddingHorizontal: getSpacing(spacing.md),
     paddingVertical: getSpacing(spacing.sm),
-    borderRadius: moderateScale(borderRadius.md),
+    borderRadius: 16,
     backgroundColor: colors.backgroundSecondary,
   },
   filterButtonActive: {
@@ -299,6 +308,12 @@ const styles = StyleSheet.create({
   },
   alertCard: {
     padding: getSpacing(spacing.md),
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   alertHeader: {
     flexDirection: 'row',
@@ -307,8 +322,8 @@ const styles = StyleSheet.create({
   alertIcon: {
     width: scale(48),
     height: scale(48),
-    borderRadius: moderateScale(borderRadius.md),
-    backgroundColor: colors.backgroundSecondary,
+    borderRadius: 16,
+    backgroundColor: '#dcfce7',
     justifyContent: 'center',
     alignItems: 'center',
   },

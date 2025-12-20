@@ -188,7 +188,7 @@ export const UavExecutionReportScreen = () => {
             <Body>←</Body>
           </TouchableOpacity>
           <Spacer size="lg" />
-          <Body>Loading assignment...</Body>
+          <Body>Đang tải nhiệm vụ...</Body>
         </Container>
       </SafeAreaView>
     );
@@ -203,14 +203,14 @@ export const UavExecutionReportScreen = () => {
               <Body>←</Body>
             </TouchableOpacity>
             <Spacer size="md" />
-            <BodySemibold>Unable to load report data</BodySemibold>
+            <BodySemibold>Không thể tải dữ liệu báo cáo</BodySemibold>
             <Spacer size="sm" />
             <BodySmall color={colors.textSecondary}>
-              Please check your connection or try again later.
+              Vui lòng kiểm tra kết nối hoặc thử lại sau.
             </BodySmall>
             <Spacer size="md" />
             <Button size="sm" variant="outline" onPress={() => refetch()}>
-              Retry
+              Thử lại
             </Button>
           </Card>
         </Container>
@@ -232,7 +232,7 @@ export const UavExecutionReportScreen = () => {
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
               <Body>←</Body>
             </TouchableOpacity>
-            <H3 style={styles.headerTitle}>Execution Report</H3>
+            <H3 style={styles.headerTitle}>Báo cáo thực hiện</H3>
             <View style={styles.headerRight} />
           </View>
 
@@ -244,7 +244,7 @@ export const UavExecutionReportScreen = () => {
               <BodySmall color={colors.textSecondary}>{order.groupName}</BodySmall>
               <Spacer size="sm" />
               <BodySmall color={colors.textSecondary}>
-                Scheduled: {dayjs(order.scheduledDate).format('MMM D, YYYY')}
+                Lịch: {dayjs(order.scheduledDate).format('MMM D, YYYY')}
                 {order.scheduledTime ? ` • ${order.scheduledTime}` : ''}
               </BodySmall>
             </Card>
@@ -254,46 +254,46 @@ export const UavExecutionReportScreen = () => {
             <Card variant="elevated" style={styles.card}>
               <BodySemibold>{resolvedPlotName}</BodySemibold>
               <BodySmall color={colors.textSecondary}>
-                Planned Area: {resolvedArea.toFixed(2)} ha
+                Diện tích dự kiến: {resolvedArea.toFixed(2)} ha
               </BodySmall>
               <BodySmall color={colors.textSecondary}>
-                Status: {assignment.status.replace(/([A-Z])/g, ' $1').trim()}
+                Trạng thái: {assignment.status.replace(/([A-Z])/g, ' $1').trim()}
               </BodySmall>
             </Card>
 
             <Spacer size="md" />
 
             <Card variant="elevated" style={styles.card}>
-              <H3 style={styles.sectionTitle}>Report Details</H3>
+              <H3 style={styles.sectionTitle}>Chi tiết báo cáo</H3>
               <Spacer size="md" />
               <BodySmall color={colors.textSecondary}>
-                Actual Cost (₫) <BodySmall color={colors.error}>*</BodySmall>
+                Chi phí thực tế (₫) <BodySmall color={colors.error}>*</BodySmall>
               </BodySmall>
               <Spacer size="xs" />
               <Input
                 value={formState.actualCost}
                 onChangeText={(text) => setFormState((prev) => ({ ...prev, actualCost: text }))}
                 keyboardType="decimal-pad"
-                placeholder="Enter actual service cost"
+                placeholder="Nhập chi phí dịch vụ thực tế"
               />
               <Spacer size="md" />
               <BodySmall color={colors.textSecondary}>
-                Actual Area Covered (ha) <BodySmall color={colors.error}>*</BodySmall>
+                Diện tích thực tế đã phủ (ha) <BodySmall color={colors.error}>*</BodySmall>
               </BodySmall>
               <Spacer size="xs" />
               <Input
                 value={formState.actualArea}
                 onChangeText={(text) => setFormState((prev) => ({ ...prev, actualArea: text }))}
                 keyboardType="decimal-pad"
-                placeholder="Enter actual covered area"
+                placeholder="Nhập diện tích thực tế đã phủ"
               />
               <Spacer size="md" />
-              <BodySmall color={colors.textSecondary}>Notes</BodySmall>
+              <BodySmall color={colors.textSecondary}>Ghi chú</BodySmall>
               <Spacer size="xs" />
               <Input
                 value={formState.notes}
                 onChangeText={(text) => setFormState((prev) => ({ ...prev, notes: text }))}
-                placeholder="Add any observations..."
+                placeholder="Thêm bất kỳ quan sát nào..."
                 multiline
                 numberOfLines={4}
               />
@@ -302,14 +302,14 @@ export const UavExecutionReportScreen = () => {
             <Spacer size="md" />
 
             <Card variant="elevated" style={styles.card}>
-              <H3 style={styles.sectionTitle}>Proof Images</H3>
+              <H3 style={styles.sectionTitle}>Ảnh chứng minh</H3>
               <Spacer size="md" />
               <View style={styles.mediaButtons}>
                 <Button variant="outline" size="sm" onPress={takePhoto} style={styles.mediaButton}>
-                  📸 Camera
+                  Máy ảnh
                 </Button>
                 <Button variant="outline" size="sm" onPress={pickImage} style={styles.mediaButton}>
-                  🖼️ Gallery
+                  Thư viện
                 </Button>
               </View>
               {proofImages.length > 0 && (
@@ -339,7 +339,7 @@ export const UavExecutionReportScreen = () => {
               disabled={reportMutation.isPending}
               style={styles.submitButton}
             >
-              {reportMutation.isPending ? 'Submitting...' : 'Submit Report'}
+              {reportMutation.isPending ? 'Đang gửi báo cáo...' : 'Gửi báo cáo'}
             </Button>
 
             <Spacer size="xl" />
@@ -350,10 +350,22 @@ export const UavExecutionReportScreen = () => {
   );
 };
 
+// Green theme colors for farmer-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.background,
   },
   keyboardView: {
     flex: 1,
@@ -363,30 +375,51 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: spacing.md,
+    backgroundColor: greenTheme.cardBackground,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: greenTheme.border,
   },
   backButton: {
     width: 40,
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: borderRadius.full,
+    backgroundColor: greenTheme.primaryLighter,
   },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
+    color: greenTheme.primary,
+    fontWeight: '700',
   },
   headerRight: {
     width: 40,
   },
   card: {
     padding: spacing.md,
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   orderNumber: {
     paddingTop: 5,
     paddingBottom: 3,
     fontSize: 18,
+    color: greenTheme.primary,
+    fontWeight: '700',
   },
   sectionTitle: {
     fontSize: 18,
+    color: greenTheme.primary,
+    fontWeight: '700',
   },
   mediaButtons: {
     flexDirection: 'row',
@@ -394,6 +427,8 @@ const styles = StyleSheet.create({
   },
   mediaButton: {
     flex: 1,
+    borderColor: greenTheme.primary,
+    backgroundColor: greenTheme.primaryLighter,
   },
   mediaGrid: {
     flexDirection: 'row',
@@ -404,12 +439,16 @@ const styles = StyleSheet.create({
     width: '30%',
     aspectRatio: 1,
     position: 'relative',
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: greenTheme.border,
   },
   mediaPreview: {
     width: '100%',
     height: '100%',
     borderRadius: borderRadius.md,
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: greenTheme.primaryLighter,
   },
   removeButton: {
     position: 'absolute',
@@ -421,9 +460,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.error,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: greenTheme.cardBackground,
   },
   submitButton: {
     marginTop: spacing.md,
+    backgroundColor: greenTheme.primary,
   },
 });
 

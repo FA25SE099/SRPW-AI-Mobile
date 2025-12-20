@@ -87,7 +87,7 @@ export const EconomicsScreen = () => {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Body>←</Body>
           </TouchableOpacity>
-          <H3 style={styles.headerTitle}>Economic Performance</H3>
+          <H3 style={styles.headerTitle}>Hiệu quả kinh tế</H3>
           <View style={styles.headerRight} />
         </View>
 
@@ -97,7 +97,7 @@ export const EconomicsScreen = () => {
         <Card variant="elevated" style={styles.seasonCard}>
           <H4>{selectedSeason.seasonName}</H4>
           <BodySmall color={colors.textSecondary}>
-            Total Area: {totalArea.toFixed(1)} hectares
+            Tổng diện tích: {totalArea.toFixed(1)} ha
           </BodySmall>
         </Card>
 
@@ -105,17 +105,17 @@ export const EconomicsScreen = () => {
 
         {/* Summary Cards */}
         <View style={styles.summaryRow}>
-          <Card variant="elevated" style={[styles.summaryCard, { backgroundColor: colors.error }]}>
+          <Card variant="elevated" style={{ ...styles.summaryCard, backgroundColor: '#FF6B6B' }}>
             <Body color={colors.white} style={styles.summaryLabel}>
-              Total Cost
+              Tổng chi phí
             </Body>
             <Body color={colors.white} style={styles.summaryAmount}>
               {formatCurrency(selectedSeason.totalCost)}
             </Body>
           </Card>
-          <Card variant="elevated" style={[styles.summaryCard, { backgroundColor: colors.success }]}>
+          <Card variant="elevated" style={{ ...styles.summaryCard, backgroundColor: greenTheme.primaryLight }}>
             <Body color={colors.white} style={styles.summaryLabel}>
-              Total Revenue
+              Tổng doanh thu
             </Body>
             <Body color={colors.white} style={styles.summaryAmount}>
               {formatCurrency(selectedSeason.totalRevenue)}
@@ -125,9 +125,9 @@ export const EconomicsScreen = () => {
 
         <Spacer size="md" />
 
-        <Card variant="elevated" style={[styles.profitCard, { backgroundColor: colors.primary }]}>
+        <Card variant="elevated" style={styles.profitCard}>
           <Body color={colors.white} style={styles.profitLabel}>
-            Net Profit
+            Lợi nhuận ròng
           </Body>
           <Body color={colors.white} style={styles.profitAmount}>
             {formatCurrency(selectedSeason.profit)}
@@ -135,10 +135,10 @@ export const EconomicsScreen = () => {
           <Spacer size="sm" />
           <View style={styles.profitDetails}>
             <BodySmall color={colors.white}>
-              {formatCurrency(selectedSeason.profitPerHectare)} per hectare
+              {formatCurrency(selectedSeason.profitPerHectare)} / ha
             </BodySmall>
             <BodySmall color={colors.white}>
-              {profitMargin}% profit margin
+              Biên lợi nhuận {profitMargin}%
             </BodySmall>
           </View>
         </Card>
@@ -146,7 +146,7 @@ export const EconomicsScreen = () => {
         <Spacer size="xl" />
 
         {/* Field Breakdown */}
-        <H4>Field Performance</H4>
+        <H4>Hiệu quả theo thửa đất</H4>
         <Spacer size="md" />
 
         <ScrollView showsVerticalScrollIndicator={false}>
@@ -158,29 +158,29 @@ export const EconomicsScreen = () => {
                   <View>
                     <BodySemibold>{field.fieldName}</BodySemibold>
                     <BodySmall color={colors.textSecondary}>
-                      {field.area} hectares
+                      {field.area} ha
                     </BodySmall>
                   </View>
-                  <Badge variant="success" size="sm">
+                  <Badge variant="success" size="sm" style={{ backgroundColor: greenTheme.primaryLight }}>
                     {fieldProfitMargin}%
                   </Badge>
                 </View>
                 <Spacer size="md" />
                 <View style={styles.fieldMetrics}>
                   <View style={styles.metricItem}>
-                    <BodySmall color={colors.textSecondary}>Cost</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Chi phí</BodySmall>
                     <BodySemibold color={colors.error}>
                       {formatCurrency(field.cost)}
                     </BodySemibold>
                   </View>
                   <View style={styles.metricItem}>
-                    <BodySmall color={colors.textSecondary}>Revenue</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Doanh thu</BodySmall>
                     <BodySemibold color={colors.success}>
                       {formatCurrency(field.revenue)}
                     </BodySemibold>
                   </View>
                   <View style={styles.metricItem}>
-                    <BodySmall color={colors.textSecondary}>Profit</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Lợi nhuận</BodySmall>
                     <BodySemibold color={colors.primary}>
                       {formatCurrency(field.profit)}
                     </BodySemibold>
@@ -189,7 +189,7 @@ export const EconomicsScreen = () => {
                 <Spacer size="sm" />
                 <View style={styles.fieldProfitPerHa}>
                   <BodySmall color={colors.textSecondary}>
-                    Profit per hectare:
+                    Lợi nhuận / ha:
                   </BodySmall>
                   <BodySemibold color={colors.primary}>
                     {formatCurrency(field.profit / field.area)}
@@ -206,33 +206,62 @@ export const EconomicsScreen = () => {
   );
 };
 
+// Green theme colors for farmer-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: getSpacing(spacing.md),
+    backgroundColor: greenTheme.cardBackground,
+    paddingBottom: getSpacing(spacing.sm),
+    borderBottomWidth: 1,
+    borderBottomColor: greenTheme.border,
   },
   backButton: {
     width: scale(40),
     height: scale(40),
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: moderateScale(borderRadius.full),
+    backgroundColor: greenTheme.primaryLighter,
   },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
     fontSize: getFontSize(20),
+    color: greenTheme.primary,
+    fontWeight: '700',
   },
   headerRight: {
     width: scale(40),
   },
   seasonCard: {
     padding: getSpacing(spacing.md),
+    borderRadius: moderateScale(borderRadius.lg),
+    backgroundColor: greenTheme.cardBackground,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -241,6 +270,12 @@ const styles = StyleSheet.create({
   summaryCard: {
     flex: 1,
     padding: getSpacing(spacing.md),
+    borderRadius: moderateScale(borderRadius.lg),
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   summaryLabel: {
     fontSize: getFontSize(12),
@@ -252,6 +287,13 @@ const styles = StyleSheet.create({
   },
   profitCard: {
     padding: getSpacing(spacing.lg),
+    borderRadius: moderateScale(borderRadius.lg),
+    backgroundColor: greenTheme.primary,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3,
   },
   profitLabel: {
     fontSize: getFontSize(14),
@@ -271,6 +313,15 @@ const styles = StyleSheet.create({
   fieldCard: {
     padding: getSpacing(spacing.md),
     marginBottom: getSpacing(spacing.md),
+    borderRadius: moderateScale(borderRadius.lg),
+    backgroundColor: greenTheme.cardBackground,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   fieldCardHeader: {
     flexDirection: 'row',
@@ -292,7 +343,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: getSpacing(spacing.sm),
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: greenTheme.border,
   },
 });
 

@@ -109,7 +109,7 @@ export const UavOrdersScreen = () => {
       <SafeAreaView style={styles.container}>
         <Container padding="lg">
           <View style={styles.loadingContainer}>
-            <Body>Loading orders...</Body>
+            <Body>Đang tải đơn hàng...</Body>
           </View>
         </Container>
       </SafeAreaView>
@@ -125,10 +125,10 @@ export const UavOrdersScreen = () => {
               <Body>←</Body>
             </TouchableOpacity>
             <Spacer size="lg" />
-            <Body color={colors.error}>Failed to load orders</Body>
+            <Body color={colors.error}>Không thể tải đơn hàng</Body>
             <Spacer size="sm" />
             <Button size="sm" onPress={() => refetch()}>
-              Retry
+              Thử lại
             </Button>
           </View>
         </Container>
@@ -141,11 +141,11 @@ export const UavOrdersScreen = () => {
       <Container padding="lg">
         <View style={styles.header}>
           <View>
-            <BodySmall color={colors.textSecondary}>Service Orders</BodySmall>
-            <H3 style={styles.headerTitle}>Spraying Operations</H3>
+            <BodySmall color={greenTheme.primary} style={{ fontWeight: '600' }}>Đơn hàng</BodySmall>
+            <H3 style={styles.headerTitle}>Phun thuốc</H3>
           </View>
-          <Badge variant="info">
-            <BodySmall>Total {filterCounts.all}</BodySmall>
+          <Badge variant="info" style={{ backgroundColor: greenTheme.primaryLight }}>
+            <BodySmall style={{ color: colors.white, fontWeight: '700' }}>Tổng {filterCounts.all}</BodySmall>
           </Badge>
         </View>
 
@@ -153,11 +153,11 @@ export const UavOrdersScreen = () => {
 
         <View style={styles.summaryRow}>
           <View style={styles.summaryCard}>
-            <BodySmall style={styles.summaryLabel}>In Progress</BodySmall>
+            <BodySmall style={styles.summaryLabel}>Đang tiến hành</BodySmall>
             <BodySemibold style={styles.summaryValue}>{filterCounts['in-progress']}</BodySemibold>
           </View>
           <View style={styles.summaryCard}>
-            <BodySmall style={styles.summaryLabel}>Completed</BodySmall>
+            <BodySmall style={styles.summaryLabel}>Hoàn thành</BodySmall>
             <BodySemibold style={styles.summaryValue}>{filterCounts.completed}</BodySemibold>
           </View>
         </View>
@@ -166,9 +166,9 @@ export const UavOrdersScreen = () => {
 
         <View style={styles.segmentedContainer}>
           {[
-            { label: 'All', value: 'all' },
-            { label: 'In Progress', value: 'in-progress' },
-            { label: 'Completed', value: 'completed' },
+            { label: 'Tất cả', value: 'all' },
+            { label: 'Đang tiến hành', value: 'in-progress' },
+            { label: 'Hoàn thành', value: 'completed' },
           ].map((chip) => (
             <TouchableOpacity
               key={chip.value}
@@ -200,7 +200,7 @@ export const UavOrdersScreen = () => {
         {/* Orders List */}
         {filteredOrders.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Body color={colors.textSecondary}>No orders found</Body>
+            <Body color={colors.textSecondary}>Không tìm thấy đơn hàng</Body>
           </View>
         ) : (
           <ScrollView
@@ -245,22 +245,22 @@ export const UavOrdersScreen = () => {
                   <Spacer size="md" />
                   <View style={styles.orderDetails}>
                     <View style={styles.orderDetailItem}>
-                      <BodySmall color={colors.textSecondary}>Scheduled</BodySmall>
+                      <BodySmall color={colors.textSecondary}>Lịch</BodySmall>
                       <BodySemibold>
                         {dayjs(order.scheduledDate).format('MMM D, YYYY')}
                         {order.scheduledTime ? ` • ${order.scheduledTime}` : ''}
                       </BodySemibold>
                     </View>
                     <View style={styles.orderDetailItem}>
-                      <BodySmall color={colors.textSecondary}>Area</BodySmall>
+                      <BodySmall color={colors.textSecondary}>Diện tích</BodySmall>
                       <BodySemibold>{order.totalArea.toFixed(2)} ha</BodySemibold>
                     </View>
                     <View style={styles.orderDetailItem}>
-                      <BodySmall color={colors.textSecondary}>Plots</BodySmall>
+                      <BodySmall color={colors.textSecondary}>Thửa đất</BodySmall>
                       <BodySemibold>{order.totalPlots}</BodySemibold>
                     </View>
                     <View style={styles.progressWrapper}>
-                      <BodySmall color={colors.textSecondary}>Completion</BodySmall>
+                        <BodySmall color={colors.textSecondary}>Hoàn thành</BodySmall>
                       <View style={styles.progressBar}>
                         <View
                           style={[
@@ -283,19 +283,37 @@ export const UavOrdersScreen = () => {
   );
 };
 
+// Green theme colors for farmer-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: spacing.md,
+    backgroundColor: greenTheme.cardBackground,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: greenTheme.border,
   },
   headerTitle: {
     fontSize: 24,
+    color: greenTheme.primary,
+    fontWeight: '700',
   },
   loadingContainer: {
     flex: 1,
@@ -307,6 +325,8 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.sm,
+    borderRadius: borderRadius.full,
+    backgroundColor: greenTheme.primaryLighter,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -314,26 +334,36 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     flex: 1,
-    backgroundColor: colors.white,
+    backgroundColor: greenTheme.cardBackground,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
-    ...shadows.xs,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   summaryValue: {
     fontSize: 22,
     paddingTop: 12,
     marginTop: spacing.xs / 2,
+    color: greenTheme.primary,
+    fontWeight: '700',
   },
   summaryLabel: {
-    color: colors.textPrimary,
+    color: greenTheme.primary,
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   segmentedContainer: {
     flexDirection: 'row',
     borderRadius: borderRadius.full,
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: greenTheme.primaryLighter,
     padding: 4,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
   segment: {
     flex: 1,
@@ -342,18 +372,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   segmentActive: {
-    backgroundColor: colors.white,
-    ...shadows.xs,
+    backgroundColor: greenTheme.cardBackground,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
   segmentText: {
     fontWeight: '500',
-    color: colors.textSecondary,
+    color: greenTheme.primary,
   },
   segmentTextActive: {
-    color: colors.primary,
+    color: greenTheme.primary,
+    fontWeight: '700',
   },
   orderCard: {
     padding: spacing.md,
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   orderHeader: {
     flexDirection: 'row',
@@ -373,14 +417,20 @@ const styles = StyleSheet.create({
   orderTitle: {
     paddingTop: 3,
     fontSize: 16,
+    color: greenTheme.primary,
+    fontWeight: '700',
   },
   statusBadge: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
   priorityBadge: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
   orderDetails: {
     gap: spacing.xs,
@@ -397,12 +447,14 @@ const styles = StyleSheet.create({
   progressBar: {
     height: 6,
     borderRadius: 3,
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: greenTheme.primaryLighter,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
   progressFill: {
     height: '100%',
     borderRadius: 3,
-    backgroundColor: colors.primary,
+    backgroundColor: greenTheme.primary,
   },
   emptyContainer: {
     flex: 1,

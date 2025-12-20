@@ -14,6 +14,9 @@ import {
   FarmLogDetailResponse,
   CreateEmergencyReportRequest,
   PestDetectionResponse,
+  StartTaskRequest,
+  StartTaskResponse,
+  FarmerProfileResponse,
 } from '@/types/api';
 
 type GetFarmerPlotsParams = {
@@ -260,5 +263,21 @@ export const detectPestInImage = async (
   }
   
   return results[0];
+};
+
+export const startTask = async (request: StartTaskRequest): Promise<StartTaskResponse> => {
+  const response = await api.post<StartTaskResponse>('/farmer/cultivation-tasks/start', {
+    cultivationTaskId: request.cultivationTaskId,
+    weatherConditions: request.weatherConditions || null,
+    notes: request.notes || null,
+  });
+
+  return response as unknown as StartTaskResponse;
+};
+
+export const getFarmerProfile = async (): Promise<FarmerProfileResponse> => {
+  const response = await api.get<FarmerProfileResponse>('/Farmer/profile');
+
+  return response as unknown as FarmerProfileResponse;
 };
 

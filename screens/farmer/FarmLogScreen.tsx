@@ -13,6 +13,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import dayjs from 'dayjs';
 import { colors, spacing, borderRadius, shadows } from '../../theme';
 import { scale, moderateScale, getFontSize, getSpacing, verticalScale } from '../../utils/responsive';
@@ -73,11 +74,11 @@ const mockActivities: FarmActivity[] = [
 ];
 
 const activityTypes = [
-  { value: 'planting', label: 'Planting', icon: '🌱' },
-  { value: 'fertilizing', label: 'Fertilizing', icon: '💧' },
-  { value: 'spraying', label: 'Spraying', icon: '💨' },
-  { value: 'irrigation', label: 'Irrigation', icon: '🚿' },
-  { value: 'harvesting', label: 'Harvesting', icon: '🌾' },
+  { value: 'planting', label: 'Gieo trồng', icon: { name: 'seed-outline', library: 'MaterialCommunityIcons' } },
+  { value: 'fertilizing', label: 'Bón phân', icon: { name: 'water-outline', library: 'Ionicons' } },
+  { value: 'spraying', label: 'Phun thuốc', icon: { name: 'spray', library: 'MaterialCommunityIcons' } },
+  { value: 'irrigation', label: 'Tưới tiêu', icon: { name: 'water', library: 'Ionicons' } },
+  { value: 'harvesting', label: 'Thu hoạch', icon: { name: 'leaf-outline', library: 'Ionicons' } },
 ];
 
 export const FarmLogScreen = () => {
@@ -86,7 +87,7 @@ export const FarmLogScreen = () => {
 
   const getActivityIcon = (type: string) => {
     const activity = activityTypes.find((a) => a.value === type);
-    return activity?.icon || '📝';
+    return activity?.icon || { name: 'document-text-outline', library: 'Ionicons' };
   };
 
   const formatCurrency = (amount: number) => {
@@ -111,12 +112,12 @@ export const FarmLogScreen = () => {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Body>←</Body>
           </TouchableOpacity>
-          <H3 style={styles.headerTitle}>Farm Log</H3>
+          <H3 style={styles.headerTitle}>Nhật ký nông trại</H3>
           <TouchableOpacity
             onPress={() => router.push('/farmer/farm-log/add' as any)}
             style={styles.addButton}
           >
-            <Body color={colors.primary}>+</Body>
+            <Body color={greenTheme.primary} style={{ fontSize: getFontSize(24), fontWeight: '700' }}>+</Body>
           </TouchableOpacity>
         </View>
 
@@ -126,14 +127,14 @@ export const FarmLogScreen = () => {
         <Card variant="elevated" style={styles.summaryCard}>
           <View style={styles.summaryRow}>
             <View>
-              <BodySmall color={colors.textSecondary}>Total Activities</BodySmall>
+              <BodySmall color={colors.textSecondary}>Tổng hoạt động</BodySmall>
               <BodySemibold style={styles.summaryNumber}>
                 {filteredActivities.length}
               </BodySemibold>
             </View>
             <View>
-              <BodySmall color={colors.textSecondary}>Total Cost</BodySmall>
-              <BodySemibold style={styles.summaryNumber} color={colors.primary}>
+              <BodySmall color={colors.textSecondary}>Tổng chi phí</BodySmall>
+              <BodySemibold style={styles.summaryNumber} color={greenTheme.primary}>
                 {formatCurrency(totalCost)}
               </BodySemibold>
             </View>
@@ -158,7 +159,7 @@ export const FarmLogScreen = () => {
             <BodySmall
               color={selectedFilter === 'all' ? colors.white : colors.textPrimary}
             >
-              All
+              Tất cả
             </BodySmall>
           </TouchableOpacity>
           {activityTypes.map((type) => (
@@ -170,11 +171,18 @@ export const FarmLogScreen = () => {
                 selectedFilter === type.value && styles.filterButtonActive,
               ]}
             >
-              <BodySmall
-                color={selectedFilter === type.value ? colors.white : colors.textPrimary}
-              >
-                {type.icon} {type.label}
-              </BodySmall>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                {type.icon.library === 'Ionicons' ? (
+                  <Ionicons name={type.icon.name as any} size={16} color={selectedFilter === type.value ? colors.white : colors.textPrimary} />
+                ) : (
+                  <MaterialCommunityIcons name={type.icon.name as any} size={16} color={selectedFilter === type.value ? colors.white : colors.textPrimary} />
+                )}
+                <BodySmall
+                  color={selectedFilter === type.value ? colors.white : colors.textPrimary}
+                >
+                  {type.label}
+                </BodySmall>
+              </View>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -188,7 +196,14 @@ export const FarmLogScreen = () => {
               <Card variant="elevated" style={styles.activityCard}>
                 <View style={styles.activityCardHeader}>
                   <View style={styles.activityIcon}>
-                    <Body>{getActivityIcon(activity.activityType)}</Body>
+                    {(() => {
+                      const icon = getActivityIcon(activity.activityType);
+                      return icon.library === 'Ionicons' ? (
+                        <Ionicons name={icon.name as any} size={24} color={greenTheme.primary} />
+                      ) : (
+                        <MaterialCommunityIcons name={icon.name as any} size={24} color={greenTheme.primary} />
+                      );
+                    })()}
                   </View>
                   <View style={styles.activityHeaderInfo}>
                     <BodySemibold>{activity.fieldName}</BodySemibold>
@@ -207,12 +222,12 @@ export const FarmLogScreen = () => {
                 <Spacer size="md" />
                 <View style={styles.activityDetails}>
                   <View style={styles.activityDetailRow}>
-                    <BodySmall color={colors.textSecondary}>Activity:</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Hoạt động:</BodySmall>
                     <BodySemibold>{activity.activityType}</BodySemibold>
                   </View>
                   {activity.materialName && (
                     <View style={styles.activityDetailRow}>
-                      <BodySmall color={colors.textSecondary}>Material:</BodySmall>
+                      <BodySmall color={colors.textSecondary}>Vật liệu:</BodySmall>
                       <BodySemibold>
                         {activity.materialName} ({activity.quantity} {activity.unit})
                       </BodySemibold>
@@ -234,36 +249,67 @@ export const FarmLogScreen = () => {
   );
 };
 
+// Green theme colors for farmer-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: getSpacing(spacing.md),
+    backgroundColor: greenTheme.cardBackground,
+    paddingBottom: getSpacing(spacing.sm),
+    borderBottomWidth: 1,
+    borderBottomColor: greenTheme.border,
   },
   backButton: {
     width: scale(40),
     height: scale(40),
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: moderateScale(borderRadius.full),
+    backgroundColor: greenTheme.primaryLighter,
   },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
     fontSize: getFontSize(20),
+    color: greenTheme.primary,
+    fontWeight: '700',
   },
   addButton: {
     width: scale(40),
     height: scale(40),
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: moderateScale(borderRadius.full),
+    backgroundColor: greenTheme.primaryLighter,
   },
   summaryCard: {
     padding: getSpacing(spacing.lg),
+    borderRadius: moderateScale(borderRadius.lg),
+    backgroundColor: greenTheme.cardBackground,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -272,6 +318,7 @@ const styles = StyleSheet.create({
   summaryNumber: {
     fontSize: getFontSize(24),
     marginTop: getSpacing(spacing.xs),
+    color: greenTheme.primary,
   },
   filterContainer: {
     gap: getSpacing(spacing.sm),
@@ -280,14 +327,26 @@ const styles = StyleSheet.create({
   filterButton: {
     paddingHorizontal: getSpacing(spacing.md),
     paddingVertical: getSpacing(spacing.sm),
-    borderRadius: moderateScale(borderRadius.md),
-    backgroundColor: colors.backgroundSecondary,
+    borderRadius: moderateScale(borderRadius.lg),
+    backgroundColor: greenTheme.primaryLighter,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
   filterButtonActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: greenTheme.primary,
+    borderColor: greenTheme.primary,
   },
   activityCard: {
     padding: getSpacing(spacing.md),
+    borderRadius: moderateScale(borderRadius.lg),
+    backgroundColor: greenTheme.cardBackground,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   activityCardHeader: {
     flexDirection: 'row',
@@ -298,7 +357,7 @@ const styles = StyleSheet.create({
     width: scale(48),
     height: scale(48),
     borderRadius: moderateScale(borderRadius.md),
-    backgroundColor: colors.primaryLighter,
+    backgroundColor: greenTheme.primaryLighter,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -307,6 +366,7 @@ const styles = StyleSheet.create({
   },
   costBadge: {
     alignSelf: 'flex-start',
+    backgroundColor: greenTheme.primaryLight,
   },
   activityDetails: {
     gap: getSpacing(spacing.sm),
@@ -319,8 +379,10 @@ const styles = StyleSheet.create({
   activityNotes: {
     marginTop: getSpacing(spacing.xs),
     padding: getSpacing(spacing.sm),
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: greenTheme.primaryLighter,
     borderRadius: moderateScale(borderRadius.sm),
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
 });
 
