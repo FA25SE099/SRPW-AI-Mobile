@@ -22,6 +22,18 @@ import {
 } from '../../components/ui';
 import { useUser } from '../../libs/auth';
 
+// Green theme colors for farmer-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
+
 // Mock data
 const mockStats = {
   pendingOrders: 5,
@@ -35,7 +47,7 @@ const quickActions = [
     id: '1',
     title: 'View Orders',
     icon: '📋',
-    color: colors.primary,
+    color: greenTheme.primary,
     route: '/(uav-tabs)/orders',
   },
   {
@@ -49,7 +61,7 @@ const quickActions = [
     id: '3',
     title: 'In Progress',
     icon: '🚁',
-    color: '#34C759',
+    color: greenTheme.primaryLight,
     route: '/(uav-tabs)/orders?filter=in-progress',
   },
 ];
@@ -115,8 +127,8 @@ export const UavHomeScreen = () => {
             <Avatar size="md" initials={userInitials} />
             <Spacer size="sm" horizontal />
             <View>
-              <BodySmall color={colors.textSecondary}>Welcome back</BodySmall>
-              <BodySemibold>{userName}</BodySemibold>
+              <BodySmall color={greenTheme.primary} style={{ fontWeight: '600' }}>Welcome back</BodySmall>
+              <BodySemibold style={{ color: greenTheme.primary }}>{userName}</BodySemibold>
             </View>
           </View>
         </View>
@@ -126,14 +138,14 @@ export const UavHomeScreen = () => {
         {/* Stats Cards */}
         <View style={styles.statsContainer}>
           <Card variant="elevated" style={styles.statCard}>
-            <BodySmall color={colors.textSecondary}>Pending Orders</BodySmall>
+            <BodySmall color={greenTheme.primary} style={{ fontWeight: '600' }}>Pending Orders</BodySmall>
             <Spacer size="xs" />
-            <H3>{mockStats.pendingOrders}</H3>
+            <H3 style={{ color: greenTheme.primary }}>{mockStats.pendingOrders}</H3>
           </Card>
           <Card variant="elevated" style={styles.statCard}>
-            <BodySmall color={colors.textSecondary}>In Progress</BodySmall>
+            <BodySmall color={greenTheme.primary} style={{ fontWeight: '600' }}>In Progress</BodySmall>
             <Spacer size="xs" />
-            <H3>{mockStats.inProgressOrders}</H3>
+            <H3 style={{ color: greenTheme.primary }}>{mockStats.inProgressOrders}</H3>
           </Card>
         </View>
 
@@ -141,21 +153,21 @@ export const UavHomeScreen = () => {
 
         <View style={styles.statsContainer}>
           <Card variant="elevated" style={styles.statCard}>
-            <BodySmall color={colors.textSecondary}>Completed Today</BodySmall>
+            <BodySmall color={greenTheme.primary} style={{ fontWeight: '600' }}>Completed Today</BodySmall>
             <Spacer size="xs" />
-            <H3>{mockStats.completedToday}</H3>
+            <H3 style={{ color: greenTheme.success }}>{mockStats.completedToday}</H3>
           </Card>
           <Card variant="elevated" style={styles.statCard}>
-            <BodySmall color={colors.textSecondary}>Total Sprayed</BodySmall>
+            <BodySmall color={greenTheme.primary} style={{ fontWeight: '600' }}>Total Sprayed</BodySmall>
             <Spacer size="xs" />
-            <H3>{mockStats.totalSprayed} ha</H3>
+            <H3 style={{ color: greenTheme.primary }}>{mockStats.totalSprayed} ha</H3>
           </Card>
         </View>
 
         <Spacer size="xl" />
 
         {/* Quick Actions */}
-        <H4>Quick Actions</H4>
+        <H4 style={{ color: greenTheme.primary }}>Quick Actions</H4>
         <Spacer size="md" />
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {quickActions.map((action) => (
@@ -177,9 +189,9 @@ export const UavHomeScreen = () => {
 
         {/* Recent Orders */}
         <View style={styles.sectionHeader}>
-          <H4>Recent Orders</H4>
+          <H4 style={{ color: greenTheme.primary }}>Recent Orders</H4>
           <TouchableOpacity onPress={() => router.push('/(uav-tabs)/orders' as any)}>
-            <BodySmall color={colors.primary}>View All</BodySmall>
+            <BodySmall color={greenTheme.primary} style={{ fontWeight: '600' }}>View All</BodySmall>
           </TouchableOpacity>
         </View>
         <Spacer size="md" />
@@ -202,11 +214,11 @@ export const UavHomeScreen = () => {
                     <BodySmall color={colors.textSecondary}>{order.fieldName}</BodySmall>
                   </View>
                   <Badge
-                    variant="outline"
-                    style={[
-                      styles.statusBadge,
-                      { borderColor: getStatusColor(order.status) },
-                    ]}
+                    variant="neutral"
+                    style={{
+                      ...styles.statusBadge,
+                      borderColor: getStatusColor(order.status),
+                    }}
                   >
                     <BodySmall style={{ color: getStatusColor(order.status) }}>
                       {order.status}
@@ -237,12 +249,16 @@ export const UavHomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    backgroundColor: greenTheme.cardBackground,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: greenTheme.border,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -255,6 +271,15 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     padding: spacing.md,
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -262,19 +287,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   actionCard: {
-    backgroundColor: colors.white,
+    backgroundColor: greenTheme.cardBackground,
     padding: spacing.md,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
     borderLeftWidth: 4,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
     minWidth: 120,
     marginRight: spacing.md,
-    ...shadows.sm,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   actionIcon: {
     width: 48,
     height: 48,
     borderRadius: borderRadius.md,
-    backgroundColor: colors.primaryLighter,
+    backgroundColor: greenTheme.primaryLighter,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -283,9 +314,20 @@ const styles = StyleSheet.create({
   },
   actionTitle: {
     fontSize: 14,
+    color: greenTheme.primary,
+    fontWeight: '600',
   },
   orderCard: {
     padding: spacing.md,
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   orderHeader: {
     flexDirection: 'row',

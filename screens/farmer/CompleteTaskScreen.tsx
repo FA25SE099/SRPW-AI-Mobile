@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { colors, spacing, borderRadius } from '../../theme';
@@ -35,6 +36,7 @@ import {
 import { CreateFarmLogRequest, FarmLogMaterialRequest, TodayTaskResponse } from '../../types/api';
 import { createFarmLog } from '../../libs/farmer';
 import { useUser } from '../../libs/auth';
+import { uploadFile } from '../../libs/api-client';
 
 export const CompleteTaskScreen = () => {
   const router = useRouter();
@@ -82,24 +84,34 @@ export const CompleteTaskScreen = () => {
         });
       }
 
-      const request: CreateFarmLogRequest = {
-        ...formData,
-        materials: materials.length > 0 ? materials : undefined,
-        farmerId: user?.id || null,
-      };
+      const data = new FormData();
+      data.append('CultivationTaskId', formData.cultivationTaskId);
+      data.append('PlotCultivationId', formData.plotCultivationId);
+      if (formData.workDescription) data.append('WorkDescription', formData.workDescription);
+      if (formData.actualAreaCovered) data.append('ActualAreaCovered', formData.actualAreaCovered.toString());
+      if (formData.serviceCost) data.append('ServiceCost', formData.serviceCost.toString());
+      if (formData.serviceNotes) data.append('ServiceNotes', formData.serviceNotes);
+      if (formData.weatherConditions) data.append('WeatherConditions', formData.weatherConditions);
+      if (formData.interruptionReason) data.append('InterruptionReason', formData.interruptionReason);
+      if (user?.id) data.append('FarmerId', user.id);
 
-      // Prepare image files
-      const imageFiles = images.map((img, index) => ({
-        uri: img.uri,
-        type: img.type || 'image/jpeg',
-        name: img.name || `proof_${index}.jpg`,
-      }));
+      if (materials.length > 0) {
+        data.append('Materials', JSON.stringify(materials));
+      }
 
-      return createFarmLog(request, imageFiles);
+      images.forEach((img, index) => {
+        data.append('ProofImages', {
+          uri: img.uri,
+          type: img.type || 'image/jpeg',
+          name: img.name || `proof_${index}.jpg`,
+        } as any);
+      });
+
+      return uploadFile('/Farmer/create-farm-log', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['today-tasks'] });
-      Alert.alert('Success', 'Farm log submitted and task marked as completed.', [
+      Alert.alert('Thành công', 'Đã gửi nhật ký nông trại và đánh dấu công việc đã hoàn thành.', [
         {
           text: 'OK',
           onPress: () => router.back(),
@@ -107,7 +119,7 @@ export const CompleteTaskScreen = () => {
       ]);
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.message || 'Failed to submit farm log');
+      Alert.alert('Lỗi', error.message || 'Không thể gửi nhật ký nông trại');
     },
   });
 
@@ -172,7 +184,7 @@ export const CompleteTaskScreen = () => {
           onPress: pickImage,
         },
         {
-          text: 'Cancel',
+          text: 'Hủy',
           style: 'cancel',
         },
       ],
@@ -186,7 +198,7 @@ export const CompleteTaskScreen = () => {
 
   const handleSubmit = () => {
     if (!formData.cultivationTaskId || !formData.plotCultivationId) {
-      Alert.alert('Error', 'Missing required task information');
+      Alert.alert('Lỗi', 'Thiếu thông tin công việc bắt buộc');
       return;
     }
 
@@ -212,7 +224,7 @@ export const CompleteTaskScreen = () => {
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
               <Body>←</Body>
             </TouchableOpacity>
-            <H3 style={styles.headerTitle}>Complete Task</H3>
+            <H3 style={styles.headerTitle}>Hoàn thành công việc</H3>
             <View style={styles.headerRight} />
           </View>
 
@@ -221,15 +233,18 @@ export const CompleteTaskScreen = () => {
           {/* Task Info */}
           <Card variant="elevated" style={styles.infoCard}>
             <BodySemibold style={styles.taskName}>{params.taskName}</BodySemibold>
-            <BodySmall color={colors.textSecondary}>📍 {params.plotSoThuaSoTo}</BodySmall>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Ionicons name="location-outline" size={16} color={greenTheme.primary} />
+              <BodySmall color={greenTheme.primary} style={{ fontWeight: '600' }}>{params.plotSoThuaSoTo}</BodySmall>
+            </View>
           </Card>
 
           <Spacer size="lg" />
 
           {/* Work Description */}
           <Input
-            label="Work Description"
-            placeholder="Describe the work completed..."
+            label="Mô tả công việc"
+            placeholder="Mô tả công việc đã hoàn thành..."
             value={formData.workDescription || ''}
             onChangeText={(text) => setFormData({ ...formData, workDescription: text })}
             multiline
@@ -239,7 +254,7 @@ export const CompleteTaskScreen = () => {
 
           {/* Actual Area Covered */}
           <Input
-            label="Actual Area Covered (ha)"
+            label="Diện tích thực tế (ha)"
             placeholder="0.00"
             value={formData.actualAreaCovered?.toString() || ''}
             onChangeText={(text) => {
@@ -254,7 +269,7 @@ export const CompleteTaskScreen = () => {
 
           {/* Service Cost */}
           <Input
-            label="Service Cost (₫)"
+            label="Chi phí dịch vụ (₫)"
             placeholder="0"
             value={formData.serviceCost?.toString() || ''}
             onChangeText={(text) => {
@@ -269,8 +284,8 @@ export const CompleteTaskScreen = () => {
 
           {/* Service Notes */}
           <Input
-            label="Service Notes"
-            placeholder="Additional notes about the service..."
+            label="Ghi chú dịch vụ"
+            placeholder="Ghi chú thêm về dịch vụ..."
             value={formData.serviceNotes || ''}
             onChangeText={(text) => setFormData({ ...formData, serviceNotes: text })}
             multiline
@@ -280,16 +295,16 @@ export const CompleteTaskScreen = () => {
 
           {/* Weather Conditions */}
           <Input
-            label="Weather Conditions"
-            placeholder="e.g., Sunny, Rainy, Cloudy..."
+            label="Điều kiện thời tiết"
+            placeholder="Ví dụ: Nắng, Mưa, Nhiều mây..."
             value={formData.weatherConditions || ''}
             onChangeText={(text) => setFormData({ ...formData, weatherConditions: text })}
           />
 
           {/* Interruption Reason */}
           <Input
-            label="Interruption Reason (if any)"
-            placeholder="Reason for interruption..."
+            label="Lý do gián đoạn (nếu có)"
+            placeholder="Lý do gián đoạn..."
             value={formData.interruptionReason || ''}
             onChangeText={(text) => setFormData({ ...formData, interruptionReason: text })}
             multiline
@@ -301,20 +316,20 @@ export const CompleteTaskScreen = () => {
           {formData.materials && formData.materials.length > 0 && (
             <>
               <Spacer size="md" />
-              <BodySemibold style={styles.sectionTitle}>Materials Used</BodySemibold>
+              <BodySemibold style={styles.sectionTitle}>Vật liệu đã sử dụng</BodySemibold>
               <Spacer size="sm" />
               {formData.materials.map((material: any) => (
                 <Card key={material.materialId} variant="elevated" style={styles.materialCard}>
                   <BodySemibold>{material.materialName}</BodySemibold>
                   <BodySmall color={colors.textSecondary}>
-                    Unit: {material.materialUnit}
+                    Đơn vị: {material.materialUnit}
                   </BodySmall>
                   <BodySmall color={colors.textSecondary}>
-                    Planned: {material.plannedQuantityTotal.toLocaleString()}
+                    Dự kiến: {material.plannedQuantityTotal.toLocaleString()}
                   </BodySmall>
                   <Spacer size="sm" />
                   <Input
-                    label="Actual Quantity Used"
+                    label="Số lượng thực tế đã dùng"
                     placeholder="0"
                     value={materialQuantities[material.materialId]?.quantity || ''}
                     onChangeText={(text) =>
@@ -327,8 +342,8 @@ export const CompleteTaskScreen = () => {
                     keyboardType="decimal-pad"
                   />
                   <Input
-                    label="Notes (optional)"
-                    placeholder="Notes about this material..."
+                    label="Ghi chú (tùy chọn)"
+                    placeholder="Ghi chú về vật liệu này..."
                     value={materialQuantities[material.materialId]?.notes || ''}
                     onChangeText={(text) =>
                       updateMaterialQuantity(
@@ -348,7 +363,7 @@ export const CompleteTaskScreen = () => {
 
           {/* Proof Images */}
           <Spacer size="md" />
-          <BodySemibold style={styles.sectionTitle}>Proof Images</BodySemibold>
+          <BodySemibold style={styles.sectionTitle}>Ảnh minh chứng</BodySemibold>
           <Spacer size="sm" />
           <View style={styles.imageButtonRow}>
             <Button
@@ -357,7 +372,8 @@ export const CompleteTaskScreen = () => {
               onPress={showImagePickerOptions}
               style={styles.addImageButton}
             >
-              📷 Add Images
+              <Ionicons name="camera-outline" size={18} color={greenTheme.primary} style={{ marginRight: 4 }} />
+              Thêm ảnh
             </Button>
           </View>
           <Spacer size="sm" />
@@ -385,11 +401,12 @@ export const CompleteTaskScreen = () => {
             fullWidth
             size="lg"
             disabled={createFarmLogMutation.isPending}
+            style={{ backgroundColor: greenTheme.primary }}
           >
             {createFarmLogMutation.isPending ? (
               <ActivityIndicator color={colors.white} />
             ) : (
-              'Submit Farm Log'
+              'Gửi nhật ký nông trại'
             )}
           </Button>
 
@@ -400,10 +417,22 @@ export const CompleteTaskScreen = () => {
   );
 };
 
+// Green theme colors for farmer-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.background,
   },
   keyboardView: {
     flex: 1,
@@ -413,39 +442,68 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: getSpacing(spacing.md),
+    backgroundColor: greenTheme.cardBackground,
+    paddingBottom: getSpacing(spacing.sm),
+    borderBottomWidth: 1,
+    borderBottomColor: greenTheme.border,
   },
   backButton: {
     width: scale(40),
     height: scale(40),
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: moderateScale(borderRadius.full),
+    backgroundColor: greenTheme.primaryLighter,
   },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
     fontSize: getFontSize(20),
+    color: greenTheme.primary,
+    fontWeight: '700',
   },
   headerRight: {
     width: scale(40),
   },
   infoCard: {
     padding: getSpacing(spacing.md),
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: moderateScale(borderRadius.lg),
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   taskName: {
     fontSize: getFontSize(16),
     marginBottom: getSpacing(spacing.xs),
+    color: greenTheme.primary,
+    fontWeight: '700',
   },
   textArea: {
     minHeight: verticalScale(80),
     textAlignVertical: 'top',
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: moderateScale(borderRadius.md),
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
   sectionTitle: {
     fontSize: getFontSize(16),
     marginBottom: getSpacing(spacing.xs),
+    color: greenTheme.primary,
+    fontWeight: '700',
   },
   materialCard: {
     padding: getSpacing(spacing.md),
     marginBottom: getSpacing(spacing.md),
+    backgroundColor: greenTheme.primaryLighter,
+    borderRadius: moderateScale(borderRadius.lg),
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
   imageButtonRow: {
     flexDirection: 'row',
@@ -453,6 +511,8 @@ const styles = StyleSheet.create({
   },
   addImageButton: {
     alignSelf: 'flex-start',
+    borderColor: greenTheme.primary,
+    backgroundColor: greenTheme.primaryLighter,
   },
   imageGrid: {
     flexDirection: 'row',
@@ -465,6 +525,10 @@ const styles = StyleSheet.create({
     height: scale(100),
     marginRight: getSpacing(spacing.sm),
     marginBottom: getSpacing(spacing.sm),
+    borderRadius: moderateScale(borderRadius.md),
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: greenTheme.border,
   },
   image: {
     width: '100%',
@@ -481,6 +545,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.error,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: greenTheme.cardBackground,
   },
 });
-

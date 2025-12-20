@@ -15,9 +15,10 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueries } from '@tanstack/react-query';
-import MapView, { Marker, Polygon as MapPolygon, Region} from 'react-native-maps';
 import { colors, spacing, borderRadius, shadows } from '../../theme';
+import { Coordinate } from '../../types/coordinates';
 import { scale, moderateScale, getFontSize, getSpacing, isTablet, verticalScale } from '../../utils/responsive';
 import {
   Container,
@@ -30,6 +31,9 @@ import {
   Spacer,
   Button,
   Spinner,
+  MapboxMap,
+  PolygonData,
+  MarkerData,
 } from '../../components/ui';
 import { FarmerPlot } from '../../types/api';
 import { getCurrentFarmerPlots, getPlotCultivationPlans } from '../../libs/farmer';
@@ -139,30 +143,30 @@ const FieldCard = ({ field, onPressCard, onFocusOnMap, hasCultivationPlans, onRe
       <TouchableOpacity onPress={onPressCard} activeOpacity={0.85}>
         <View style={styles.fieldCardHeader}>
           <View style={styles.fieldIcon}>
-            <Body>🌾</Body>
+            <Ionicons name="leaf-outline" size={24} color={greenTheme.primary} />
           </View>
           <View style={styles.fieldInfo}>
             <BodySemibold>{field.groupName}</BodySemibold>
             <BodySmall color={colors.textSecondary}>
-              Plot #{field.soThua} • Sheet #{field.soTo}
+              Thửa #{field.soThua} • Tờ #{field.soTo}
             </BodySmall>
           </View>
           <TouchableOpacity onPress={onFocusOnMap}>
-            <Body color={colors.primary}>📍</Body>
+            <Ionicons name="location-outline" size={20} color={greenTheme.primary} />
           </TouchableOpacity>
         </View>
         <Spacer size="md" />
         <View style={styles.fieldDetails}>
           <View style={styles.fieldDetailItem}>
-            <BodySmall color={colors.textSecondary}>Area</BodySmall>
+            <BodySmall color={colors.textSecondary}>Diện tích</BodySmall>
             <BodySemibold>{field.area} ha</BodySemibold>
           </View>
           <View style={styles.fieldDetailItem}>
-            <BodySmall color={colors.textSecondary}>Status</BodySmall>
+            <BodySmall color={colors.textSecondary}>Trạng thái</BodySmall>
             <BodySemibold>{field.status}</BodySemibold>
           </View>
           <View style={styles.fieldDetailItem}>
-            <BodySmall color={colors.textSecondary}>Active alerts</BodySmall>
+            <BodySmall color={colors.textSecondary}>Cảnh báo</BodySmall>
             <BodySemibold>{field.activeAlerts}</BodySemibold>
           </View>
         </View>
@@ -175,7 +179,7 @@ const FieldCard = ({ field, onPressCard, onFocusOnMap, hasCultivationPlans, onRe
           onPress={onPressCard}
           style={styles.actionButton}
         >
-          View plans
+          Xem kế hoạch
         </Button>
         {hasCultivationPlans && (
           <Button
@@ -184,7 +188,7 @@ const FieldCard = ({ field, onPressCard, onFocusOnMap, hasCultivationPlans, onRe
             onPress={onReportIssue}
             style={styles.actionButton}
           >
-            Report Issue
+            Báo cáo vấn đề
           </Button>
         )}
       </View>
@@ -197,11 +201,22 @@ export const FieldsScreen = () => {
   const router = useRouter();
   const { data: user } = useUser();
   const { width: screenWidth } = useWindowDimensions();
-  const mapRef = useRef<MapView | null>(null);
-  const fullscreenMapRef = useRef<MapView | null>(null);
+  const mapRef = useRef<any>(null);
+  const fullscreenMapRef = useRef<any>(null);
+  const cameraRef = useRef<any>(null);
+  const fullscreenCameraRef = useRef<any>(null);
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
-  const [pendingRegion, setPendingRegion] = useState<Region | null>(null);
+  const [pendingRegion, setPendingRegion] = useState<{
+    latitude: number;
+    longitude: number;
+    latitudeDelta: number;
+    longitudeDelta: number;
+  } | null>(null);
   const [addresses, setAddresses] = useState<{ [plotId: string]: string }>({});
+  const [selectedPlotInfo, setSelectedPlotInfo] = useState<{
+    plot: FarmerPlot;
+    coordinate: Coordinate;
+  } | null>(null);
   const {
     data: plots,
     isLoading,
@@ -329,6 +344,27 @@ export const FieldsScreen = () => {
     return DEFAULT_CENTER;
   }, [pointMarkers, polygonOverlays]);
 
+  // Convert to Mapbox format
+  const mapboxPolygons = useMemo<PolygonData[]>(() => {
+    return polygonOverlays.map((polygon) => ({
+      id: polygon.plotId,
+      coordinates: polygon.coordinates,
+      strokeColor: '#2E7D32', // Forest green
+      fillColor: 'rgba(46, 125, 50, 0.25)', // Light green fill
+      strokeWidth: 2,
+    }));
+  }, [polygonOverlays]);
+
+  const mapboxMarkers = useMemo<MarkerData[]>(() => {
+    return pointMarkers.map((marker) => ({
+      id: marker.plotId,
+      coordinate: marker.coordinate,
+      title: marker.groupName,
+      description: marker.address,
+      color: greenTheme.primary,
+    }));
+  }, [pointMarkers]);
+
   const totalAreaHa = useMemo(() => {
     if (!plots || plots.length === 0) return 0;
     return plots.reduce((sum, plot) => sum + (plot.area || 0), 0);
@@ -361,27 +397,52 @@ export const FieldsScreen = () => {
     return <Spinner fullScreen />;
   }
 
+  const handlePolygonPress = (polygonId: string, coordinate: Coordinate) => {
+    console.log('[FieldsScreen] Polygon pressed:', polygonId, coordinate);
+    const plot = plots?.find((p) => p.plotId === polygonId);
+    if (plot) {
+      console.log('[FieldsScreen] Found plot:', plot.groupName);
+      setSelectedPlotInfo({ plot, coordinate });
+    } else {
+      console.warn('[FieldsScreen] Plot not found for ID:', polygonId);
+    }
+  };
+
   const focusOnPlot = (plot: FarmerPlot, expand?: boolean) => {
     const coordinate = parsePointWkt(plot.coordinate);
     if (!coordinate) return;
 
-    const region: Region = {
+    const region = {
       latitude: coordinate.latitude,
       longitude: coordinate.longitude,
       latitudeDelta: 0.02,
       longitudeDelta: 0.02,
     };
 
-    if (mapRef.current) {
-      mapRef.current.animateToRegion(region, 500);
+    const center = {
+      longitude: region.longitude,
+      latitude: region.latitude,
+    };
+    const zoomLevel = Math.max(8, Math.min(20, Math.log2(360 / Math.max(region.latitudeDelta, 0.001))));
+
+    if (cameraRef.current) {
+      cameraRef.current.setCamera({
+        centerCoordinate: [center.longitude, center.latitude],
+        zoomLevel,
+        animationDuration: 500,
+      });
     }
 
     if (expand) {
       setPendingRegion(region);
       setIsMapFullscreen(true);
       requestAnimationFrame(() => {
-        if (fullscreenMapRef.current) {
-          fullscreenMapRef.current.animateToRegion(region, 500);
+        if (fullscreenCameraRef.current) {
+          fullscreenCameraRef.current.setCamera({
+            centerCoordinate: [center.longitude, center.latitude],
+            zoomLevel,
+            animationDuration: 500,
+          });
         }
       });
     }
@@ -396,13 +457,7 @@ export const FieldsScreen = () => {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Body>←</Body>
           </TouchableOpacity>
-          <H3 style={styles.headerTitle}>My Fields</H3>
-          <TouchableOpacity
-            onPress={() => router.push('/farmer/fields/add' as any)}
-            style={styles.addButton}
-          >
-            <Body color={colors.primary}>+</Body>
-          </TouchableOpacity>
+          <H3 style={styles.headerTitle}>Danh sách thửa đất</H3>
         </View>
 
         <Spacer size="lg" />
@@ -410,11 +465,11 @@ export const FieldsScreen = () => {
         {/* Summary */}
         <View style={styles.summaryRow}>
           <Card variant="flat" style={styles.summaryCard}>
-            <BodySmall color={colors.textSecondary}>Total fields</BodySmall>
+            <BodySmall color={colors.textSecondary}>Tổng số thửa</BodySmall>
             <H4>{plots?.length ?? 0}</H4>
           </Card>
           <Card variant="flat" style={styles.summaryCard}>
-            <BodySmall color={colors.textSecondary}>Total area</BodySmall>
+            <BodySmall color={colors.textSecondary}>Tổng diện tích</BodySmall>
             <H4>{totalAreaHa.toFixed(2)} ha</H4>
           </Card>
         </View>
@@ -430,38 +485,80 @@ export const FieldsScreen = () => {
               setIsMapFullscreen(true);
             }}
           >
-            <Body color={colors.white}>Full Screen</Body>
+            <Body color={colors.white}>Toàn màn hình</Body>
           </TouchableOpacity>
-          <MapView
-            ref={mapRef}
-            style={styles.map}
-            initialRegion={mapRegion}
-            mapType="hybrid"
-            showsBuildings={true}
-            showsPointsOfInterest={true}
-            showsTraffic={false}
-            showsCompass={true}
-            showsScale={true}
-          >
-            {polygonOverlays.map((polygon) => (
-              <MapPolygon
-                key={polygon.plotId}
-                coordinates={polygon.coordinates}
-                strokeColor="#6C5CE7"
-                fillColor="rgba(108, 92, 231, 0.25)"
-                strokeWidth={2}
-              />
-            ))}
-
-            {pointMarkers.map((marker) => (
-              <Marker
-                key={marker.plotId}
-                coordinate={marker.coordinate}
-                title={marker.groupName}
-                description={marker.address}
-              />
-            ))}
-          </MapView>
+          <View style={styles.mapWrapper}>
+            <MapboxMap
+              mapRef={mapRef}
+              cameraRef={cameraRef}
+              initialRegion={mapRegion}
+              polygons={mapboxPolygons}
+              markers={mapboxMarkers}
+              onPolygonPress={handlePolygonPress}
+              style={styles.map}
+            />
+            {selectedPlotInfo && (
+              <View style={styles.infoTagContainer}>
+                <Card variant="elevated" style={styles.infoTag}>
+                  <TouchableOpacity
+                    style={styles.infoTagClose}
+                    onPress={() => setSelectedPlotInfo(null)}
+                  >
+                    <Ionicons name="close" size={18} color={greenTheme.primary} />
+                  </TouchableOpacity>
+                  <BodySemibold style={styles.infoTagTitle}>
+                    {selectedPlotInfo.plot.groupName}
+                  </BodySemibold>
+                  <Spacer size="xs" />
+                  <BodySmall color={colors.textSecondary}>
+                    Thửa #{selectedPlotInfo.plot.soThua} • Tờ #{selectedPlotInfo.plot.soTo}
+                  </BodySmall>
+                  <Spacer size="xs" />
+                  <View style={styles.infoTagDetails}>
+                    <View style={styles.infoTagDetailItem}>
+                      <BodySmall color={colors.textSecondary}>Diện tích:</BodySmall>
+                      <BodySemibold>{selectedPlotInfo.plot.area} ha</BodySemibold>
+                    </View>
+                    <View style={styles.infoTagDetailItem}>
+                      <BodySmall color={colors.textSecondary}>Trạng thái:</BodySmall>
+                      <BodySemibold>{selectedPlotInfo.plot.status}</BodySemibold>
+                    </View>
+                  </View>
+                  <Spacer size="sm" />
+                  <View style={styles.infoTagActions}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onPress={() => {
+                        setSelectedPlotInfo(null);
+                        focusOnPlot(selectedPlotInfo.plot, true);
+                      }}
+                      style={styles.infoTagButton}
+                    >
+                      Xem trên bản đồ
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onPress={() => {
+                        setSelectedPlotInfo(null);
+                        router.push({
+                          pathname: '/farmer/fields/[plotId]/plans',
+                          params: {
+                            plotId: selectedPlotInfo.plot.plotId,
+                            plotName: selectedPlotInfo.plot.groupName,
+                          },
+                        } as any);
+                      }}
+                      style={styles.infoTagButton}
+                    >
+                      Xem kế hoạch
+                    </Button>
+                  </View>
+                </Card>
+              </View>
+            )}
+          </View>
         </Card>
 
         <Modal visible={isMapFullscreen} animationType="slide">
@@ -478,63 +575,82 @@ export const FieldsScreen = () => {
                 size="sm"
                 onPress={() => {
                   const target = mapRegion;
-                  if (fullscreenMapRef.current) {
-                    fullscreenMapRef.current.animateToRegion(target, 500);
+                  if (fullscreenCameraRef.current) {
+                    const center = {
+                      longitude: target.longitude,
+                      latitude: target.latitude,
+                    };
+                    const zoomLevel = Math.max(8, Math.min(20, Math.log2(360 / Math.max(target.latitudeDelta, 0.001))));
+                    fullscreenCameraRef.current.setCamera({
+                      centerCoordinate: [center.longitude, center.latitude],
+                      zoomLevel,
+                      animationDuration: 500,
+                    });
                   }
                 }}
               >
                 Reset View
               </Button>
             </View>
-            <MapView
-              ref={fullscreenMapRef}
-              style={styles.fullscreenMap}
+            <MapboxMap
+              mapRef={fullscreenMapRef}
+              cameraRef={fullscreenCameraRef}
               initialRegion={mapRegion}
-              mapType="hybrid"
-              showsBuildings={true}
-              showsPointsOfInterest={true}
-              showsTraffic={false}
-              showsCompass={true}
-              showsScale={true}
-            >
-              {polygonOverlays.map((polygon) => (
-                <MapPolygon
-                  key={polygon.plotId}
-                  coordinates={polygon.coordinates}
-                  strokeColor="#6C5CE7"
-                  fillColor="rgba(108, 92, 231, 0.25)"
-                  strokeWidth={2}
-                />
-              ))}
-
-              {pointMarkers.map((marker) => (
-                <Marker
-                  key={marker.plotId}
-                  coordinate={marker.coordinate}
-                  title={marker.groupName}
-                  description={marker.address}
-                />
-              ))}
-            </MapView>
+              polygons={mapboxPolygons}
+              markers={mapboxMarkers}
+              onPolygonPress={handlePolygonPress}
+              style={styles.fullscreenMap}
+            />
+            {selectedPlotInfo && (
+              <View style={styles.infoTagContainer}>
+                <Card variant="elevated" style={styles.infoTag}>
+                  <TouchableOpacity
+                    style={styles.infoTagClose}
+                    onPress={() => setSelectedPlotInfo(null)}
+                  >
+                    <Ionicons name="close" size={18} color={greenTheme.primary} />
+                  </TouchableOpacity>
+                  <BodySemibold style={styles.infoTagTitle}>
+                    {selectedPlotInfo.plot.groupName}
+                  </BodySemibold>
+                  <Spacer size="xs" />
+                  <BodySmall color={colors.textSecondary}>
+                    Thửa #{selectedPlotInfo.plot.soThua} • Tờ #{selectedPlotInfo.plot.soTo}
+                  </BodySmall>
+                  <Spacer size="xs" />
+                  <View style={styles.infoTagDetails}>
+                    <View style={styles.infoTagDetailItem}>
+                      <BodySmall color={colors.textSecondary}>Diện tích:</BodySmall>
+                      <BodySemibold>{selectedPlotInfo.plot.area} ha</BodySemibold>
+                    </View>
+                    <View style={styles.infoTagDetailItem}>
+                      <BodySmall color={colors.textSecondary}>Trạng thái:</BodySmall>
+                      <BodySemibold>{selectedPlotInfo.plot.status}</BodySemibold>
+                    </View>
+                  </View>
+                  <Spacer size="sm" />
+                </Card>
+              </View>
+            )}
           </SafeAreaView>
         </Modal>
 
         <Spacer size="xl" />
 
         {/* Fields List */}
-        <H4>All Fields {plots ? `(${plots.length})` : ''}</H4>
+        <H4>Tất cả các thửa đất của tôi {plots ? `(${plots.length})` : ''}</H4>
         <Spacer size="md" />
 
         {isError && (
           <Card variant="elevated" style={styles.errorCard}>
-            <BodySemibold>Unable to load plots</BodySemibold>
+            <BodySemibold>Không thể tải các thửa đất</BodySemibold>
             <Spacer size="xs" />
             <BodySmall color={colors.textSecondary}>
-              Please check your connection and try again.
+              Vui lòng kiểm tra kết nối của bạn và thử lại.
             </BodySmall>
             <Spacer size="md" />
             <Button onPress={() => refetch()} size="sm">
-              Try Again
+              Thử lại
             </Button>
           </Card>
         )}
@@ -547,10 +663,10 @@ export const FieldsScreen = () => {
         >
           {plots && plots.length === 0 && (
             <Card variant="flat" style={styles.emptyState}>
-              <BodySemibold>No plots found</BodySemibold>
+              <BodySemibold>Không tìm thấy các thửa đất</BodySemibold>
               <Spacer size="xs" />
               <BodySmall color={colors.textSecondary}>
-                Once your plots are assigned, they will appear here.
+                Khi các thửa đất được gán, chúng sẽ hiện ra ở đây.
               </BodySmall>
             </Card>
           )}
@@ -581,27 +697,47 @@ export const FieldsScreen = () => {
   );
 };
 
+// Green theme colors for farmer-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: getSpacing(spacing.md),
+    backgroundColor: greenTheme.cardBackground,
+    paddingBottom: getSpacing(spacing.sm),
+    borderBottomWidth: 1,
+    borderBottomColor: greenTheme.border,
   },
   backButton: {
     width: scale(40),
     height: scale(40),
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: moderateScale(borderRadius.full),
+    backgroundColor: greenTheme.primaryLighter,
   },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
     fontSize: getFontSize(20),
+    color: greenTheme.primary,
+    fontWeight: '700',
   },
   addButton: {
     width: scale(40),
@@ -613,6 +749,19 @@ const styles = StyleSheet.create({
     height: verticalScale(220),
     padding: 0,
     overflow: 'hidden',
+    borderRadius: moderateScale(borderRadius.lg),
+    backgroundColor: greenTheme.cardBackground,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  mapWrapper: {
+    flex: 1,
+    position: 'relative',
   },
   map: {
     flex: 1,
@@ -622,25 +771,29 @@ const styles = StyleSheet.create({
     top: getSpacing(spacing.sm),
     right: getSpacing(spacing.sm),
     zIndex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: greenTheme.primary,
     paddingHorizontal: getSpacing(spacing.md),
     paddingVertical: getSpacing(spacing.xs),
     borderRadius: moderateScale(borderRadius.md),
+    opacity: 0.9,
   },
   fullscreenMapContainer: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.background,
   },
   fullscreenHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: getSpacing(spacing.md),
+    backgroundColor: greenTheme.cardBackground,
+    borderBottomWidth: 1,
+    borderBottomColor: greenTheme.border,
   },
   closeButton: {
     paddingHorizontal: getSpacing(spacing.md),
     paddingVertical: getSpacing(spacing.sm),
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: greenTheme.primaryLighter,
     borderRadius: moderateScale(borderRadius.sm),
   },
   fullscreenMap: {
@@ -656,11 +809,21 @@ const styles = StyleSheet.create({
     paddingVertical: getSpacing(spacing.md),
     paddingHorizontal: getSpacing(spacing.md),
     borderRadius: moderateScale(borderRadius.lg),
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: greenTheme.primaryLighter,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
   fieldCard: {
     padding: getSpacing(spacing.md),
     borderRadius: moderateScale(borderRadius.lg),
+    backgroundColor: greenTheme.cardBackground,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   fieldCardHeader: {
     flexDirection: 'row',
@@ -671,7 +834,7 @@ const styles = StyleSheet.create({
     width: scale(48),
     height: scale(48),
     borderRadius: moderateScale(borderRadius.md),
-    backgroundColor: colors.primaryLighter,
+    backgroundColor: greenTheme.primaryLighter,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -689,6 +852,8 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
+    borderColor: greenTheme.primary,
+    backgroundColor: greenTheme.primaryLighter,
   },
   buttonRow: {
     flexDirection: 'row',
@@ -698,10 +863,70 @@ const styles = StyleSheet.create({
     padding: getSpacing(spacing.lg),
     alignItems: 'flex-start',
     gap: getSpacing(spacing.sm),
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: moderateScale(borderRadius.lg),
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
   emptyState: {
     padding: getSpacing(spacing.lg),
     alignItems: 'flex-start',
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: moderateScale(borderRadius.lg),
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+  },
+  infoTagContainer: {
+    position: 'absolute',
+    bottom: getSpacing(spacing.lg),
+    left: getSpacing(spacing.lg),
+    right: getSpacing(spacing.lg),
+    zIndex: 1000,
+  },
+  infoTag: {
+    padding: getSpacing(spacing.md),
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: moderateScale(borderRadius.lg),
+    borderWidth: 2,
+    borderColor: greenTheme.primary,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  infoTagClose: {
+    position: 'absolute',
+    top: getSpacing(spacing.sm),
+    right: getSpacing(spacing.sm),
+    width: scale(28),
+    height: scale(28),
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: moderateScale(borderRadius.full),
+    backgroundColor: greenTheme.primaryLighter,
+  },
+  infoTagTitle: {
+    fontSize: getFontSize(16),
+    color: greenTheme.primary,
+    paddingRight: getSpacing(spacing.xl),
+  },
+  infoTagDetails: {
+    gap: getSpacing(spacing.xs),
+  },
+  infoTagDetailItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  infoTagActions: {
+    flexDirection: 'row',
+    gap: getSpacing(spacing.sm),
+  },
+  infoTagButton: {
+    flex: 1,
+    borderColor: greenTheme.primary,
+    backgroundColor: greenTheme.primaryLighter,
   },
 });
 

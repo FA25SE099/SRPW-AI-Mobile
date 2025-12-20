@@ -21,6 +21,7 @@ import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { colors, spacing } from '../../theme';
 import { env } from '../../configs/env';
+import { uploadFile } from '../../libs/api-client';
 
 // Types for API Response
 interface PestLocation {
@@ -143,62 +144,39 @@ export const DiseaseScannerScreen = () => {
 
   const analyzeImage = async (imageUri: string) => {
     try {
-      // Create FormData for file upload
       const formData = new FormData();
-      
-      // Format the file for React Native
       const filename = imageUri.split('/').pop() || 'rice_plant.jpg';
       const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `image/${match[1]}` : 'image/jpeg';
-      
-      // Validate file extension
+      let type = match ? `image/${match[1].toLowerCase()}` : 'image/jpeg';
+      if (type === 'image/jpg') type = 'image/jpeg';
+
       const extension = match ? match[1].toLowerCase() : 'jpg';
       if (!['jpg', 'jpeg', 'png'].includes(extension)) {
         Alert.alert('Invalid File', 'Please select a .jpg, .jpeg, or .png image file.');
         setIsScanning(false);
         return;
       }
-      
-      // Append file to FormData with key 'files' as per API specification
+
+      // The key 'files' is expected by the backend API
       formData.append('files', {
         uri: imageUri,
         name: filename,
         type: type,
       } as any);
-      
+
       console.log('📤 Uploading image to rice pest detection API...');
-      
-      // Call your rice pest detection API
-      const apiUrl = `${env.API_URL}/rice/check-pest`;
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Accept': 'application/json',
-          // Note: Don't set Content-Type for FormData, let the browser/RN set it with boundary
-        },
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API Error Response:', errorText);
-        throw new Error(`API request failed with status ${response.status}`);
-      }
-      
-      const results: PestDetectionResult[] = await response.json();
+      const results = await uploadFile('/rice/check-pest', formData) as PestDetectionResult[];
       console.log('✅ Pest detection completed:', results);
 
       setIsScanning(false);
-      
-      // Get the first result (API returns an array)
+
       const result = results[0];
-      
+
       if (!result) {
         Alert.alert('No Results', 'No pest detection results received from the server.');
         return;
       }
-      
-      // Navigate to results screen with data
+
       router.push({
         pathname: '/farmer/disease-results',
         params: {
@@ -206,12 +184,12 @@ export const DiseaseScannerScreen = () => {
           resultData: JSON.stringify(result),
         },
       } as any);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error analyzing image:', error);
       Alert.alert(
-        'Error', 
-        'Failed to analyze image. Please check your internet connection and try again.',
-        [{ text: 'OK' }]
+        'Error',
+        error.message || 'Failed to analyze image. Please check your internet connection and try again.',
+        [{ text: 'OK' }],
       );
       setIsScanning(false);
     }
@@ -231,36 +209,35 @@ export const DiseaseScannerScreen = () => {
         >
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Disease Scanner</Text>
-        <View style={styles.backButton} />
+        <Text style={styles.headerTitle}>Quét sâu bệnh</Text>
+        <View style={styles.backButton} />  
       </View>
 
       {/* Camera View */}
       <View style={styles.cameraContainer}>
         <CameraView
-          // @ts-expect-error
           ref={cameraRef}
           style={styles.camera}
           facing={facing}
-        >
-          {/* Scanning Frame */}
-          <View style={styles.scanFrame}>
-            <View style={[styles.corner, styles.topLeft]} />
-            <View style={[styles.corner, styles.topRight]} />
-            <View style={[styles.corner, styles.bottomLeft]} />
-            <View style={[styles.corner, styles.bottomRight]} />
-            
-            {/* Center Line */}
-            <View style={styles.scanLine} />
-          </View>
+        />
 
-          {/* Instructions */}
-          <View style={styles.instructionContainer}>
-            <Text style={styles.instructionText}>
-              Position the plant within the frame
-            </Text>
-          </View>
-        </CameraView>
+        {/* Scanning Frame */}
+        <View style={styles.scanFrame}>
+          <View style={[styles.corner, styles.topLeft]} />
+          <View style={[styles.corner, styles.topRight]} />
+          <View style={[styles.corner, styles.bottomLeft]} />
+          <View style={[styles.corner, styles.bottomRight]} />
+          
+          {/* Center Line */}
+          <View style={styles.scanLine} />
+        </View>
+
+        {/* Instructions */}
+        <View style={styles.instructionContainer}>
+          <Text style={styles.instructionText}>
+            Đặt cây trong khung hình để quét
+          </Text>
+        </View>
       </View>
 
       {/* Controls */}
@@ -372,7 +349,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scanFrame: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.xl * 2,
@@ -488,4 +469,3 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
-

@@ -16,7 +16,6 @@ import {
   Image,
 } from 'react-native';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
-import MapView, { Marker, Polygon as MapPolygon, Polyline, Region } from 'react-native-maps';
 import dayjs from 'dayjs';
 import { useQuery } from '@tanstack/react-query';
 import { colors, spacing, borderRadius, shadows } from '../../theme';
@@ -32,7 +31,12 @@ import {
   Spacer,
   Button,
   Spinner,
+  MapboxMap,
+  PolygonData,
+  MarkerData,
+  PolylineData,
 } from '../../components/ui';
+import { Coordinate } from '../../types/coordinates';
 import { getUavOrderDetail } from '../../libs/uav';
 import { UavOrderDetail } from '../../types/api';
 
@@ -43,12 +47,26 @@ const DEFAULT_CENTER = {
   longitudeDelta: 0.05,
 };
 
+// Green theme colors for farmer-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
+
 export const UavOrderDetailScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
   const orderId = params.orderId as string;
-  const mapRef = useRef<MapView | null>(null);
-  const fullscreenMapRef = useRef<MapView | null>(null);
+  const mapRef = useRef<any>(null);
+  const fullscreenMapRef = useRef<any>(null);
+  const cameraRef = useRef<any>(null);
+  const fullscreenCameraRef = useRef<any>(null);
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
   const [expandedProofs, setExpandedProofs] = useState<Record<string, boolean>>({});
   const [focusedPlotId, setFocusedPlotId] = useState<string | null>(null);
@@ -94,6 +112,46 @@ export const UavOrderDetailScreen = () => {
       return DEFAULT_CENTER;
     }
     return getRegionFromPoints(points);
+  }, [assignmentPolygons, focusedPlotId]);
+
+  // Convert to Mapbox format
+  const mapboxPolygons = useMemo<PolygonData[]>(() => {
+    return assignmentPolygons.map((polygon) => ({
+      id: polygon.plotId,
+      coordinates: polygon.coordinates,
+      strokeColor:
+        focusedPlotId && focusedPlotId === polygon.plotId
+          ? greenTheme.primary
+          : getStatusColor(polygon.status),
+      fillColor:
+        focusedPlotId && focusedPlotId === polygon.plotId
+          ? `${greenTheme.primary}40`
+          : `${getStatusColor(polygon.status)}30`,
+      strokeWidth: focusedPlotId && focusedPlotId === polygon.plotId ? 3 : 2,
+    }));
+  }, [assignmentPolygons, focusedPlotId]);
+
+  const mapboxPolylines = useMemo<PolylineData[]>(() => {
+    if (routeCoordinates.length === 0) return [];
+    return [
+      {
+        id: 'route',
+        coordinates: routeCoordinates,
+        strokeColor: greenTheme.primary,
+        strokeWidth: 3,
+      },
+    ];
+  }, [routeCoordinates]);
+
+  const mapboxMarkers = useMemo<MarkerData[]>(() => {
+    if (assignmentPolygons.length === 0) return [];
+    return [
+      {
+        id: 'first-plot',
+        coordinate: assignmentPolygons[0].coordinates[0],
+        title: assignmentPolygons[0].plotName,
+      },
+    ];
   }, [assignmentPolygons]);
 
   if (isLoading || !order) {
@@ -163,11 +221,25 @@ export const UavOrderDetailScreen = () => {
       return;
     }
     const region = getRegionFromPoints(polygon.coordinates);
-    if (mapRef.current) {
-      mapRef.current.animateToRegion(region, 500);
+    const center = {
+      longitude: region.longitude,
+      latitude: region.latitude,
+    };
+    const zoomLevel = Math.max(8, Math.min(20, Math.log2(360 / Math.max(region.latitudeDelta, 0.001))));
+    
+    if (cameraRef.current) {
+      cameraRef.current.setCamera({
+        centerCoordinate: [center.longitude, center.latitude],
+        zoomLevel,
+        animationDuration: 500,
+      });
     }
-    if (fullscreenMapRef.current) {
-      fullscreenMapRef.current.animateToRegion(region, 500);
+    if (fullscreenCameraRef.current) {
+      fullscreenCameraRef.current.setCamera({
+        centerCoordinate: [center.longitude, center.latitude],
+        zoomLevel,
+        animationDuration: 500,
+      });
     }
   };
 
@@ -179,7 +251,7 @@ export const UavOrderDetailScreen = () => {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Body>←</Body>
           </TouchableOpacity>
-          <H3 style={styles.headerTitle}>Order Details</H3>
+          <H3 style={styles.headerTitle}>Chi tiết đơn hàng</H3>
           <View style={styles.headerRight} />
         </View>
 
@@ -190,11 +262,11 @@ export const UavOrderDetailScreen = () => {
           <Card variant="elevated" style={styles.card}>
             <View style={styles.orderHeader}>
               <View style={styles.orderInfo}>
-                <BodySmall color={colors.textSecondary}>Order</BodySmall>
+                <BodySmall color={colors.textSecondary}>Đơn hàng</BodySmall>
                 <BodySemibold style={styles.orderNumber}>{order.orderName}</BodySemibold>
                 <BodySmall color={colors.textSecondary}>{order.groupName}</BodySmall>
                 {order.vendorName && (
-                  <BodySmall color={colors.textSecondary}>Vendor: {order.vendorName}</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Nhà cung cấp: {order.vendorName}</BodySmall>
                 )}
               </View>
               <View style={styles.badges}>
@@ -203,7 +275,7 @@ export const UavOrderDetailScreen = () => {
                   style={getStatusBadgeStyle(getStatusColor(order.status))}
                 >
                   <BodySmall style={{ color: getStatusColor(order.status) }}>
-                    {order.status.replace(/([A-Z])/g, ' $1').trim()}
+                    {order.status.replace(/([A-Z])/g, ' $1').trim()} Trạng thái
                   </BodySmall>
                 </Badge>
                 <Spacer size="xs" />
@@ -212,7 +284,7 @@ export const UavOrderDetailScreen = () => {
                   style={getPriorityBadgeStyle(getPriorityColor(order.priority))}
                 >
                   <BodySmall style={{ color: getPriorityColor(order.priority) }}>
-                    {order.priority}
+                    {order.priority} Độ ưu tiên
                   </BodySmall>
                 </Badge>
               </View>
@@ -220,15 +292,15 @@ export const UavOrderDetailScreen = () => {
             <Spacer size="lg" />
             <View style={styles.statRow}>
               <View style={styles.statCard}>
-                <BodySmall color={colors.textSecondary}>Area</BodySmall>
+                <BodySmall color={colors.textSecondary}>Diện tích</BodySmall>
                 <BodySemibold style={styles.statValue}>{order.totalArea.toFixed(2)} ha</BodySemibold>
               </View>
               <View style={styles.statCard}>
-                <BodySmall color={colors.textSecondary}>Plots</BodySmall>
+                <BodySmall color={colors.textSecondary}>Thửa đất</BodySmall>
                 <BodySemibold style={styles.statValue}>{order.totalPlots}</BodySemibold>
               </View>
               <View style={styles.statCard}>
-                <BodySmall color={colors.textSecondary}>Completion</BodySmall>
+                <BodySmall color={colors.textSecondary}>Hoàn thành</BodySmall>
                 <BodySemibold style={styles.statValue}>
                   {order.completionPercentage}%
                 </BodySemibold>
@@ -244,59 +316,28 @@ export const UavOrderDetailScreen = () => {
               style={styles.expandButton}
               onPress={() => setIsMapFullscreen(true)}
             >
-              <Body color={colors.white}>Full Screen</Body>
+              <Body color={colors.white}>Toàn màn hình</Body>
             </TouchableOpacity>
-            <MapView
-              ref={mapRef}
-              style={styles.map}
+            <MapboxMap
+              mapRef={mapRef}
+              cameraRef={cameraRef}
               initialRegion={mapRegion}
-              mapType="hybrid"
-              showsBuildings={true}
-              showsPointsOfInterest={true}
-              showsCompass={true}
-              showsScale={true}
-            >
-              {assignmentPolygons.map((polygon) => (
-                <MapPolygon
-                  key={polygon.plotId}
-                  coordinates={polygon.coordinates}
-                  strokeColor={
-                    focusedPlotId && focusedPlotId === polygon.plotId
-                      ? colors.primary
-                      : getStatusColor(polygon.status)
-                  }
-                  fillColor={
-                    focusedPlotId && focusedPlotId === polygon.plotId
-                      ? `${colors.primary}40`
-                      : `${getStatusColor(polygon.status)}30`
-                  }
-                  strokeWidth={focusedPlotId && focusedPlotId === polygon.plotId ? 3 : 2}
-                />
-              ))}
-              {routeCoordinates.length > 0 && (
-                <Polyline
-                  coordinates={routeCoordinates}
-                  strokeColor={colors.primary}
-                  strokeWidth={3}
-                />
-              )}
-              {assignmentPolygons.length > 0 && (
-                <Marker
-                  coordinate={assignmentPolygons[0].coordinates[0]}
-                  title={assignmentPolygons[0].plotName}
-                />
-              )}
-            </MapView>
+              polygons={mapboxPolygons}
+              markers={mapboxMarkers}
+              polylines={mapboxPolylines}
+              focusedId={focusedPlotId}
+              style={styles.map}
+            />
           </Card>
 
           <Spacer size="md" />
 
           {/* Schedule */}
           <Card variant="elevated" style={styles.card}>
-            <H4>Schedule</H4>
+            <H4>Lịch</H4>
             <Spacer size="md" />
             <View style={styles.infoRow}>
-              <BodySmall color={colors.textSecondary}>Scheduled:</BodySmall>
+              <BodySmall color={colors.textSecondary}>Lịch:</BodySmall>
               <BodySemibold>
                 {dayjs(order.scheduledDate).format('MMM D, YYYY')}
                 {order.scheduledTime ? ` • ${order.scheduledTime}` : ''}
@@ -306,7 +347,7 @@ export const UavOrderDetailScreen = () => {
               <>
                 <Spacer size="sm" />
                 <View style={styles.infoRow}>
-                  <BodySmall color={colors.textSecondary}>Started:</BodySmall>
+                  <BodySmall color={colors.textSecondary}>Bắt đầu:</BodySmall>
                   <BodySemibold>{dayjs(order.startedAt).format('MMM D, YYYY h:mm A')}</BodySemibold>
                 </View>
               </>
@@ -315,7 +356,7 @@ export const UavOrderDetailScreen = () => {
               <>
                 <Spacer size="sm" />
                 <View style={styles.infoRow}>
-                  <BodySmall color={colors.textSecondary}>Completed:</BodySmall>
+                  <BodySmall color={colors.textSecondary}>Hoàn thành:</BodySmall>
                   <BodySemibold>
                     {dayjs(order.completedAt).format('MMM D, YYYY h:mm A')}
                   </BodySemibold>
@@ -324,12 +365,12 @@ export const UavOrderDetailScreen = () => {
             )}
             <Spacer size="sm" />
             <View style={styles.infoRow}>
-              <BodySmall color={colors.textSecondary}>Estimated Cost:</BodySmall>
+              <BodySmall color={colors.textSecondary}>Chi phí dự kiến:</BodySmall>
               <BodySemibold>{order.estimatedCost?.toLocaleString() ?? 0}₫</BodySemibold>
             </View>
             <Spacer size="sm" />
             <View style={styles.infoRow}>
-              <BodySmall color={colors.textSecondary}>Actual Cost:</BodySmall>
+              <BodySmall color={colors.textSecondary}>Chi phí thực tế:</BodySmall>
               <BodySemibold>{order.actualCost?.toLocaleString() ?? 0}₫</BodySemibold>
             </View>
           </Card>
@@ -338,10 +379,10 @@ export const UavOrderDetailScreen = () => {
 
           {/* Materials */}
           <Card variant="elevated" style={styles.card}>
-            <H4>Materials & Dosage</H4>
+            <H4>Vật liệu & Liều lượng</H4>
             <Spacer size="md" />
             {order.materials.length === 0 && (
-              <BodySmall color={colors.textSecondary}>No materials assigned.</BodySmall>
+              <BodySmall color={colors.textSecondary}>Không có vật liệu được gán.</BodySmall>
             )}
             {order.materials.map((material) => (
               <View key={material.materialId} style={styles.materialCard}>
@@ -354,13 +395,13 @@ export const UavOrderDetailScreen = () => {
                 <Spacer size="sm" />
                 <View style={styles.materialDetails}>
                   <View style={styles.materialDetailItem}>
-                    <BodySmall color={colors.textSecondary}>Total Quantity:</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Tổng số lượng:</BodySmall>
                     <BodySemibold>
                       {material.totalQuantityRequired} {material.materialUnit}
                     </BodySemibold>
                   </View>
                   <View style={styles.materialDetailItem}>
-                    <BodySmall color={colors.textSecondary}>Est. Cost:</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Chi phí dự kiến:</BodySmall>
                     <BodySemibold>
                       {material.totalEstimatedCost.toLocaleString()}₫
                     </BodySemibold>
@@ -374,7 +415,7 @@ export const UavOrderDetailScreen = () => {
 
           {/* Plot Assignments */}
           <Card variant="elevated" style={styles.card}>
-            <H4>Plot Assignments</H4>
+            <H4>Gán thửa đất</H4>
             <Spacer size="md" />
             {order.plotAssignments.map((assignment) => (
               <TouchableOpacity
@@ -387,7 +428,7 @@ export const UavOrderDetailScreen = () => {
                   <View>
                     <BodySemibold>{assignment.plotName}</BodySemibold>
                     <BodySmall color={colors.textSecondary}>
-                      Area: {assignment.servicedArea} ha
+                      Diện tích: {assignment.servicedArea} ha
                     </BodySmall>
                   </View>
                   <Badge
@@ -401,14 +442,14 @@ export const UavOrderDetailScreen = () => {
                 </View>
                 <Spacer size="sm" />
                 <View style={styles.assignmentMeta}>
-                  <BodySmall color={colors.textSecondary}>Actual Cost:</BodySmall>
+                  <BodySmall color={colors.textSecondary}>Chi phí thực tế:</BodySmall>
                   <BodySemibold>
                     {assignment.actualCost ? `${assignment.actualCost.toLocaleString()}₫` : '—'}
                   </BodySemibold>
                 </View>
                 {assignment.completionDate && (
                   <View style={styles.assignmentMeta}>
-                    <BodySmall color={colors.textSecondary}>Completed:</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Hoàn thành:</BodySmall>
                     <BodySemibold>
                       {dayjs(assignment.completionDate).format('MMM D, YYYY h:mm A')}
                     </BodySemibold>
@@ -433,9 +474,9 @@ export const UavOrderDetailScreen = () => {
                       }
                     >
                       <BodySmall color={colors.textSecondary}>
-                        Proofs ({assignment.proofUrls.length})
+                        Chứng minh ({assignment.proofUrls.length})
                       </BodySmall>
-                      <Body style={{ color: colors.primary }}>
+                      <Body style={{ color: greenTheme.primary }}>
                         {expandedProofs[assignment.plotId] ? '▲' : '▼'}
                       </Body>
                     </TouchableOpacity>
@@ -478,7 +519,7 @@ export const UavOrderDetailScreen = () => {
                         } as any)
                       }
                     >
-                      <BodySemibold style={styles.reportButtonText}>Report Completion</BodySemibold>
+                      <BodySemibold style={styles.reportButtonText}>Báo cáo hoàn thành</BodySemibold>
                     </TouchableOpacity>
                   </>
                 )}
@@ -497,55 +538,39 @@ export const UavOrderDetailScreen = () => {
                 style={styles.closeButton}
                 onPress={() => setIsMapFullscreen(false)}
               >
-                <Body color={colors.primary}>Close</Body>
+                <Body color={greenTheme.primary} style={{ fontWeight: '600' }}>Đóng</Body>
               </TouchableOpacity>
               <Button
                 variant="outline"
                 size="sm"
                 onPress={() => {
-                  if (fullscreenMapRef.current) {
-                    fullscreenMapRef.current.animateToRegion(mapRegion, 500);
+                  if (fullscreenCameraRef.current) {
+                    const center = {
+                      longitude: mapRegion.longitude,
+                      latitude: mapRegion.latitude,
+                    };
+                    const zoomLevel = Math.max(8, Math.min(20, Math.log2(360 / Math.max(mapRegion.latitudeDelta, 0.001))));
+                    fullscreenCameraRef.current.setCamera({
+                      centerCoordinate: [center.longitude, center.latitude],
+                      zoomLevel,
+                      animationDuration: 500,
+                    });
                   }
                 }}
               >
-                Reset View
+                Đặt lại hiển thị
               </Button>
-            </View>
-            <MapView
-              ref={fullscreenMapRef}
-              style={styles.fullscreenMap}
+            </View> 
+            <MapboxMap
+              mapRef={fullscreenMapRef}
+              cameraRef={fullscreenCameraRef}
               initialRegion={mapRegion}
-              mapType="hybrid"
-              showsBuildings={true}
-              showsPointsOfInterest={true}
-              showsCompass={true}
-              showsScale={true}
-            >
-              {assignmentPolygons.map((polygon) => (
-                <MapPolygon
-                  key={`full-${polygon.plotId}`}
-                  coordinates={polygon.coordinates}
-                  strokeColor={
-                    focusedPlotId && focusedPlotId === polygon.plotId
-                      ? colors.primary
-                      : getStatusColor(polygon.status)
-                  }
-                  fillColor={
-                    focusedPlotId && focusedPlotId === polygon.plotId
-                      ? `${colors.primary}40`
-                      : `${getStatusColor(polygon.status)}30`
-                  }
-                  strokeWidth={focusedPlotId && focusedPlotId === polygon.plotId ? 3 : 2}
-                />
-              ))}
-              {routeCoordinates.length > 0 && (
-                <Polyline
-                  coordinates={routeCoordinates}
-                  strokeColor={colors.primary}
-                  strokeWidth={3}
-                />
-              )}
-            </MapView>
+              polygons={mapboxPolygons}
+              markers={mapboxMarkers}
+              polylines={mapboxPolylines}
+              focusedId={focusedPlotId}
+              style={styles.fullscreenMap}
+            />
           </SafeAreaView>
         </Modal>
       </Container>
@@ -556,7 +581,7 @@ export const UavOrderDetailScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.background,
   },
   errorContainer: {
     flex: 1,
@@ -569,6 +594,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: spacing.md,
+    backgroundColor: greenTheme.cardBackground,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: greenTheme.border,
   },
   backButton: {
     alignSelf: 'flex-start',
@@ -576,16 +605,29 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: borderRadius.full,
+    backgroundColor: greenTheme.primaryLighter,
   },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
+    color: greenTheme.primary,
+    fontWeight: '700',
   },
   headerRight: {
     width: 40,
   },
   card: {
     padding: spacing.md,
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   orderHeader: {
     flexDirection: 'row',
@@ -599,6 +641,8 @@ const styles = StyleSheet.create({
   orderNumber: {
     paddingTop: 5,
     fontSize: 18,
+    color: greenTheme.primary,
+    fontWeight: '700',
   },
   statRow: {
     flexDirection: 'row',
@@ -608,11 +652,15 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: spacing.sm,
     borderRadius: borderRadius.md,
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: greenTheme.primaryLighter,
     alignItems: 'flex-start',
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
   statValue: {
     fontSize: 18,
+    color: greenTheme.primary,
+    fontWeight: '700',
   },
   badges: {
     alignItems: 'flex-end',
@@ -623,18 +671,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: greenTheme.border,
   },
   priorityBadge: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: greenTheme.border,
   },
   mapCard: {
     height: 250,
     padding: 0,
     overflow: 'hidden',
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   map: {
     flex: 1,
@@ -644,25 +701,29 @@ const styles = StyleSheet.create({
     top: spacing.sm,
     right: spacing.sm,
     zIndex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: greenTheme.primary,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.md,
+    opacity: 0.9,
   },
   fullscreenMapContainer: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.background,
   },
   fullscreenHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: spacing.md,
+    backgroundColor: greenTheme.cardBackground,
+    borderBottomWidth: 1,
+    borderBottomColor: greenTheme.border,
   },
   closeButton: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: greenTheme.primaryLighter,
     borderRadius: borderRadius.sm,
   },
   fullscreenMap: {
@@ -676,9 +737,10 @@ const styles = StyleSheet.create({
   assignmentCard: {
     padding: spacing.sm,
     borderWidth: 1,
-    borderColor: colors.borderLight,
+    borderColor: greenTheme.border,
     borderRadius: borderRadius.md,
     marginBottom: spacing.sm,
+    backgroundColor: greenTheme.primaryLighter,
   },
   assignmentHeader: {
     flexDirection: 'row',
@@ -695,11 +757,13 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.full,
     borderWidth: 1,
-    borderColor: colors.primary,
+    borderColor: greenTheme.primary,
     alignItems: 'center',
+    backgroundColor: greenTheme.cardBackground,
   },
   reportButtonText: {
-    color: colors.primary,
+    color: greenTheme.primary,
+    fontWeight: '600',
   },
   proofLink: {
     paddingVertical: spacing.xs / 2,
@@ -717,24 +781,28 @@ const styles = StyleSheet.create({
     width: 120,
     marginRight: spacing.sm,
     borderRadius: borderRadius.md,
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: greenTheme.cardBackground,
     padding: spacing.xs,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
   proofImage: {
     width: '100%',
     height: 80,
     borderRadius: borderRadius.sm,
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.primaryLighter,
   },
   proofCaption: {
     marginTop: spacing.xs / 2,
     fontSize: 10,
   },
   materialCard: {
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: greenTheme.primaryLighter,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
   materialHeader: {
     flexDirection: 'row',
@@ -744,6 +812,9 @@ const styles = StyleSheet.create({
   dosageBadge: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
+    backgroundColor: greenTheme.cardBackground,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
   materialDetails: {
     gap: spacing.xs,
@@ -757,16 +828,14 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingTop: spacing.xs,
     borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
+    borderTopColor: greenTheme.border,
   },
   actionButton: {
     marginTop: spacing.md,
   },
 });
 
-type LatLng = { latitude: number; longitude: number };
-
-const parseWktPolygon = (wkt?: string | null): LatLng[] => {
+const parseWktPolygon = (wkt?: string | null): Coordinate[] => {
   if (!wkt) return [];
   const match = wkt.match(/\(\((.+)\)\)/);
   if (!match) return [];
@@ -779,7 +848,7 @@ const parseWktPolygon = (wkt?: string | null): LatLng[] => {
     });
 };
 
-const parseWktLineString = (wkt?: string | null): LatLng[] => {
+const parseWktLineString = (wkt?: string | null): Coordinate[] => {
   if (!wkt) return [];
   const match = wkt.match(/\((.+)\)/);
   if (!match) return [];
@@ -792,7 +861,12 @@ const parseWktLineString = (wkt?: string | null): LatLng[] => {
     });
 };
 
-const getRegionFromPoints = (points: LatLng[]): Region => {
+const getRegionFromPoints = (points: Coordinate[]): {
+  latitude: number;
+  longitude: number;
+  latitudeDelta: number;
+  longitudeDelta: number;
+} => {
   if (points.length === 0) {
     return DEFAULT_CENTER;
   }

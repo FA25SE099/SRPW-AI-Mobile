@@ -203,7 +203,7 @@ export const DiseaseResultsScreen = () => {
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Processing results...</Text>
+          <Text style={styles.loadingText}>Đang xử lý kết quả...</Text>
         </View>
       </SafeAreaView>
     );
@@ -232,7 +232,7 @@ export const DiseaseResultsScreen = () => {
           <Ionicons name="arrow-back" size={28} color="#1f2937" />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, isSmallScreen && styles.headerTitleSmall]}>
-          Scan Results
+          Kết quả quét
         </Text>
         <TouchableOpacity 
           style={styles.shareButton} 
@@ -285,7 +285,6 @@ export const DiseaseResultsScreen = () => {
                         
                         return (
                           <Polygon
-                            // @ts-expect-error - React Native SVG typing issue
                             key={`${pest.id}-${segmentIndex}`}
                             points={points}
                             fill={`${info.color}40`}
@@ -315,7 +314,6 @@ export const DiseaseResultsScreen = () => {
 
               return (
                 <View
-                  // @ts-expect-error - key is a valid React prop
                   key={`label-${pest.id}`}
                   style={[
                     styles.labelContainer,
@@ -340,7 +338,7 @@ export const DiseaseResultsScreen = () => {
         <View style={[styles.summaryCard, isMediumScreen && styles.cardMedium]}>
           <View style={styles.summaryHeader}>
             <Text style={[styles.summaryTitle, isSmallScreen && styles.summaryTitleSmall]}>
-              Detection Summary
+              Tóm tắt phát hiện
             </Text>
           </View>
 
@@ -348,37 +346,37 @@ export const DiseaseResultsScreen = () => {
             <View style={styles.healthyCard}>
               <Ionicons name="checkmark-circle" size={isSmallScreen ? 40 : 48} color="#10b981" />
               <Text style={[styles.healthyTitle, isSmallScreen && styles.healthyTitleSmall]}>
-                Plant is Healthy!
+                Cây khỏe mạnh!
               </Text>
-              <Text style={styles.healthyText}>No pests detected</Text>
+              <Text style={styles.healthyText}>Không có sâu bệnh phát hiện</Text>
             </View>
           ) : (
             <>
               <View style={styles.detectionCountBanner}>
                 <Ionicons name="bug" size={24} color="#ef4444" />
                 <Text style={styles.detectionCountBannerText}>
-                  {detections.length} {detections.length === 1 ? 'Pest' : 'Pests'} Detected
+                  {detections.length} {detections.length === 1 ? 'Sâu bệnh' : 'Sâu bệnh'} phát hiện
                 </Text>
               </View>
               
               <View style={styles.summaryStats}>
                 <View style={styles.statBox}>
                   <Text style={styles.statNumber}>{detections.length}</Text>
-                  <Text style={styles.statLabel}>Total Pests</Text>
+                  <Text style={styles.statLabel}>Tổng sâu bệnh</Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statBox}>
                   <Text style={styles.statNumber}>
                     {Math.round(detections.reduce((sum, p) => sum + p.confidence, 0) / detections.length)}%
                   </Text>
-                  <Text style={styles.statLabel}>Avg Confidence</Text>
+                  <Text style={styles.statLabel}>Độ tin cậy trung bình</Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statBox}>
                   <Text style={[styles.statNumber, styles.statNumberDanger]}>
                     {detections.filter(p => p.confidenceLevel === 'High').length}
                   </Text>
-                  <Text style={styles.statLabel}>High Risk</Text>
+                  <Text style={styles.statLabel}>Rủi ro cao</Text>
                 </View>
               </View>
             </>
@@ -391,7 +389,6 @@ export const DiseaseResultsScreen = () => {
           
           return (
             <View 
-              // @ts-expect-error - key is a valid React prop
               key={pest.id} 
               style={[
                 styles.detectionCard, 
@@ -427,7 +424,7 @@ export const DiseaseResultsScreen = () => {
               <View style={styles.detectionStats}>
                 <View style={styles.statItem}>
                   <View style={styles.statHeader}>
-                    <Text style={styles.statLabel}>Confidence Level</Text>
+                    <Text style={styles.statLabel}>Độ tin cậy</Text>
                     <Text style={[styles.confidenceBadge, { color: info.color }]}>
                       {pest.confidenceLevel}
                     </Text>
@@ -452,7 +449,7 @@ export const DiseaseResultsScreen = () => {
               <View style={styles.treatmentSection}>
                 <View style={styles.treatmentHeader}>
                   <MaterialCommunityIcons name="medical-bag" size={20} color="#10b981" />
-                  <Text style={styles.treatmentTitle}>Recommended Treatment</Text>
+                  <Text style={styles.treatmentTitle}>Phương pháp điều trị</Text>
                 </View>
                 <Text style={[styles.treatmentText, isSmallScreen && styles.treatmentTextSmall]}>
                   {info.treatment}
@@ -473,7 +470,7 @@ export const DiseaseResultsScreen = () => {
             activeOpacity={0.7}
           >
             <Ionicons name="scan" size={20} color="#10b981" />
-            <Text style={styles.secondaryButtonText}>Scan Again</Text>
+            <Text style={styles.secondaryButtonText}>Quét lại</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -488,7 +485,7 @@ export const DiseaseResultsScreen = () => {
               style={styles.primaryButtonGradient}
             >
               <Ionicons name="download-outline" size={20} color="#FFFFFF" />
-              <Text style={styles.primaryButtonText}>Save Report</Text>
+              <Text style={styles.primaryButtonText}>Lưu báo cáo</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>

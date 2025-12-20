@@ -3,7 +3,10 @@
  * WKT/GeoJSON conversion and polygon calculations
  */
 
-import { LatLng } from 'react-native-maps';
+import { Coordinate } from '../types/coordinates';
+
+// Alias for backward compatibility
+type LatLng = Coordinate;
 
 /**
  * Convert WKT string to GeoJSON object
@@ -132,7 +135,7 @@ export const parsePolygonWkt = (
 /**
  * Calculate polygon area in square meters using spherical excess formula
  */
-export const calculatePolygonArea = (coordinates: LatLng[]): number => {
+export const calculatePolygonArea = (coordinates: Coordinate[]): number => {
   if (coordinates.length < 3) return 0;
 
   const closedCoords = [...coordinates];
@@ -162,7 +165,7 @@ export const calculatePolygonArea = (coordinates: LatLng[]): number => {
 /**
  * Create closed GeoJSON polygon from coordinates
  */
-export const createPolygonGeoJSON = (coordinates: LatLng[]): string => {
+export const createPolygonGeoJSON = (coordinates: Coordinate[]): string => {
   // Create the polygon ring - must be closed (first and last point must be the same)
   const ring = coordinates.map((coord) => [coord.longitude, coord.latitude]);
   
@@ -197,9 +200,9 @@ export const convertGeoJSONToWKT = (geoJsonString: string): string => {
 };
 
 /**
- * Convert LatLng coordinates array to WKT polygon format
+ * Convert Coordinate array to WKT polygon format
  */
-export const createPolygonWKT = (coordinates: LatLng[]): string => {
+export const createPolygonWKT = (coordinates: Coordinate[]): string => {
   // Create closed ring
   const ring = coordinates.map((coord) => [coord.longitude, coord.latitude]);
   const firstPoint = ring[0];
