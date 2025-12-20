@@ -43,6 +43,7 @@ import {
 } from '../../types/api';
 import { createEmergencyReport, getPlotCultivationPlans, detectPestInImage } from '../../libs/farmer';
 import { useUser } from '../../libs/auth';
+import { uploadFile } from '../../libs/api-client';
 
 const ALERT_TYPES: AlertType[] = ['Pest', 'Weather', 'Disease', 'Other'];
 const SEVERITY_LEVELS: Severity[] = ['Low', 'Medium', 'High', 'Critical'];
@@ -131,21 +132,31 @@ export const CreateReportScreen = () => {
         };
       }
 
-      const request: CreateEmergencyReportRequest = {
-        ...formData,
-        title: formData.title.trim(),
-        description: formData.description.trim(),
-        aiDetectionResult: aiDetectionSummary,
-      };
+      const data = new FormData();
+      if (formData.plotCultivationId) data.append('PlotCultivationId', formData.plotCultivationId);
+      if (formData.groupId) data.append('GroupId', formData.groupId);
+      if (formData.clusterId) data.append('ClusterId', formData.clusterId);
+      data.append('AlertType', formData.alertType);
+      data.append('Title', formData.title.trim());
+      data.append('Description', formData.description.trim());
+      data.append('Severity', formData.severity);
 
-      // Prepare image files
-      const imageFiles = images.map((img, index) => ({
-        uri: img.uri,
-        type: img.type || 'image/jpeg',
-        name: img.name || `report_${index}.jpg`,
-      }));
+      if (aiDetectionSummary) {
+        data.append('AiDetectionResult', JSON.stringify(aiDetectionSummary));
+      }
 
-      return createEmergencyReport(request, imageFiles);
+      images.forEach((img) => {
+        const fileName = img.name || img.uri.split('/').pop() || `report_${Date.now()}.jpg`;
+        const fileType = fileName.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+
+        data.append('Images', {
+          uri: img.uri,
+          type: fileType,
+          name: fileName,
+        } as any);
+      });
+
+      return uploadFile('/Farmer/create-report', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alerts'] });
@@ -181,11 +192,18 @@ export const CreateReportScreen = () => {
     });
 
     if (!result.canceled && result.assets) {
-      const newImages = result.assets.map((asset) => ({
-        uri: asset.uri,
-        type: asset.type || 'image/jpeg',
-        name: asset.fileName || `report_${Date.now()}.jpg`,
-      }));
+      const newImages = result.assets.map((asset) => {
+        const uri = asset.uri;
+        const fileName = asset.fileName || uri.split('/').pop() || `report_${Date.now()}.jpg`;
+        // Infer MIME type from file extension for robustness on Android
+        const fileType = fileName.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+        
+        return {
+          uri: uri,
+          type: fileType,
+          name: fileName,
+        };
+      });
       setImages([...images, ...newImages]);
       
       // If alert type is Pest and we just added the first image, auto-detect
@@ -210,10 +228,15 @@ export const CreateReportScreen = () => {
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
       const asset = result.assets[0];
+      const uri = asset.uri;
+      const fileName = asset.fileName || uri.split('/').pop() || `report_${Date.now()}.jpg`;
+      // Infer MIME type from file extension for robustness on Android
+      const fileType = fileName.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+      
       const newImage = {
-        uri: asset.uri,
-        type: asset.type || 'image/jpeg',
-        name: asset.fileName || `report_${Date.now()}.jpg`,
+        uri: uri,
+        type: fileType,
+        name: fileName,
       };
       setImages([...images, newImage]);
       
@@ -1027,4 +1050,3 @@ const styles = StyleSheet.create({
     borderRadius: moderateScale(borderRadius.md),
   },
 });
-

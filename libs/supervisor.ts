@@ -4,7 +4,14 @@
  */
 
 import { api } from './api-client';
-import { PagedResult } from '@/types/api';
+import { 
+  PagedResult, 
+  StandardPlan,
+  StandardPlanMaterialCostRequest,
+  StandardPlanMaterialCostResponse,
+  StandardPlanProfitAnalysisRequest,
+  StandardPlanProfitAnalysisResponse 
+} from '@/types/api';
 
 // TODO: Define proper types based on backend API
 export type SupervisedFarmer = {
@@ -431,4 +438,40 @@ export const updatePlot = async (data: UpdatePlotInput): Promise<NonNullable<Upd
   // API client already unwrapped the Result<T>, so response IS the data
   return response as any;
 };
+
+/**
+ * Get all standard plans (from expert role)
+ * Note: API returns array directly, not PagedResult
+ */
+export const getStandardPlans = async (): Promise<StandardPlan[]> => {
+  const response = await api.get<StandardPlan[]>('/StandardPlan');
+  return Array.isArray(response) ? response : [];
+};
+
+/**
+ * Calculate material cost for a standard plan
+ */
+export const calculateStandardPlanMaterialCost = async (
+  request: StandardPlanMaterialCostRequest
+): Promise<StandardPlanMaterialCostResponse> => {
+  const response = await api.post<StandardPlanMaterialCostResponse>(
+    '/Material/calculate-standard-plan-material-cost',
+    request
+  );
+  return response as unknown as StandardPlanMaterialCostResponse;
+};
+
+/**
+ * Calculate profit analysis for a standard plan
+ */
+export const calculateStandardPlanProfitAnalysis = async (
+  request: StandardPlanProfitAnalysisRequest
+): Promise<StandardPlanProfitAnalysisResponse> => {
+  const response = await api.post<StandardPlanProfitAnalysisResponse>(
+    '/Material/calculate-standard-plan-profit-analysis',
+    request
+  );
+  return response as unknown as StandardPlanProfitAnalysisResponse;
+};
+
 

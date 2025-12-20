@@ -35,6 +35,7 @@ import {
 import { CreateFarmLogRequest, FarmLogMaterialRequest, TodayTaskResponse } from '../../types/api';
 import { createFarmLog } from '../../libs/farmer';
 import { useUser } from '../../libs/auth';
+import { uploadFile } from '../../libs/api-client';
 
 export const CompleteTaskScreen = () => {
   const router = useRouter();
@@ -82,20 +83,30 @@ export const CompleteTaskScreen = () => {
         });
       }
 
-      const request: CreateFarmLogRequest = {
-        ...formData,
-        materials: materials.length > 0 ? materials : undefined,
-        farmerId: user?.id || null,
-      };
+      const data = new FormData();
+      data.append('CultivationTaskId', formData.cultivationTaskId);
+      data.append('PlotCultivationId', formData.plotCultivationId);
+      if (formData.workDescription) data.append('WorkDescription', formData.workDescription);
+      if (formData.actualAreaCovered) data.append('ActualAreaCovered', formData.actualAreaCovered.toString());
+      if (formData.serviceCost) data.append('ServiceCost', formData.serviceCost.toString());
+      if (formData.serviceNotes) data.append('ServiceNotes', formData.serviceNotes);
+      if (formData.weatherConditions) data.append('WeatherConditions', formData.weatherConditions);
+      if (formData.interruptionReason) data.append('InterruptionReason', formData.interruptionReason);
+      if (user?.id) data.append('FarmerId', user.id);
 
-      // Prepare image files
-      const imageFiles = images.map((img, index) => ({
-        uri: img.uri,
-        type: img.type || 'image/jpeg',
-        name: img.name || `proof_${index}.jpg`,
-      }));
+      if (materials.length > 0) {
+        data.append('Materials', JSON.stringify(materials));
+      }
 
-      return createFarmLog(request, imageFiles);
+      images.forEach((img, index) => {
+        data.append('ProofImages', {
+          uri: img.uri,
+          type: img.type || 'image/jpeg',
+          name: img.name || `proof_${index}.jpg`,
+        } as any);
+      });
+
+      return uploadFile('/Farmer/create-farm-log', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['today-tasks'] });
@@ -483,4 +494,3 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
-
