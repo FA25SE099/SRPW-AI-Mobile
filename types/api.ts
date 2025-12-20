@@ -809,3 +809,30 @@ export type PestDetectionResponse = {
   detectedPests: DetectedPest[];
   imageInfo: PestDetectionImageInfo;
 };
+
+// Start Task Types
+export type StartTaskRequest = {
+  cultivationTaskId: string;
+  weatherConditions?: string | null;
+  notes?: string | null;
+};
+
+export type StartTaskResponse = {
+  succeeded: boolean;
+  data?: string | null; // Task ID or success message
+  message?: string | null;
+  errors?: string[];
+};
+
+// Farmer Profile Types
+export type FarmerProfileResponse = {
+  farmerId: string;
+  fullName: string;
+  address: string | null;
+  phoneNumber: string;
+  isActive: boolean;
+  isVerified: boolean;
+  lastActivityAt: string | null;
+  farmCode: string | null;
+  plotCount: number;
+};

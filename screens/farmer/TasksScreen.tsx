@@ -15,7 +15,7 @@ import {
 import {SafeAreaView} from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router';
 import dayjs from 'dayjs';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { colors, spacing, borderRadius, shadows } from '../../theme';
 import { scale, moderateScale, getFontSize, getSpacing, isTablet, verticalScale } from '../../utils/responsive';
 import {
@@ -29,8 +29,9 @@ import {
   Button,
 } from '../../components/ui';
 import { FarmerPlot, TodayTaskResponse } from '../../types/api';
-import { getCurrentFarmerPlots, getTodayTasks } from '../../libs/farmer';
+import { getCurrentFarmerPlots, getTodayTasks, startTask } from '../../libs/farmer';
 import { TaskDetailModal } from './TaskDetailModal';
+import { Alert } from 'react-native';
 
 export const FarmerTasksScreen = () => {
   const router = useRouter();
@@ -47,6 +48,7 @@ export const FarmerTasksScreen = () => {
   });
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
   const [isDetailVisible, setIsDetailVisible] = useState(false);
+  const queryClient = useQueryClient();
   
   // Responsive styles
   const responsiveStyles = getResponsiveStyles(screenWidth);
@@ -92,6 +94,26 @@ export const FarmerTasksScreen = () => {
   } = useQuery({
     queryKey: ['today-tasks', { plotId: apiPlotId, status: apiStatusFilter }],
     queryFn: () => getTodayTasks({ plotId: apiPlotId, statusFilter: apiStatusFilter }),
+  });
+
+  // Start task mutation
+  const startTaskMutation = useMutation({
+    mutationFn: (request: { cultivationTaskId: string; weatherConditions?: string; notes?: string }) =>
+      startTask({
+        cultivationTaskId: request.cultivationTaskId,
+        weatherConditions: request.weatherConditions || null,
+        notes: request.notes || null,
+      }),
+    onSuccess: () => {
+      // Invalidate and refetch tasks to update the status
+      queryClient.invalidateQueries({ queryKey: ['today-tasks'] });
+      refetch();
+      Alert.alert('Success', 'Task started successfully');
+    },
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to start task';
+      Alert.alert('Error', errorMessage);
+    },
   });
 
   const getTaskIcon = (type: string) => {
@@ -186,6 +208,29 @@ export const FarmerTasksScreen = () => {
   const handleViewDetail = (taskId: string) => {
     setDetailTaskId(taskId);
     setIsDetailVisible(true);
+  };
+
+  const handleStartTask = (task: TodayTaskResponse) => {
+    Alert.alert(
+      'Start Task',
+      `Are you sure you want to start "${task.taskName}"?`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Start',
+          onPress: () => {
+            startTaskMutation.mutate({
+              cultivationTaskId: task.cultivationTaskId,
+              weatherConditions: undefined, // Can be enhanced with weather input later
+              notes: undefined, // Can be enhanced with notes input later
+            });
+          },
+        },
+      ],
+    );
   };
 
   if (isLoading) {
@@ -381,7 +426,14 @@ export const FarmerTasksScreen = () => {
           </View>
         ) : (
           <ScrollView showsVerticalScrollIndicator={false}>
-            {filteredTasks.map((task: TodayTaskResponse) => (
+            {filteredTasks.map((task: TodayTaskResponse, index: number) => {
+              // Find the first approved task index
+              const firstApprovedIndex = filteredTasks.findIndex(
+                (t) => normalizeStatus(t.status) === 'approved'
+              );
+              const isFirstApproved = index === firstApprovedIndex && normalizeStatus(task.status) === 'approved';
+              
+              return (
               <TouchableOpacity 
                 key={task.cultivationTaskId}
                 onPress={() => handleViewDetail(task.cultivationTaskId)}
@@ -522,7 +574,29 @@ export const FarmerTasksScreen = () => {
                   )}
                   <Spacer size="md" />
                   <View style={styles.actionRow}>
-                    {normalizeStatus(task.status) !== 'completed' && normalizeStatus(task.status) !== 'approved' && (
+                    {/* Only show Start Task for the first approved task */}
+                    {isFirstApproved && (
+                      <TouchableOpacity
+                        style={styles.primaryActionButton}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          handleStartTask(task);
+                        }}
+                        disabled={startTaskMutation.isPending}
+                      >
+                        <View style={styles.primaryActionButtonContent}>
+                          {startTaskMutation.isPending ? (
+                            <ActivityIndicator size="small" color={colors.white} />
+                          ) : (
+                            <BodySemibold style={styles.primaryActionButtonText}>
+                              Start Task
+                            </BodySemibold>
+                          )}
+                        </View>
+                      </TouchableOpacity>
+                    )}
+                    {/* Show Confirm Completion for in-progress tasks (not approved, not completed) */}
+                    {normalizeStatus(task.status) === 'in-progress' && (
                       <TouchableOpacity
                         style={styles.primaryActionButton}
                         onPress={(e) => {
@@ -532,17 +606,40 @@ export const FarmerTasksScreen = () => {
                       >
                         <View style={styles.primaryActionButtonContent}>
                           <BodySemibold style={styles.primaryActionButtonText}>
-                            {normalizeStatus(task.status) === 'pending'
-                              ? 'Start Task'
-                              : 'Confirm Completion'}
+                            Confirm Completion
                           </BodySemibold>
                         </View>
                       </TouchableOpacity>
                     )}
-                    {(normalizeStatus(task.status) === 'completed' || normalizeStatus(task.status) === 'approved') && (
+                    {/* Show Start Task for pending tasks */}
+                    {normalizeStatus(task.status) === 'pending' && (
+                      <TouchableOpacity
+                        style={styles.primaryActionButton}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          handleConfirmTask(task);
+                        }}
+                      >
+                        <View style={styles.primaryActionButtonContent}>
+                          <BodySemibold style={styles.primaryActionButtonText}>
+                            Start Task
+                          </BodySemibold>
+                        </View>
+                      </TouchableOpacity>
+                    )}
+                    {/* Show completed banner for completed tasks */}
+                    {normalizeStatus(task.status) === 'completed' && (
                       <View style={styles.completedBanner}>
                         <Body style={styles.completedText}>
-                          ✓ {normalizeStatus(task.status) === 'approved' ? 'Approved' : 'Completed'}
+                          ✓ Completed
+                        </Body>
+                      </View>
+                    )}
+                    {/* Show approved banner for approved tasks that are not the first one */}
+                    {normalizeStatus(task.status) === 'approved' && !isFirstApproved && (
+                      <View style={styles.completedBanner}>
+                        <Body style={styles.completedText}>
+                          ✓ Approved
                         </Body>
                       </View>
                     )}
@@ -550,7 +647,8 @@ export const FarmerTasksScreen = () => {
                 </Card>
                 <Spacer size="md" />
               </TouchableOpacity>
-            ))}
+            );
+            })}
           </ScrollView>
         )}
       </Container>
