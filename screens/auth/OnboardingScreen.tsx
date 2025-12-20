@@ -33,12 +33,12 @@ export const OnboardingScreen = () => {
               resizeMode="contain"
             />
             <Spacer size="lg" />
-            <BodySemibold color={colors.primary}>Rice Production Companion</BodySemibold>
-            <H1 style={styles.title}>Manage fields with confidence</H1>
+            <BodySemibold color={colors.primary}>App quản lý kế hoạch sản xuất</BodySemibold>
+            <H1 style={styles.title}>Quản lý trại với độ tin cậy</H1>
             <Spacer size="sm" />
             <Body color={colors.textSecondary} style={styles.description}>
-              Stay on top of cultivation tasks, UAV spraying schedules, and farm logs in one simple
-              workspace made for growers.
+              Theo dõi các nhiệm vụ sản xuất, lịch phun thuốc của UAV và nhật ký trại trong một
+              không gian làm việc được thiết kế cho nông dân.
             </Body>
           </View>
 
@@ -57,10 +57,10 @@ export const OnboardingScreen = () => {
 
           <View style={styles.footer}>
             <Button onPress={handleGetStarted} fullWidth size="lg" style={styles.button}>
-              Get started
+              Bắt đầu
             </Button>
             <Spacer size="sm" />
-            <Body color={colors.textSecondary}>Flexible for both farmers and UAV vendors.</Body>
+            <Body color={colors.textSecondary}>Linh hoạt cho cả nông dân và nhà cung cấp UAV.</Body>
           </View>
         </Container>
       </ScrollView>

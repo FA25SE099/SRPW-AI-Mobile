@@ -81,51 +81,51 @@ export const ProfileScreen = () => {
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={colors.primary} />
                 <Spacer size="md" />
-                <Body color={colors.textSecondary}>Loading profile...</Body>
+                <Body color={colors.textSecondary}>Đang tải thông tin...</Body>
               </View>
             ) : farmerProfileError ? (
               <View style={styles.errorContainer}>
-                <Body color={colors.error}>Failed to load profile</Body>
+                <Body color={colors.error}>Không thể tải thông tin</Body>
               </View>
             ) : farmerProfile ? (
               <View style={styles.section}>
-                <H1>Profile Information</H1>
+                <H1>Thông tin hồ sơ</H1>
                 <Spacer size="md" />
                 
                 <View style={styles.infoCard}>
                   <View style={styles.infoRow}>
-                    <BodySmall color={colors.textSecondary}>Full Name</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Họ và tên</BodySmall>
                     <BodySemibold>{farmerProfile.fullName}</BodySemibold>
                   </View>
                   
                   {farmerProfile.phoneNumber && (
                     <View style={styles.infoRow}>
-                      <BodySmall color={colors.textSecondary}>Phone Number</BodySmall>
+                      <BodySmall color={colors.textSecondary}>Số điện thoại</BodySmall>
                       <BodySemibold>{farmerProfile.phoneNumber}</BodySemibold>
                     </View>
                   )}
                   
                   {farmerProfile.address && (
                     <View style={styles.infoRow}>
-                      <BodySmall color={colors.textSecondary}>Address</BodySmall>
+                      <BodySmall color={colors.textSecondary}>Địa chỉ</BodySmall>
                       <BodySemibold>{farmerProfile.address}</BodySemibold>
                     </View>
                   )}
                   
                   {farmerProfile.farmCode && (
                     <View style={styles.infoRow}>
-                      <BodySmall color={colors.textSecondary}>Farm Code</BodySmall>
+                      <BodySmall color={colors.textSecondary}>Mã nông trại</BodySmall>
                       <BodySemibold>{farmerProfile.farmCode}</BodySemibold>
                     </View>
                   )}
                   
                   <View style={styles.infoRow}>
-                    <BodySmall color={colors.textSecondary}>Plot Count</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Số thửa đất</BodySmall>
                     <BodySemibold>{farmerProfile.plotCount}</BodySemibold>
                   </View>
                   
                   <View style={styles.infoRow}>
-                    <BodySmall color={colors.textSecondary}>Status</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Trạng thái</BodySmall>
                     <View style={[
                       styles.statusBadge,
                       farmerProfile.isActive 
@@ -133,13 +133,13 @@ export const ProfileScreen = () => {
                         : styles.statusBadgeInactive
                     ]}>
                       <BodySmall style={styles.statusBadgeText}>
-                        {farmerProfile.isActive ? 'Active' : 'Inactive'}
+                        {farmerProfile.isActive ? 'Hoạt động' : 'Không hoạt động'}
                       </BodySmall>
                     </View>
                   </View>
                   
                   <View style={styles.infoRow}>
-                    <BodySmall color={colors.textSecondary}>Verified</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Đã xác thực</BodySmall>
                     <View style={[
                       styles.statusBadge,
                       farmerProfile.isVerified 
@@ -147,7 +147,7 @@ export const ProfileScreen = () => {
                         : styles.statusBadgeUnverified
                     ]}>
                       <BodySmall style={styles.statusBadgeText}>
-                        {farmerProfile.isVerified ? '✓ Verified' : 'Not Verified'}
+                          {farmerProfile.isVerified ? '✓ Đã xác thực' : 'Chưa xác thực'}
                       </BodySmall>
                     </View>
                   </View>
@@ -160,9 +160,9 @@ export const ProfileScreen = () => {
         {/* Profile Info for non-farmers */}
         {!isFarmer && (
           <View style={styles.section}>
-            <H1>Profile</H1>
+            <H1>Hồ sơ</H1>
             <Spacer size="md" />
-            <Body color={colors.textSecondary}>Profile settings coming soon...</Body>
+            <Body color={colors.textSecondary}>Thiết lập hồ sơ sắp tới...</Body>
           </View>
         )}
 
@@ -170,7 +170,7 @@ export const ProfileScreen = () => {
         
         {/* Logout Button */}
         <Button onPress={handleLogout} variant="outline" loading={logout.isPending} fullWidth>
-          Logout
+          Đăng xuất
         </Button>
         
         <Spacer size="xl" />

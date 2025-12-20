@@ -98,12 +98,12 @@ export const PlanDetailScreen = () => {
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
               <Body>←</Body>
             </TouchableOpacity>
-            <H3 style={styles.headerTitle}>{planName || 'Plan Detail'}</H3>
+            <H3 style={styles.headerTitle}>{planName || 'Chi tiết kế hoạch'}</H3>
             <View style={styles.headerRight} />
           </View>
           <Spacer size="3xl" />
           <Card variant="elevated" style={styles.errorCard}>
-            <BodySemibold>Unable to load plan details</BodySemibold>
+            <BodySemibold>Không thể tải chi tiết kế hoạch</BodySemibold>
             <Spacer size="xs" />
             <BodySmall color={colors.textSecondary}>
               Please check your connection and try again.
@@ -136,7 +136,7 @@ export const PlanDetailScreen = () => {
             }
             style={styles.reportButton}
           >
-            <BodySmall color={colors.error}>Report</BodySmall>
+            <BodySmall color={colors.error}>Báo cáo</BodySmall>
           </TouchableOpacity>
         </View>
 
@@ -155,10 +155,10 @@ export const PlanDetailScreen = () => {
         >
           {plan.stages.length === 0 ? (
             <Card variant="flat" style={styles.emptyState}>
-              <BodySemibold>No stages found</BodySemibold>
+              <BodySemibold>Không tìm thấy giai đoạn nào</BodySemibold>
               <Spacer size="xs" />
               <BodySmall color={colors.textSecondary}>
-                This plan does not have any stages defined yet.
+                Kế hoạch này chưa có giai đoạn nào được định nghĩa.
               </BodySmall>
             </Card>
           ) : (
@@ -167,7 +167,7 @@ export const PlanDetailScreen = () => {
                 <View style={styles.stageHeader}>
                   <BodySemibold>{stage.stageName}</BodySemibold>
                   <BodySmall color={colors.textSecondary}>
-                    Order #{stage.sequenceOrder}
+                    Thứ tự #{stage.sequenceOrder}
                   </BodySmall>
                 </View>
 
@@ -175,7 +175,7 @@ export const PlanDetailScreen = () => {
 
                 {stage.tasks.length === 0 ? (
                   <BodySmall color={colors.textSecondary}>
-                    No tasks defined for this stage.
+                    Không có công việc nào được định nghĩa cho giai đoạn này.
                   </BodySmall>
                 ) : (
                   stage.tasks.map((task: PlotPlanTask) => (
@@ -184,8 +184,9 @@ export const PlanDetailScreen = () => {
                         <BodySemibold>{task.taskName}</BodySemibold>
                         <BodySmall
                           color={
-                            task.status === 'Completed' ? colors.success : colors.primary
+                            task.status === 'Completed' ? greenTheme.success : greenTheme.primary
                           }
+                          style={{ fontWeight: '600' }}
                         >
                           {task.status}
                         </BodySmall>
@@ -204,7 +205,7 @@ export const PlanDetailScreen = () => {
                         {dayjs(task.scheduledDate).format('MMM D, YYYY')}
                       </BodySmall>
                       <BodySmall color={colors.textSecondary}>
-                        Priority: {task.priority}
+                        Ưu tiên: {task.priority}
                       </BodySmall>
                       {typeof task.actualMaterialCost === 'number' && (
                         <BodySmall color={colors.textSecondary}>
@@ -281,7 +282,7 @@ export const PlanDetailScreen = () => {
 
           {farmLogsLoading && (
             <Card variant="flat" style={styles.emptyState}>
-              <BodySmall color={colors.textSecondary}>Loading farm logs...</BodySmall>
+              <BodySmall color={colors.textSecondary}>Đang tải nhật ký nông trại...</BodySmall>
             </Card>
           )}
 
@@ -384,27 +385,47 @@ export const PlanDetailScreen = () => {
   );
 };
 
+// Green theme colors for farmer-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: getSpacing(spacing.md),
+    backgroundColor: greenTheme.cardBackground,
+    paddingBottom: getSpacing(spacing.sm),
+    borderBottomWidth: 1,
+    borderBottomColor: greenTheme.border,
   },
   backButton: {
     width: scale(40),
     height: scale(40),
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: moderateScale(borderRadius.full),
+    backgroundColor: greenTheme.primaryLighter,
   },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
     fontSize: getFontSize(20),
+    color: greenTheme.primary,
+    fontWeight: '700',
   },
   reportButton: {
     paddingHorizontal: getSpacing(spacing.sm),
@@ -414,19 +435,37 @@ const styles = StyleSheet.create({
     borderColor: colors.error,
     minWidth: scale(60),
     alignItems: 'center',
+    backgroundColor: '#FFEBEE',
   },
   errorCard: {
     padding: getSpacing(spacing.lg),
     gap: getSpacing(spacing.sm),
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: moderateScale(borderRadius.lg),
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
   emptyState: {
     padding: getSpacing(spacing.lg),
     gap: getSpacing(spacing.sm),
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: moderateScale(borderRadius.lg),
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
   stageCard: {
     padding: getSpacing(spacing.md),
     marginBottom: getSpacing(spacing.md),
     gap: getSpacing(spacing.sm),
+    borderRadius: moderateScale(borderRadius.lg),
+    backgroundColor: greenTheme.cardBackground,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   stageHeader: {
     flexDirection: 'row',
@@ -436,10 +475,11 @@ const styles = StyleSheet.create({
   taskCard: {
     padding: getSpacing(spacing.sm),
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: greenTheme.border,
     borderRadius: moderateScale(borderRadius.md),
     marginTop: getSpacing(spacing.sm),
     gap: getSpacing(spacing.xs),
+    backgroundColor: greenTheme.primaryLighter,
   },
   taskHeader: {
     flexDirection: 'row',
@@ -453,8 +493,10 @@ const styles = StyleSheet.create({
   materialCard: {
     padding: getSpacing(spacing.sm),
     borderRadius: moderateScale(borderRadius.sm),
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: greenTheme.cardBackground,
     gap: getSpacing(spacing.xs / 2),
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
   taskActions: {
     flexDirection: 'row',
@@ -465,17 +507,26 @@ const styles = StyleSheet.create({
     paddingVertical: getSpacing(spacing.sm),
     borderRadius: moderateScale(borderRadius.full),
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
+    borderColor: greenTheme.primary,
+    backgroundColor: greenTheme.cardBackground,
   },
   secondaryButtonText: {
-    color: colors.primary,
+    color: greenTheme.primary,
     fontSize: getFontSize(14),
+    fontWeight: '600',
   },
   logCard: {
     padding: getSpacing(spacing.md),
     marginBottom: getSpacing(spacing.md),
-    borderRadius: moderateScale(borderRadius.md),
+    borderRadius: moderateScale(borderRadius.lg),
+    backgroundColor: greenTheme.cardBackground,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   logHeader: {
     flexDirection: 'row',

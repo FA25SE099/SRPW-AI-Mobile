@@ -22,12 +22,12 @@ const mockStats = {
 };
 
 const quickActions = [
-  { id: '1', title: 'My Fields', iconName: 'leaf', iconType: 'Ionicons', gradient: ['#10b981', '#059669'] as const, route: '/(farmer-tabs)/fields' },
-  { id: '2', title: 'Farm Log', iconName: 'book', iconType: 'Ionicons', gradient: ['#10b981', '#059669'] as const, route: '/farmer/farm-log' },
-  { id: '3', title: 'Tasks', iconName: 'checkbox', iconType: 'Ionicons', gradient: ['#10b981', '#059669'] as const, route: '/(farmer-tabs)/tasks' },
-  { id: '4', title: 'Disease Scanner', iconName: 'scan', iconType: 'Ionicons', gradient: ['#10b981', '#059669'] as const, route: '/farmer/disease-scanner' },
-  { id: '5', title: 'Weather', iconName: 'weather-partly-cloudy', iconType: 'MaterialCommunityIcons', gradient: ['#10b981', '#059669'] as const, route: '/farmer/weather' },
-  { id: '6', title: 'Economics', iconName: 'cash', iconType: 'Ionicons', gradient: ['#10b981', '#059669'] as const, route: '/farmer/economics' },
+  { id: '1', title: 'Thửa ruộng', iconName: 'leaf', iconType: 'Ionicons', gradient: ['#10b981', '#059669'] as const, route: '/(farmer-tabs)/fields' },
+  { id: '2', title: 'Lịch sử', iconName: 'book', iconType: 'Ionicons', gradient: ['#10b981', '#059669'] as const, route: '/farmer/farm-log' },
+  { id: '3', title: 'Công việc', iconName: 'checkbox', iconType: 'Ionicons', gradient: ['#10b981', '#059669'] as const, route: '/(farmer-tabs)/tasks' },
+  { id: '4', title: 'Quét sâu bệnh', iconName: 'scan', iconType: 'Ionicons', gradient: ['#10b981', '#059669'] as const, route: '/farmer/disease-scanner' },
+  { id: '5', title: 'Thời tiết', iconName: 'weather-partly-cloudy', iconType: 'MaterialCommunityIcons', gradient: ['#10b981', '#059669'] as const, route: '/farmer/weather' },
+  { id: '6', title: 'Kinh tế', iconName: 'cash', iconType: 'Ionicons', gradient: ['#10b981', '#059669'] as const, route: '/farmer/economics' },
 ];
 
 const recentActivities = [
@@ -87,22 +87,22 @@ export const FarmerHomeScreen = () => {
 
               {/* Welcome Message */}
               <View style={styles.welcomeSection}>
-                <Text style={styles.welcomeText}>Welcome to</Text>
-                <Text style={styles.appTitle}>Smart Garden AI</Text>
+                <Text style={styles.welcomeText}>Chào mừng bạn đến với</Text>
+                <Text style={styles.appTitle}>App quản lý kế hoạch sản xuất</Text>
               </View>
 
               {/* Stats Cards */}
               <View style={styles.statsRow}>
                 <View style={styles.statCard}>
-                  <Text style={styles.statLabel}>Area</Text>
+                  <Text style={styles.statLabel}>Diện tích</Text>
                   <Text style={styles.statValue}>{mockStats.totalFields}m²</Text>
                 </View>
                 <View style={styles.statCard}>
-                  <Text style={styles.statLabel}>Yield</Text>
+                  <Text style={styles.statLabel}>Năng suất</Text>
                   <Text style={styles.statValue}>{mockStats.pendingTasks} Tons</Text>
                 </View>
                 <View style={styles.statCard}>
-                  <Text style={styles.statLabel}>Plant Age</Text>
+                  <Text style={styles.statLabel}>Tuổi cây</Text>
                   <Text style={styles.statValue}>{mockStats.activeAlerts} Days</Text>
                 </View>
               </View>
@@ -115,7 +115,7 @@ export const FarmerHomeScreen = () => {
 
             {/* Quick Actions */}
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Quick Actions</Text>
+              <Text style={styles.sectionTitle}>Hành động nhanh</Text>
             </View>
             <Spacer size="md" />
             <View style={styles.quickActionsGrid}>
@@ -144,8 +144,8 @@ export const FarmerHomeScreen = () => {
             <View style={styles.seasonCard}>
               <View style={styles.seasonHeader}>
                 <View>
-                  <Text style={styles.seasonTitle}>Current Season</Text>
-                  <Text style={styles.seasonSubtitle}>Winter-Spring 2024</Text>
+                  <Text style={styles.seasonTitle}>Mùa hiện tại</Text>
+                  <Text style={styles.seasonSubtitle}>Mùa đông-Xuân 2024</Text>
                 </View>
                 <View style={styles.seasonBadge}>
                   <Text style={styles.seasonBadgeText}>{mockStats.seasonProgress}%</Text>
@@ -162,7 +162,7 @@ export const FarmerHomeScreen = () => {
               </View>
               <Spacer size="sm" />
               <Text style={styles.progressLabel}>
-                {Math.round((mockStats.seasonProgress / 100) * 120)} of 120 days completed
+                {Math.round((mockStats.seasonProgress / 100) * 120)} ngày đã hoàn thành
               </Text>
             </View>
 
@@ -170,9 +170,9 @@ export const FarmerHomeScreen = () => {
 
             {/* Recent Activities */}
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Recent Activities</Text>
+              <Text style={styles.sectionTitle}>Hoạt động gần đây</Text>
               <TouchableOpacity onPress={() => router.push('/farmer/farm-log' as any)}>
-                <Text style={styles.viewAllText}>View All →</Text>
+                <Text style={styles.viewAllText}>Xem tất cả →</Text>
               </TouchableOpacity>
             </View>
 
@@ -236,8 +236,8 @@ export const FarmerHomeScreen = () => {
                     <Ionicons name="stats-chart" size={32} color="#FFFFFF" />
                   </View>
                   <View style={styles.ctaText}>
-                    <Text style={styles.ctaTitle}>Economic Performance</Text>
-                    <Text style={styles.ctaSubtitle}>View your financial insights</Text>
+                    <Text style={styles.ctaTitle}>Hiệu quả kinh tế</Text>
+                    <Text style={styles.ctaSubtitle}>Xem các báo cáo tài chính</Text>
                   </View>
                 </View>
                 <Ionicons name="chevron-forward" size={24} color="#FFFFFF" />

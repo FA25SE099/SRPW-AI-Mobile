@@ -72,19 +72,19 @@ export const PlotPlansScreen = () => {
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
               <Body>←</Body>
             </TouchableOpacity>
-            <H3 style={styles.headerTitle}>Cultivation Plans</H3>
+            <H3 style={styles.headerTitle}>Kế hoạch canh tác</H3>
             <View style={styles.headerRight} />
           </View>
           <Spacer size="3xl" />
           <Card variant="elevated" style={styles.errorCard}>
-            <BodySemibold>Unable to load cultivation plans</BodySemibold>
+            <BodySemibold>Không thể tải kế hoạch canh tác</BodySemibold>
             <Spacer size="xs" />
             <BodySmall color={colors.textSecondary}>
-              Please check your connection and try again.
+              Vui lòng kiểm tra kết nối và thử lại.
             </BodySmall>
             <Spacer size="md" />
             <Button onPress={() => refetch()} size="sm">
-              Try Again
+              Thử lại
             </Button>
           </Card>
         </Container>
@@ -100,22 +100,22 @@ export const PlotPlansScreen = () => {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Body>←</Body>
           </TouchableOpacity>
-          <H3 style={styles.headerTitle}>Cultivation Plans</H3>
+          <H3 style={styles.headerTitle}>Kế hoạch canh tác</H3>
           <View style={styles.headerRight} />
         </View>
 
         <BodySmall color={colors.textSecondary}>
-          Plot: {plotName || plotId}
+          Thửa đất: {plotName || plotId}
         </BodySmall>
 
         <Spacer size="xl" />
 
         {plans.length === 0 ? (
           <Card variant="flat" style={styles.emptyState}>
-            <BodySemibold>No cultivation plans yet</BodySemibold>
+            <BodySemibold>Chưa có kế hoạch canh tác</BodySemibold>
             <Spacer size="xs" />
             <BodySmall color={colors.textSecondary}>
-              Once a plan is created for this plot, it will appear here.
+              Khi có kế hoạch được tạo cho thửa đất này, nó sẽ hiển thị ở đây.
             </BodySmall>
           </Card>
         ) : (
@@ -131,12 +131,12 @@ export const PlotPlansScreen = () => {
                   <View style={styles.planHeaderLeft}>
                     <BodySemibold>{plan.productionPlanName}</BodySemibold>
                     <BodySmall color={colors.textSecondary}>
-                      Season: {plan.seasonName}
+                      Vụ mùa: {plan.seasonName}
                     </BodySmall>
                   </View>
                   <BodySmall
                     color={
-                      plan.status === 'Completed' ? colors.success : colors.primary
+                      plan.status === 'Completed' ? greenTheme.success : greenTheme.primary
                     }
                     style={styles.statusText}
                   >
@@ -148,19 +148,19 @@ export const PlotPlansScreen = () => {
 
                 <View style={styles.planDetails}>
                   <View style={styles.detailItem}>
-                    <BodySmall color={colors.textSecondary}>Variety</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Giống lúa</BodySmall>
                     <BodySemibold>{plan.riceVarietyName}</BodySemibold>
                   </View>
                   <View style={styles.detailItem}>
-                    <BodySmall color={colors.textSecondary}>Planting Date</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Ngày gieo trồng</BodySmall>
                     <BodySemibold>
                       {dayjs(plan.plantingDate).format('MMM D, YYYY')}
                     </BodySemibold>
                   </View>
                   <View style={styles.detailItem}>
-                    <BodySmall color={colors.textSecondary}>Actual Yield</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Năng suất thực tế</BodySmall>
                     <BodySemibold>
-                      {plan.actualYield ? `${plan.actualYield} kg` : 'N/A'}
+                      {plan.actualYield ? `${plan.actualYield} kg` : 'Chưa có'}
                     </BodySemibold>
                   </View>
                 </View>
@@ -178,8 +178,9 @@ export const PlotPlansScreen = () => {
                       },
                     } as any)
                   }
+                  style={{ borderColor: greenTheme.primary, backgroundColor: greenTheme.primaryLighter }}
                 >
-                  View Plan Details
+                  Xem chi tiết kế hoạch
                 </Button>
               </Card>
             ))}
@@ -190,27 +191,47 @@ export const PlotPlansScreen = () => {
   );
 };
 
+// Green theme colors for farmer-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: getSpacing(spacing.md),
+    backgroundColor: greenTheme.cardBackground,
+    paddingBottom: getSpacing(spacing.sm),
+    borderBottomWidth: 1,
+    borderBottomColor: greenTheme.border,
   },
   backButton: {
     width: scale(40),
     height: scale(40),
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: moderateScale(borderRadius.full),
+    backgroundColor: greenTheme.primaryLighter,
   },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
     fontSize: getFontSize(20),
+    color: greenTheme.primary,
+    fontWeight: '700',
   },
   headerRight: {
     width: scale(40),
@@ -218,14 +239,31 @@ const styles = StyleSheet.create({
   errorCard: {
     padding: getSpacing(spacing.lg),
     gap: getSpacing(spacing.sm),
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: moderateScale(borderRadius.lg),
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
   emptyState: {
     padding: getSpacing(spacing.lg),
     gap: getSpacing(spacing.sm),
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: moderateScale(borderRadius.lg),
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
   planCard: {
     padding: getSpacing(spacing.md),
     marginBottom: getSpacing(spacing.md),
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: moderateScale(borderRadius.lg),
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   planHeader: {
     flexDirection: 'row',
@@ -238,6 +276,7 @@ const styles = StyleSheet.create({
   statusText: {
     fontWeight: '600',
     fontSize: getFontSize(14),
+    color: greenTheme.primary,
   },
   planDetails: {
     marginTop: getSpacing(spacing.sm),

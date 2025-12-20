@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import dayjs from 'dayjs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { colors, spacing, borderRadius, shadows } from '../../theme';
@@ -117,15 +118,15 @@ export const FarmerTasksScreen = () => {
   });
 
   const getTaskIcon = (type: string) => {
-    const icons: { [key: string]: string } = {
-      Spraying: '💨',
-      Fertilizing: '💧',
-      Harvesting: '🌾',
-      Irrigation: '🚿',
-      Planting: '🌱',
-      Other: '📋',
+    const icons: { [key: string]: { name: string; library: 'Ionicons' | 'MaterialCommunityIcons' } } = {
+      Spraying: { name: 'spray', library: 'MaterialCommunityIcons' },
+      Fertilizing: { name: 'water-outline', library: 'Ionicons' },
+      Harvesting: { name: 'leaf-outline', library: 'Ionicons' },
+      Irrigation: { name: 'water', library: 'Ionicons' },
+      Planting: { name: 'seed-outline', library: 'MaterialCommunityIcons' },
+      Other: { name: 'document-text-outline', library: 'Ionicons' },
     };
-    return icons[type] || '📋';
+    return icons[type] || { name: 'document-text-outline', library: 'Ionicons' };
   };
 
   const getStatusColor = (status: string) => {
@@ -212,15 +213,15 @@ export const FarmerTasksScreen = () => {
 
   const handleStartTask = (task: TodayTaskResponse) => {
     Alert.alert(
-      'Start Task',
-      `Are you sure you want to start "${task.taskName}"?`,
+      'Bắt đầu công việc',
+      `Bạn có chắc chắn muốn bắt đầu "${task.taskName}"?`,
       [
         {
-          text: 'Cancel',
+          text: 'Hủy',
           style: 'cancel',
         },
         {
-          text: 'Start',
+          text: 'Bắt đầu',
           onPress: () => {
             startTaskMutation.mutate({
               cultivationTaskId: task.cultivationTaskId,
@@ -240,7 +241,7 @@ export const FarmerTasksScreen = () => {
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={colors.primary} />
             <Spacer size="md" />
-            <Body color={colors.textSecondary}>Loading tasks...</Body>
+            <Body color={colors.textSecondary}>Đang tải công việc...</Body>
           </View>
         </Container>
       </SafeAreaView>
@@ -255,15 +256,15 @@ export const FarmerTasksScreen = () => {
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
               <Body>←</Body>
             </TouchableOpacity>
-            <H3 style={styles.headerTitle}>My Tasks</H3>
+            <H3 style={styles.headerTitle}>Công việc của tôi</H3>
             <View style={styles.headerRight} />
           </View>
           <Spacer size="xl" />
           <View style={styles.errorContainer}>
-            <Body color={colors.error}>Failed to load tasks</Body>
+            <Body color={colors.error}>Không thể tải công việc</Body>
             <Spacer size="md" />
             <Button size="sm" onPress={() => refetch()}>
-              Retry
+              Thử lại
             </Button>
           </View>
         </Container>
@@ -279,7 +280,7 @@ export const FarmerTasksScreen = () => {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Body>←</Body>
           </TouchableOpacity>
-          <H3 style={styles.headerTitle}>My Tasks</H3>
+          <H3 style={styles.headerTitle}>Công việc của tôi</H3>
           <View style={styles.headerRight} />
         </View>
 
@@ -287,7 +288,7 @@ export const FarmerTasksScreen = () => {
 
         {/* Plot Filter */}
         <View style={styles.dropdownSection}>
-          <BodySmall color={colors.textSecondary}>Filter by plot</BodySmall>
+          <BodySmall color={colors.textSecondary}>Lọc theo thửa đất</BodySmall>
           <TouchableOpacity
             style={styles.dropdownTrigger}
             onPress={() => setIsPlotPickerOpen((prev) => !prev)}
@@ -298,7 +299,7 @@ export const FarmerTasksScreen = () => {
               </TouchableOpacity>
               {plotsError && (
                 <BodySmall color={colors.error} style={styles.dropdownError}>
-                  Failed to load plots
+                  Không thể tải thửa đất
                 </BodySmall>
               )}
               {isPlotPickerOpen && (
@@ -340,10 +341,10 @@ export const FarmerTasksScreen = () => {
             ]}
           >
             <Body
-              color={selectedFilter === 'in-progress' ? colors.primary : colors.textSecondary}
+              color={selectedFilter === 'in-progress' ? greenTheme.primary : colors.textSecondary}
               style={styles.filterTabText}
             >
-              In Progress
+              Đang thực hiện
             </Body>
             {filterCounts['in-progress'] > 0 && (
               <View style={[
@@ -368,10 +369,10 @@ export const FarmerTasksScreen = () => {
             ]}
           >
             <Body
-              color={selectedFilter === 'approved' ? colors.primary : colors.textSecondary}
+              color={selectedFilter === 'approved' ? greenTheme.primary : colors.textSecondary}
               style={styles.filterTabText}
             >
-              Approved
+              Đã duyệt
             </Body>
             {filterCounts['approved'] > 0 && (
               <View style={[
@@ -396,10 +397,10 @@ export const FarmerTasksScreen = () => {
             ]}
           >
             <Body
-              color={selectedFilter === 'completed' ? colors.primary : colors.textSecondary}
+              color={selectedFilter === 'completed' ? greenTheme.primary : colors.textSecondary}
               style={styles.filterTabText}
             >
-              Completed
+              Hoàn thành
             </Body>
             {filterCounts['completed'] > 0 && (
               <View style={[
@@ -422,7 +423,7 @@ export const FarmerTasksScreen = () => {
         {/* Tasks List */}
         {filteredTasks.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Body color={colors.textSecondary}>No tasks found</Body>
+            <Body color={colors.textSecondary}>Không tìm thấy công việc nào</Body>
           </View>
         ) : (
           <ScrollView showsVerticalScrollIndicator={false}>
@@ -461,7 +462,8 @@ export const FarmerTasksScreen = () => {
                     </View>
                     {task.isOverdue && (
                       <View style={styles.overdueBadge}>
-                        <BodySmall style={styles.overdueText}>⚠️ OVERDUE</BodySmall>
+                        <Ionicons name="warning-outline" size={12} color={colors.error} style={{ marginRight: 4 }} />
+                        <BodySmall style={styles.overdueText}>QUÁ HẠN</BodySmall>
                       </View>
                     )}
                   </View>
@@ -470,7 +472,14 @@ export const FarmerTasksScreen = () => {
                   {/* Task header */}
                   <View style={styles.taskHeader}>
                     <View style={styles.taskIcon}>
-                      <Body style={{ fontSize: 24 }}>{getTaskIcon(task.taskType)}</Body>
+                      {(() => {
+                        const icon = getTaskIcon(task.taskType);
+                        return icon.library === 'Ionicons' ? (
+                          <Ionicons name={icon.name as any} size={28} color={greenTheme.primary} />
+                        ) : (
+                          <MaterialCommunityIcons name={icon.name as any} size={28} color={greenTheme.primary} />
+                        );
+                      })()}
                     </View>
                     <View style={styles.taskHeaderInfo}>
                       <BodySemibold style={styles.taskTitle}>{task.taskName}</BodySemibold>
@@ -483,16 +492,18 @@ export const FarmerTasksScreen = () => {
                   
                   {/* Plot info */}
                   <View style={styles.plotInfoCard}>
-                    <View style={styles.plotInfoRow}>
-                      <BodySmall color={colors.textSecondary}>📍 Plot:</BodySmall>
-                      <Body style={styles.plotInfoText}>{task.plotSoThuaSoTo}</Body>
-                    </View>
-                    {task.plotArea > 0 && (
                       <View style={styles.plotInfoRow}>
-                        <BodySmall color={colors.textSecondary}>📏 Area:</BodySmall>
-                        <Body style={styles.plotInfoText}>{task.plotArea.toFixed(2)} ha</Body>
+                        <Ionicons name="location-outline" size={16} color={greenTheme.primary} style={{ marginRight: 4 }} />
+                        <BodySmall color={greenTheme.primary} style={{ fontWeight: '600' }}>Thửa đất:</BodySmall>
+                        <Body style={styles.plotInfoText}>{task.plotSoThuaSoTo}</Body>
                       </View>
-                    )}
+                      {task.plotArea > 0 && (
+                        <View style={styles.plotInfoRow}>
+                          <Ionicons name="resize-outline" size={16} color={greenTheme.primary} style={{ marginRight: 4 }} />
+                          <BodySmall color={greenTheme.primary} style={{ fontWeight: '600' }}>Diện tích:</BodySmall>
+                          <Body style={styles.plotInfoText}>{task.plotArea.toFixed(2)} ha</Body>
+                        </View>
+                      )}
                   </View>
                   
                   {task.description && (
@@ -509,24 +520,33 @@ export const FarmerTasksScreen = () => {
                   {/* Key details grid */}
                   <View style={styles.detailsGrid}>
                     <View style={styles.detailCard}>
-                      <BodySmall color={colors.textSecondary} style={styles.detailLabel}>
-                        📅 Scheduled
-                      </BodySmall>
+                      <View style={styles.detailLabelRow}>
+                        <Ionicons name="calendar-outline" size={14} color={greenTheme.primary} />
+                        <BodySmall color={greenTheme.primary} style={styles.detailLabel}>
+                          Lịch trình
+                        </BodySmall>
+                      </View>
                       <BodySemibold style={styles.detailValue}>
                         {dayjs(task.scheduledDate).format('MMM D, YYYY')}
                       </BodySemibold>
                     </View>
                     <View style={styles.detailCard}>
-                      <BodySmall color={colors.textSecondary} style={styles.detailLabel}>
-                        🎯 Priority
-                      </BodySmall>
+                      <View style={styles.detailLabelRow}>
+                        <Ionicons name="flag-outline" size={14} color={greenTheme.primary} />
+                        <BodySmall color={greenTheme.primary} style={styles.detailLabel}>
+                          Ưu tiên
+                        </BodySmall>
+                      </View>
                       <BodySemibold style={styles.detailValue}>{task.priority}</BodySemibold>
                     </View>
                     {task.estimatedMaterialCost > 0 && (
                       <View style={styles.detailCard}>
-                        <BodySmall color={colors.textSecondary} style={styles.detailLabel}>
-                          💰 Est. Cost
-                        </BodySmall>
+                        <View style={styles.detailLabelRow}>
+                          <Ionicons name="cash-outline" size={14} color={greenTheme.primary} />
+                          <BodySmall color={greenTheme.primary} style={styles.detailLabel}>
+                            Chi phí dự kiến
+                          </BodySmall>
+                        </View>
                         <BodySemibold style={styles.detailValue}>
                           {task.estimatedMaterialCost.toLocaleString()}₫
                         </BodySemibold>
@@ -538,7 +558,10 @@ export const FarmerTasksScreen = () => {
                       <Spacer size="md" />
                       <View style={styles.materialsSection}>
                         <View style={styles.materialsSectionHeader}>
-                          <BodySemibold style={styles.materialsTitle}>📦 Materials Required</BodySemibold>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                            <Ionicons name="cube-outline" size={16} color={greenTheme.primary} />
+                            <BodySemibold style={styles.materialsTitle}>Vật liệu cần thiết</BodySemibold>
+                          </View>
                           <View style={styles.materialsCountBadge}>
                             <BodySmall style={styles.materialsCountText}>
                               {task.materials.length}
@@ -558,15 +581,15 @@ export const FarmerTasksScreen = () => {
                             </View>
                             <View style={styles.materialDetails}>
                               <BodySmall color={colors.textSecondary}>
-                                Qty: {material.plannedQuantityTotal.toLocaleString()} • 
-                                Cost: {material.estimatedAmount.toLocaleString()}₫
+                                SL: {material.plannedQuantityTotal.toLocaleString()} • 
+                                Chi phí: {material.estimatedAmount.toLocaleString()}₫
                               </BodySmall>
                             </View>
                           </View>
                         ))}
                         {task.materials.length > 2 && (
                           <BodySmall color={colors.primary} style={styles.moreMaterials}>
-                            +{task.materials.length - 2} more materials
+                            +{task.materials.length - 2} vật liệu khác
                           </BodySmall>
                         )}
                       </View>
@@ -589,7 +612,7 @@ export const FarmerTasksScreen = () => {
                             <ActivityIndicator size="small" color={colors.white} />
                           ) : (
                             <BodySemibold style={styles.primaryActionButtonText}>
-                              Start Task
+                              Bắt đầu
                             </BodySemibold>
                           )}
                         </View>
@@ -606,7 +629,7 @@ export const FarmerTasksScreen = () => {
                       >
                         <View style={styles.primaryActionButtonContent}>
                           <BodySemibold style={styles.primaryActionButtonText}>
-                            Confirm Completion
+                            Xác nhận hoàn thành
                           </BodySemibold>
                         </View>
                       </TouchableOpacity>
@@ -622,24 +645,26 @@ export const FarmerTasksScreen = () => {
                       >
                         <View style={styles.primaryActionButtonContent}>
                           <BodySemibold style={styles.primaryActionButtonText}>
-                            Start Task
+                            Bắt đầu
                           </BodySemibold>
                         </View>
                       </TouchableOpacity>
                     )}
                     {/* Show completed banner for completed tasks */}
-                    {normalizeStatus(task.status) === 'completed' && (
+                        {normalizeStatus(task.status) === 'completed' && (
                       <View style={styles.completedBanner}>
+                        <Ionicons name="checkmark-circle" size={18} color={greenTheme.success} style={{ marginRight: 4 }} />
                         <Body style={styles.completedText}>
-                          ✓ Completed
+                          Hoàn thành
                         </Body>
                       </View>
                     )}
                     {/* Show approved banner for approved tasks that are not the first one */}
                     {normalizeStatus(task.status) === 'approved' && !isFirstApproved && (
                       <View style={styles.completedBanner}>
+                        <Ionicons name="checkmark-circle" size={18} color={greenTheme.success} style={{ marginRight: 4 }} />
                         <Body style={styles.completedText}>
-                          ✓ Approved
+                          Đã duyệt
                         </Body>
                       </View>
                     )}
@@ -675,37 +700,63 @@ const getResponsiveStyles = (screenWidth: number) => {
   };
 };
 
+// Green theme colors for farmer-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: getSpacing(spacing.md),
+    backgroundColor: greenTheme.cardBackground,
+    paddingBottom: getSpacing(spacing.sm),
+    borderBottomWidth: 1,
+    borderBottomColor: greenTheme.border,
   },
   backButton: {
     width: scale(40),
     height: scale(40),
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: moderateScale(borderRadius.full),
+    backgroundColor: greenTheme.primaryLighter,
   },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
     fontSize: getFontSize(20),
+    color: greenTheme.primary,
+    fontWeight: '700',
   },
   headerRight: {
     width: scale(40),
   },
   filterContainer: {
     flexDirection: 'row',
-    backgroundColor: colors.white,
+    backgroundColor: greenTheme.cardBackground,
     borderRadius: moderateScale(borderRadius.lg),
     padding: getSpacing(4),
-    ...shadows.sm,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   filterTab: {
     flex: 1,
@@ -718,14 +769,14 @@ const styles = StyleSheet.create({
     gap: getSpacing(spacing.xs),
   },
   filterTabActive: {
-    backgroundColor: colors.primaryLighter,
+    backgroundColor: greenTheme.primaryLighter,
   },
   filterTabText: {
     fontSize: getFontSize(14),
     fontWeight: '600',
   },
   filterBadge: {
-    backgroundColor: colors.textSecondary + '20',
+    backgroundColor: greenTheme.border,
     paddingHorizontal: getSpacing(6),
     paddingVertical: getSpacing(2),
     borderRadius: moderateScale(borderRadius.full),
@@ -734,10 +785,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   filterBadgeActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: greenTheme.primary,
   },
   filterBadgeText: {
-    color: colors.textSecondary,
+    color: greenTheme.primary,
     fontSize: getFontSize(11),
     fontWeight: '700',
   },
@@ -746,7 +797,15 @@ const styles = StyleSheet.create({
   },
   taskCard: {
     padding: getSpacing(spacing.lg),
-    borderRadius: moderateScale(borderRadius.xl),
+    borderRadius: moderateScale(borderRadius.lg),
+    backgroundColor: greenTheme.cardBackground,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   badgesRow: {
     flexDirection: 'row',
@@ -767,11 +826,15 @@ const styles = StyleSheet.create({
   taskIcon: {
     width: scale(52),
     height: scale(52),
-    borderRadius: moderateScale(borderRadius.lg),
-    backgroundColor: colors.primaryLighter,
+    borderRadius: moderateScale(borderRadius.md),
+    backgroundColor: greenTheme.primaryLighter,
     justifyContent: 'center',
     alignItems: 'center',
-    ...shadows.xs,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
   },
   taskHeaderInfo: {
     flex: 1,
@@ -779,13 +842,19 @@ const styles = StyleSheet.create({
   taskTitle: {
     fontSize: getFontSize(17),
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: greenTheme.primary,
   },
   dropdownSection: {
-    backgroundColor: colors.white,
+    backgroundColor: greenTheme.cardBackground,
     borderRadius: moderateScale(borderRadius.lg),
     padding: getSpacing(spacing.md),
-    ...shadows.sm,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   dropdownTrigger: {
     marginTop: getSpacing(spacing.xs),
@@ -797,37 +866,45 @@ const styles = StyleSheet.create({
   dropdownList: {
     marginTop: getSpacing(spacing.sm),
     borderWidth: 1,
-    borderColor: colors.borderLight,
+    borderColor: greenTheme.border,
     borderRadius: moderateScale(borderRadius.md),
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.background,
   },
   dropdownOption: {
     paddingVertical: getSpacing(spacing.sm),
     paddingHorizontal: getSpacing(spacing.md),
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
+    borderBottomColor: greenTheme.border,
   },
   dropdownOptionSelected: {
-    backgroundColor: colors.primaryLighter,
+    backgroundColor: greenTheme.primaryLighter,
   },
   dropdownError: {
     marginTop: getSpacing(spacing.xs),
   },
   plotInfoCard: {
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: greenTheme.primaryLighter,
     borderRadius: moderateScale(borderRadius.md),
     padding: getSpacing(spacing.sm),
     gap: getSpacing(spacing.xs),
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
   plotInfoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: getSpacing(spacing.sm),
+    gap: getSpacing(spacing.xs),
+  },
+  detailLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: getSpacing(4),
   },
   plotInfoText: {
     fontSize: getFontSize(14),
     fontWeight: '600',
-    color: colors.textPrimary,
+    color: greenTheme.primary,
   },
   taskDescription: {
     lineHeight: moderateScale(20),
@@ -841,9 +918,11 @@ const styles = StyleSheet.create({
   detailCard: {
     flex: 1,
     minWidth: '30%',
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: greenTheme.primaryLighter,
     borderRadius: moderateScale(borderRadius.md),
     padding: getSpacing(spacing.sm),
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
   detailLabel: {
     fontSize: getFontSize(11),
@@ -851,7 +930,8 @@ const styles = StyleSheet.create({
   },
   detailValue: {
     fontSize: getFontSize(14),
-    color: colors.textPrimary,
+    color: greenTheme.primary,
+    fontWeight: '600',
   },
   actionRow: {
     flexDirection: 'row',
@@ -860,9 +940,13 @@ const styles = StyleSheet.create({
   },
   primaryActionButton: {
     flex: 1,
-    backgroundColor: colors.primary,
+    backgroundColor: greenTheme.primary,
     borderRadius: moderateScale(borderRadius.lg),
-    ...shadows.sm,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
   },
   primaryActionButtonContent: {
     paddingVertical: getSpacing(spacing.md),
@@ -872,18 +956,19 @@ const styles = StyleSheet.create({
   primaryActionButtonText: {
     color: colors.white,
     fontSize: getFontSize(15),
+    fontWeight: '700',
   },
   completedBanner: {
     flex: 1,
-    backgroundColor: colors.success + '15',
+    backgroundColor: greenTheme.success + '15',
     borderRadius: moderateScale(borderRadius.lg),
     padding: getSpacing(spacing.md),
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.success + '30',
+    borderColor: greenTheme.success + '30',
   },
   completedText: {
-    color: colors.success,
+    color: greenTheme.success,
     fontWeight: '700',
     fontSize: getFontSize(15),
   },
@@ -921,9 +1006,11 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   materialsSection: {
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: greenTheme.primaryLighter,
     borderRadius: moderateScale(borderRadius.lg),
     padding: getSpacing(spacing.md),
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
   materialsSectionHeader: {
     flexDirection: 'row',
@@ -932,10 +1019,11 @@ const styles = StyleSheet.create({
   },
   materialsTitle: {
     fontSize: getFontSize(14),
-    color: colors.textPrimary,
+    color: greenTheme.primary,
+    fontWeight: '700',
   },
   materialsCountBadge: {
-    backgroundColor: colors.primary + '20',
+    backgroundColor: greenTheme.primary,
     paddingHorizontal: getSpacing(spacing.sm),
     paddingVertical: getSpacing(2),
     borderRadius: moderateScale(borderRadius.full),
@@ -943,17 +1031,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   materialsCountText: {
-    color: colors.primary,
+    color: colors.white,
     fontSize: getFontSize(12),
     fontWeight: '700',
   },
   materialItem: {
-    backgroundColor: colors.white,
+    backgroundColor: greenTheme.cardBackground,
     borderRadius: moderateScale(borderRadius.md),
     padding: getSpacing(spacing.sm),
     marginBottom: getSpacing(spacing.xs),
     borderWidth: 1,
-    borderColor: colors.borderLight,
+    borderColor: greenTheme.border,
   },
   materialHeader: {
     flexDirection: 'row',
@@ -963,7 +1051,8 @@ const styles = StyleSheet.create({
   },
   materialName: {
     fontSize: getFontSize(14),
-    color: colors.textPrimary,
+    color: greenTheme.primary,
+    fontWeight: '600',
   },
   materialUnit: {
     fontSize: getFontSize(13),
@@ -976,6 +1065,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontWeight: '600',
     fontSize: getFontSize(13),
+    color: greenTheme.primary,
   },
 });
 

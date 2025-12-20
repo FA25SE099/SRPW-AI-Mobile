@@ -209,14 +209,13 @@ export const DiseaseScannerScreen = () => {
         >
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Disease Scanner</Text>
-        <View style={styles.backButton} />
+        <Text style={styles.headerTitle}>Quét sâu bệnh</Text>
+        <View style={styles.backButton} />  
       </View>
 
       {/* Camera View */}
       <View style={styles.cameraContainer}>
         <CameraView
-          // @ts-expect-error
           ref={cameraRef}
           style={styles.camera}
           facing={facing}
@@ -236,7 +235,7 @@ export const DiseaseScannerScreen = () => {
         {/* Instructions */}
         <View style={styles.instructionContainer}>
           <Text style={styles.instructionText}>
-            Position the plant within the frame
+            Đặt cây trong khung hình để quét
           </Text>
         </View>
       </View>
