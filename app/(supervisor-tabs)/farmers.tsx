@@ -1,4 +1,9 @@
-import { FarmersManagementScreen } from '../../screens/supervisor/FarmersManagementScreen';
+/**
+ * Supervisor Farmers Tab
+ * List of farmers under supervision
+ */
 
-export default FarmersManagementScreen;
+import { FarmersListScreen } from '@/screens/supervisor/FarmersListScreen';
+
+export default FarmersListScreen;
 

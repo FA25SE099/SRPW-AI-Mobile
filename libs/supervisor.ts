@@ -26,6 +26,36 @@ export type SupervisedFarmer = {
   lastActivity: string;
 };
 
+// Farmer type matching backend FarmerDTO
+export type Farmer = {
+  farmerId: string;
+  fullName?: string;
+  address?: string;
+  phoneNumber?: string;
+  isActive: boolean;
+  isVerified: boolean;
+  lastActivityAt?: string;
+  farmCode?: string;
+  plotCount: number;
+};
+
+export type GetSupervisorFarmersParams = {
+  onlyAssigned?: boolean;
+  currentPage?: number;
+  pageSize?: number;
+  searchTerm?: string;
+};
+
+export type SupervisorFarmersResponse = {
+  succeeded: boolean;
+  data: Farmer[];
+  currentPage: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  message: string;
+};
+
 export type SupervisedTask = {
   id: string;
   taskName: string;
@@ -108,7 +138,7 @@ type GetSupervisedAlertsParams = {
 export const getSupervisedFarmers = async (
   params: GetSupervisedFarmersParams,
 ): Promise<PagedResult<SupervisedFarmer[]>> => {
-  // TODO: Replace with actual API endpoint
+  // TODO: Replace with actual API endpoint when available
   // const response = await api.get<PagedResult<SupervisedFarmer[]>>(
   //   `/supervisor/${params.supervisorId}/farmers`,
   //   {
@@ -121,6 +151,119 @@ export const getSupervisedFarmers = async (
   // );
   // return response;
   throw new Error('API endpoint not implemented yet');
+};
+
+/**
+ * Get all farmers under supervisor (simplified - using default params)
+ */
+export const getFarmers = async (params?: GetSupervisorFarmersParams): Promise<Farmer[]> => {
+  const response = await api.post<SupervisorFarmersResponse>('/supervisor/farmers', {
+    onlyAssigned: params?.onlyAssigned ?? true,
+    currentPage: params?.currentPage ?? 1,
+    pageSize: params?.pageSize ?? 100,
+    searchTerm: params?.searchTerm,
+  });
+  
+  if (response && 'data' in response && Array.isArray(response.data)) {
+    return response.data;
+  }
+  return [];
+};
+
+/**
+ * Get all farmers with pagination support
+ */
+export const getSupervisorFarmersWithPagination = async (
+  params: GetSupervisorFarmersParams = {}
+): Promise<SupervisorFarmersResponse> => {
+  return api.post<SupervisorFarmersResponse>('/supervisor/farmers', {
+    onlyAssigned: params.onlyAssigned ?? false,
+    currentPage: params.currentPage ?? 1,
+    pageSize: params.pageSize ?? 20,
+    searchTerm: params.searchTerm,
+  });
+};
+
+export type PlotStatus = 'Active' | 'PendingPolygon' | string;
+
+export type PlotListResponse = {
+  plotId: string;
+  area: number;
+  soThua?: number;
+  soTo?: number;
+  status: PlotStatus;
+  groupId?: string;
+  boundary?: string;
+  coordinate?: string;
+  groupName?: string;
+  activeCultivations: number;
+  activeAlerts: number;
+  soilType?: string;
+};
+
+export type GetFarmerPlotsParams = {
+  farmerId: string;
+  currentPage?: number;
+  pageSize?: number;
+  status?: PlotStatus;
+  isUnassigned?: boolean | null;
+};
+
+export type GetFarmerPlotsResponse = {
+  succeeded: boolean;
+  data: PlotListResponse[];
+  currentPage: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  message: string;
+};
+
+/**
+ * Get plots for a specific farmer
+ */
+export const getFarmerPlots = async (params: GetFarmerPlotsParams): Promise<PlotListResponse[]> => {
+  const requestBody: any = {
+    farmerId: params.farmerId,
+    currentPage: params.currentPage || 1,
+    pageSize: params.pageSize || 100,
+  };
+
+  if (params.status) {
+    requestBody.status = params.status;
+  }
+  if (params.isUnassigned !== undefined && params.isUnassigned !== null) {
+    requestBody.isUnassigned = params.isUnassigned;
+  }
+
+  const response = await api.post<GetFarmerPlotsResponse>('/Farmer/plots', requestBody);
+  
+  if (response && 'data' in response && Array.isArray(response.data)) {
+    return response.data;
+  }
+  return [];
+};
+
+/**
+ * Get plots for a specific farmer with pagination
+ */
+export const getFarmerPlotsWithPagination = async (
+  params: GetFarmerPlotsParams
+): Promise<GetFarmerPlotsResponse> => {
+  const requestBody: any = {
+    farmerId: params.farmerId,
+    currentPage: params.currentPage || 1,
+    pageSize: params.pageSize || 20,
+  };
+
+  if (params.status) {
+    requestBody.status = params.status;
+  }
+  if (params.isUnassigned !== undefined && params.isUnassigned !== null) {
+    requestBody.isUnassigned = params.isUnassigned;
+  }
+
+  return api.post<GetFarmerPlotsResponse>('/Farmer/plots', requestBody);
 };
 
 /**
@@ -245,7 +388,6 @@ export const getSupervisedPlots = async (
 
 // Polygon Drawing Types
 export type PolygonTaskStatus = 'Pending' | 'InProgress' | 'Completed' | 'Cancelled';
-export type PlotStatus = 'Active' | 'Inactive' | 'Emergency' | 'Locked';
 
 export type PolygonTask = {
   id: string;

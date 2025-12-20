@@ -1,6 +1,6 @@
 /**
- * Fields Overview Screen
- * Map view of all supervised fields/plots
+ * Farmers with Plots Management Screen
+ * Unified view: Farmer list → Plot list with map → Profit analysis per plot
  */
 
 import React, { useState, useMemo, useRef } from 'react';
@@ -13,7 +13,6 @@ import {
   Modal,
   FlatList,
   Text,
-  TextInput,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -23,6 +22,7 @@ import { colors, spacing, borderRadius, shadows } from '../../theme';
 import {
   Container,
   H3,
+  H4,
   Body,
   BodySmall,
   BodySemibold,
@@ -35,57 +35,83 @@ import {
   MarkerData,
 } from '../../components/ui';
 import { useUser } from '../../libs/auth';
-import { FarmerPlot, StandardPlan, StandardPlanMaterialCostRequest } from '../../types/api';
-import { getFarmers, getFarmerPlots, getStandardPlans, calculateStandardPlanMaterialCost, Farmer, GetFarmerPlotsParams } from '../../libs/supervisor';
+import { StandardPlan, StandardPlanMaterialCostRequest } from '../../types/api';
+import { 
+  getFarmers, 
+  getFarmerPlots, 
+  getStandardPlans, 
+  calculateStandardPlanMaterialCost,
+  Farmer,
+  GetFarmerPlotsParams,
+  PlotListResponse
+} from '../../libs/supervisor';
 
-// Mock function to parse WKT point
-const parsePointWkt = (wkt: string): { latitude: number; longitude: number } | null => {
-  const match = wkt.match(/POINT\s*\(\s*([\d.]+)\s+([\d.]+)\s*\)/i);
-  if (match) {
-    return {
-      longitude: parseFloat(match[1]),
-      latitude: parseFloat(match[2]),
-    };
+// Helper functions from FieldsScreen
+const parsePointWkt = (wkt?: string | null): { latitude: number; longitude: number } | null => {
+  if (!wkt) return null;
+  const match = wkt.match(/POINT\s*\(\s*([0-9.+-]+)\s+([0-9.+-]+)\s*\)/i);
+  if (!match) return null;
+  const first = parseFloat(match[1]);
+  const second = parseFloat(match[2]);
+  if (Number.isNaN(first) || Number.isNaN(second)) {
+    return null;
   }
-  return null;
+
+  const lat = Math.abs(first) <= 90 && Math.abs(second) > 90 ? first : second;
+  const lng = Math.abs(first) <= 90 && Math.abs(second) > 90 ? second : first;
+  return { latitude: lat, longitude: lng };
 };
 
-// Mock function to parse WKT polygon
 const parsePolygonWkt = (
-  wkt: string,
+  wkt?: string | null,
 ): Array<{ latitude: number; longitude: number }> | null => {
-  const match = wkt.match(/POLYGON\s*\(\s*\(([^)]+)\)\s*\)/i);
-  if (match) {
-    const coords = match[1]
-      .trim()
-      .split(',')
-      .map((coord) => {
-        const [lng, lat] = coord.trim().split(/\s+/);
-        return {
-          longitude: parseFloat(lng),
-          latitude: parseFloat(lat),
-        };
-      });
-    return coords;
+  if (!wkt) return null;
+  const match = wkt.match(/POLYGON\s*\(\((.+)\)\)/i);
+  if (!match) return null;
+
+  const ring = match[1]
+    .split(',')
+    .map((pair) => pair.trim())
+    .map((pair) => {
+      const [lngStr, latStr] = pair.split(/\s+/);
+      const lng = parseFloat(lngStr);
+      const lat = parseFloat(latStr);
+      if (Number.isNaN(lat) || Number.isNaN(lng)) {
+        return null;
+      }
+      return { latitude: lat, longitude: lng };
+    })
+    .filter((coord): coord is { latitude: number; longitude: number } => coord !== null);
+
+  if (!ring.length) {
+    return null;
   }
-  return null;
+
+  const first = ring[0];
+  const last = ring[ring.length - 1];
+  if (first.latitude !== last.latitude || first.longitude !== last.longitude) {
+    ring.push({ ...first });
+  }
+
+  return ring;
 };
 
-export const FieldsOverviewScreen = () => {
+export const FarmersWithPlotsScreen = () => {
   const router = useRouter();
   const { data: user } = useUser();
   const mapRef = useRef<any>(null);
   const cameraRef = useRef<any>(null);
+  
+  // State management
+  const [selectedFarmer, setSelectedFarmer] = useState<Farmer | null>(null);
   const [selectedPlot, setSelectedPlot] = useState<string | null>(null);
+  const [showFarmerModal, setShowFarmerModal] = useState(false);
   const [showPriceModal, setShowPriceModal] = useState(false);
   const [priceReviewPlotId, setPriceReviewPlotId] = useState<string>('');
   const [selectedStandardPlan, setSelectedStandardPlan] = useState<string>('');
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [isCalculatingPrice, setIsCalculatingPrice] = useState(false);
   const [priceResult, setPriceResult] = useState<any>(null);
-  const [selectedFarmer, setSelectedFarmer] = useState<string>('');
-  const [selectedFarmerData, setSelectedFarmerData] = useState<Farmer | null>(null);
-  const [showFarmerModal, setShowFarmerModal] = useState(false);
 
   // Fetch farmers list
   const { data: farmers, isLoading: isFarmersLoading } = useQuery({
@@ -99,12 +125,12 @@ export const FieldsOverviewScreen = () => {
     queryFn: () => getStandardPlans(),
   });
 
-  // Fetch plots for selected farmer (or all plots if no farmer selected)
-  const { data: plotsData, isLoading: plotsLoading, error: plotsError } = useQuery({
-    queryKey: ['farmer-plots', selectedFarmer],
+  // Fetch plots for selected farmer
+  const { data: plotsData, isLoading: plotsLoading } = useQuery({
+    queryKey: ['farmer-plots', selectedFarmer?.farmerId],
     queryFn: () => selectedFarmer 
       ? getFarmerPlots({ 
-          farmerId: selectedFarmer,
+          farmerId: selectedFarmer.farmerId,
           currentPage: 1,
           pageSize: 100,
         }) 
@@ -113,28 +139,11 @@ export const FieldsOverviewScreen = () => {
   });
 
   const plots = plotsData || [];
-  
-  // If you want to use mock data for testing, uncomment below and comment out the API call above
-  // const mockPlots: FarmerPlot[] = [
-  //   {
-  //     plotId: 'REPLACE_WITH_REAL_PLOT_ID_FROM_DATABASE',
-  //     area: 2.5,
-  //     soThua: 16,
-  //     soTo: 58,
-  //     status: 'active',
-  //     groupId: 'group1',
-  //     groupName: 'DongThap1',
-  //     activeCultivations: 1,
-  //     activeAlerts: 0,
-  //     boundary: 'POLYGON ((106.7107264253334 10.884543832447122, 106.7107264253334 10.88461420845745, 106.71102901215232 10.884782328858108, 106.71109271464098 10.884782328858108, 106.71226324787057 10.884469546640403, 106.7122950991149 10.884410899937805, 106.71224334084167 10.884180222795635, 106.71217565694866 10.88415285430932, 106.7107264253334 10.884543832447122))',
-  //     coordinate: 'POINT (106.71136654907801 10.883609895322609)',
-  //   },
-  // ];
-  // const plots = mockPlots;
 
+  // Map data processing
   const pointMarkers = useMemo(() => {
     return plots
-      .map((plot) => {
+      .map((plot: any) => {
         const coordinate = parsePointWkt(plot.coordinate);
         if (!coordinate) return null;
 
@@ -151,7 +160,7 @@ export const FieldsOverviewScreen = () => {
 
   const polygons = useMemo(() => {
     return plots
-      .map((plot) => {
+      .map((plot: any) => {
         if (!plot.boundary) return null;
         const coords = parsePolygonWkt(plot.boundary);
         if (!coords) return null;
@@ -222,7 +231,7 @@ export const FieldsOverviewScreen = () => {
   }, [pointMarkers, polygons]);
 
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
+    switch (status?.toLowerCase()) {
       case 'active':
         return colors.success;
       case 'needs-attention':
@@ -237,7 +246,7 @@ export const FieldsOverviewScreen = () => {
 
   const handlePlotSelect = (plotId: string) => {
     setSelectedPlot(plotId);
-    const plot = plots.find((p) => p.plotId === plotId);
+    const plot = plots.find((p: any) => p.plotId === plotId);
     if (plot) {
       const coordinate = parsePointWkt(plot.coordinate);
       if (coordinate && cameraRef.current) {
@@ -275,13 +284,10 @@ export const FieldsOverviewScreen = () => {
 
     setIsCalculatingPrice(true);
     try {
-      // Build request object with only the fields we need
       const request: StandardPlanMaterialCostRequest = {
         standardPlanId: selectedStandardPlan,
+        plotId: priceReviewPlotId,
       };
-      
-      // Only add plotId (don't include area)
-      request.plotId = priceReviewPlotId;
       
       const result = await calculateStandardPlanMaterialCost(request);
       setPriceResult(result);
@@ -304,9 +310,9 @@ export const FieldsOverviewScreen = () => {
       <Container padding="lg">
         {/* Header */}
         <View style={styles.header}>
-          <H3>Fields Overview</H3>
+          <H3>Farmers & Fields</H3>
           <BodySmall color={colors.textSecondary}>
-            {plots.length} plots
+            {selectedFarmer ? `${plots.length} plots` : `${farmers?.length || 0} farmers`}
           </BodySmall>
         </View>
 
@@ -314,102 +320,187 @@ export const FieldsOverviewScreen = () => {
 
         {/* Farmer Selection */}
         <View style={styles.section}>
-          <Text style={styles.label}>Filter by Farmer</Text>
-          <TouchableOpacity
-            style={styles.selectButton}
-            onPress={() => setShowFarmerModal(true)}
-          >
-            <Text style={styles.selectButtonText}>
-              {selectedFarmerData 
-                ? selectedFarmerData.fullName || selectedFarmerData.farmCode || 'Unknown Farmer'
-                : 'Select Farmer'}
-            </Text>
-          </TouchableOpacity>
+          <Text style={styles.label}>Select Farmer</Text>
+          {isFarmersLoading ? (
+            <ActivityIndicator />
+          ) : (
+            <TouchableOpacity
+              style={styles.selectButton}
+              onPress={() => setShowFarmerModal(true)}
+            >
+              <Text style={styles.selectButtonText}>
+                {selectedFarmer
+                  ? selectedFarmer.fullName || `${selectedFarmer.farmCode}`
+                  : 'Choose a farmer to view their plots'}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <Spacer size="md" />
 
-        {/* Map View */}
-        <Card variant="elevated" style={styles.mapCard}>
-          <MapboxMap
-            mapRef={mapRef}
-            cameraRef={cameraRef}
-            initialRegion={mapRegion}
-            polygons={mapboxPolygons}
-            markers={mapboxMarkers}
-            style={styles.map}
-          />
-        </Card>
+        {/* Show Map and Plots only when farmer is selected */}
+        {selectedFarmer && (
+          <>
+            {/* Map View */}
+            <Card variant="elevated" style={styles.mapCard}>
+              {plotsLoading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color={colors.primary} />
+                </View>
+              ) : plots.length > 0 ? (
+                <MapboxMap
+                  mapRef={mapRef}
+                  cameraRef={cameraRef}
+                  initialRegion={mapRegion}
+                  polygons={mapboxPolygons}
+                  markers={mapboxMarkers}
+                  style={styles.map}
+                />
+              ) : (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>No plots found for this farmer</Text>
+                </View>
+              )}
+            </Card>
 
-        <Spacer size="lg" />
+            <Spacer size="lg" />
 
-        {/* Plots List */}
-        <H3>All Plots</H3>
-        <Spacer size="md" />
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {plots.map((plot) => (
-            <TouchableOpacity
-              key={plot.plotId}
-              onPress={() => handlePlotSelect(plot.plotId)}
-            >
-              <Card
-                variant="elevated"
-                style={[
-                  styles.plotCard,
-                  selectedPlot === plot.plotId && styles.plotCardSelected,
-                ]}
-              >
-                <View style={styles.plotHeader}>
-                  <View style={styles.plotInfo}>
-                    <BodySemibold>
-                      Thửa {plot.soThua}, Tờ {plot.soTo}
-                    </BodySemibold>
-                    <BodySmall color={colors.textSecondary}>
-                      {plot.groupName} • {plot.area} ha
-                    </BodySmall>
-                  </View>
-                  <Badge
-                    variant="outline"
-                    style={[
-                      styles.statusBadge,
-                      { borderColor: getStatusColor(plot.status) },
-                    ]}
+            {/* Plots List */}
+            <H4>Plots ({plots.length})</H4>
+            <Spacer size="md" />
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {plotsLoading ? (
+                <ActivityIndicator />
+              ) : plots.length === 0 ? (
+                <Card variant="flat" style={styles.emptyCard}>
+                  <Body color={colors.textSecondary}>No plots found</Body>
+                </Card>
+              ) : (
+                plots.map((plot: any) => (
+                  <TouchableOpacity
+                    key={plot.plotId}
+                    onPress={() => handlePlotSelect(plot.plotId)}
                   >
-                    <BodySmall style={{ color: getStatusColor(plot.status) }}>
-                      {plot.status}
-                    </BodySmall>
-                  </Badge>
-                </View>
+                    <Card
+                      variant="elevated"
+                      style={[
+                        styles.plotCard,
+                        selectedPlot === plot.plotId && styles.plotCardSelected,
+                      ]}
+                    >
+                      <View style={styles.plotHeader}>
+                        <View style={styles.plotInfo}>
+                          <BodySemibold>
+                            Thửa {plot.soThua}, Tờ {plot.soTo}
+                          </BodySemibold>
+                          <BodySmall color={colors.textSecondary}>
+                            {plot.groupName} • {plot.area} ha
+                          </BodySmall>
+                        </View>
+                        <Badge
+                          variant="outline"
+                          style={[
+                            styles.statusBadge,
+                            { borderColor: getStatusColor(plot.status) },
+                          ]}
+                        >
+                          <BodySmall style={{ color: getStatusColor(plot.status) }}>
+                            {plot.status}
+                          </BodySmall>
+                        </Badge>
+                      </View>
 
-                <Spacer size="sm" />
+                      <Spacer size="sm" />
 
-                <View style={styles.plotStats}>
-                  <View style={styles.plotStatItem}>
-                    <BodySmall color={colors.textSecondary}>Cultivations:</BodySmall>
-                    <BodySemibold>{plot.activeCultivations}</BodySemibold>
-                  </View>
-                  <View style={styles.plotStatItem}>
-                    <BodySmall color={colors.textSecondary}>Alerts:</BodySmall>
-                    <BodySemibold color={plot.activeAlerts > 0 ? colors.error : colors.textDark}>
-                      {plot.activeAlerts}
-                    </BodySemibold>
-                  </View>
-                </View>
+                      <View style={styles.plotStats}>
+                        <View style={styles.plotStatItem}>
+                          <BodySmall color={colors.textSecondary}>Area:</BodySmall>
+                          <BodySemibold>{plot.area} ha</BodySemibold>
+                        </View>
+                        <View style={styles.plotStatItem}>
+                          <BodySmall color={colors.textSecondary}>Soil:</BodySmall>
+                          <BodySemibold>{plot.soilType || 'N/A'}</BodySemibold>
+                        </View>
+                      </View>
 
-                <Spacer size="sm" />
+                      <Spacer size="sm" />
 
-                {/* Price Review Button */}
-                <TouchableOpacity
-                  style={styles.priceReviewButton}
-                  onPress={() => handlePriceReview(plot.plotId)}
-                >
-                  <Text style={styles.priceReviewButtonText}>💰 Price Review</Text>
-                </TouchableOpacity>
-              </Card>
-              <Spacer size="sm" />
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+                      {/* Profit Analysis Button */}
+                      <TouchableOpacity
+                        style={styles.profitButton}
+                        onPress={() => handlePriceReview(plot.plotId)}
+                      >
+                        <Text style={styles.profitButtonText}>💰 Calculate Profit</Text>
+                      </TouchableOpacity>
+                    </Card>
+                    <Spacer size="sm" />
+                  </TouchableOpacity>
+                ))
+              )}
+            </ScrollView>
+          </>
+        )}
+
+        {/* Empty state when no farmer selected */}
+        {!selectedFarmer && (
+          <Card variant="flat" style={styles.emptyStateCard}>
+            <Text style={styles.emptyStateIcon}>👨‍🌾</Text>
+            <H4 style={styles.emptyStateTitle}>Select a Farmer</H4>
+            <Body color={colors.textSecondary} style={styles.emptyStateText}>
+              Choose a farmer from the list above to view their plots and field information
+            </Body>
+          </Card>
+        )}
+
+        {/* Farmer Selection Modal */}
+        <Modal
+          visible={showFarmerModal}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setShowFarmerModal(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Select Farmer</Text>
+              <FlatList
+                data={farmers || []}
+                keyExtractor={(item) => item.farmerId}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.farmerModalItem}
+                    onPress={() => {
+                      setSelectedFarmer(item);
+                      setSelectedPlot(null);
+                      setShowFarmerModal(false);
+                    }}
+                  >
+                    <View>
+                      <Text style={styles.farmerModalName}>
+                        {item.fullName || item.farmCode || 'Unknown Farmer'}
+                      </Text>
+                      {item.address && (
+                        <Text style={styles.farmerModalEmail}>{item.address}</Text>
+                      )}
+                      {item.phoneNumber && (
+                        <Text style={styles.farmerModalPhone}>📞 {item.phoneNumber}</Text>
+                      )}
+                      <Text style={styles.farmerModalStats}>
+                        {item.plotCount} plots • {item.isActive ? '✅ Active' : '❌ Inactive'}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
+              />
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setShowFarmerModal(false)}
+              >
+                <Text style={styles.modalCloseButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
 
         {/* Price Review Modal */}
         <Modal
@@ -420,7 +511,7 @@ export const FieldsOverviewScreen = () => {
         >
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Material Cost Review</Text>
+              <Text style={styles.modalTitle}>Material Cost Analysis</Text>
 
               {/* Standard Plan Selection */}
               <Text style={styles.modalLabel}>Select Standard Plan *</Text>
@@ -442,13 +533,13 @@ export const FieldsOverviewScreen = () => {
                 {isCalculatingPrice ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.calculateButtonText}>Calculate Material Cost</Text>
+                  <Text style={styles.calculateButtonText}>Calculate Cost</Text>
                 )}
               </TouchableOpacity>
 
               {/* Results */}
               {priceResult && (
-                <View style={styles.priceResults}>
+                <ScrollView style={styles.priceResults}>
                   <Text style={styles.resultsTitle}>Cost Summary</Text>
                   <View style={styles.resultRow}>
                     <Text style={styles.resultLabel}>Area:</Text>
@@ -467,25 +558,23 @@ export const FieldsOverviewScreen = () => {
                     </Text>
                   </View>
 
-                  {priceResult.materialCostItems.length > 0 && (
+                  {priceResult.materialCostItems?.length > 0 && (
                     <>
-                      <Text style={styles.materialsTitle}>Materials Breakdown:</Text>
-                      <ScrollView style={styles.materialsList}>
-                        {priceResult.materialCostItems.map((item: any, idx: number) => (
-                          <View key={idx} style={styles.materialItem}>
-                            <Text style={styles.materialName}>{item.materialName}</Text>
-                            <Text style={styles.materialDetail}>
-                              {item.totalQuantityNeeded} {item.unit} ({item.packagesNeeded} packages)
-                            </Text>
-                            <Text style={styles.materialCost}>
-                              {formatCurrency(item.totalCost)}
-                            </Text>
-                          </View>
-                        ))}
-                      </ScrollView>
+                      <Text style={styles.materialsTitle}>Materials:</Text>
+                      {priceResult.materialCostItems.map((item: any, idx: number) => (
+                        <View key={idx} style={styles.materialItem}>
+                          <Text style={styles.materialName}>{item.materialName}</Text>
+                          <Text style={styles.materialDetail}>
+                            {item.totalQuantityNeeded} {item.unit}
+                          </Text>
+                          <Text style={styles.materialCost}>
+                            {formatCurrency(item.totalCost)}
+                          </Text>
+                        </View>
+                      ))}
                     </>
                   )}
-                </View>
+                </ScrollView>
               )}
 
               {/* Close Button */}
@@ -520,59 +609,13 @@ export const FieldsOverviewScreen = () => {
                       setShowPlanModal(false);
                     }}
                   >
-                    <Text style={styles.planModalItemText}>
-                      {item.name}
-                      {item.riceVarietyName && (
-                        <Text style={styles.planModalItemSubtext}> ({item.riceVarietyName})</Text>
-                      )}
-                    </Text>
+                    <Text style={styles.planModalItemText}>{item.name}</Text>
                   </TouchableOpacity>
                 )}
               />
               <TouchableOpacity
                 style={styles.modalCloseButton}
                 onPress={() => setShowPlanModal(false)}
-              >
-                <Text style={styles.modalCloseButtonText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
-
-        {/* Farmer Selection Modal */}
-        <Modal
-          visible={showFarmerModal}
-          animationType="slide"
-          transparent={true}
-          onRequestClose={() => setShowFarmerModal(false)}
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Select Farmer</Text>
-              <FlatList
-                data={farmers || []}
-                keyExtractor={(item) => item.farmerId}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={styles.planModalItem}
-                    onPress={() => {
-                      setSelectedFarmer(item.farmerId);
-                      setSelectedFarmerData(item);
-                      setShowFarmerModal(false);
-                    }}
-                  >
-                    <Text style={styles.planModalItemText}>
-                      {item.fullName || item.farmCode || 'Unknown Farmer'}
-                    </Text>
-                    {item.address && (
-                      <Text style={styles.planModalItemSubtext}>{item.address}</Text>
-                    )}
-                  </TouchableOpacity>
-                )}
-              />
-              <TouchableOpacity
-                style={styles.modalCloseButton}
-                onPress={() => setShowFarmerModal(false)}
               >
                 <Text style={styles.modalCloseButtonText}>Cancel</Text>
               </TouchableOpacity>
@@ -607,9 +650,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 8,
-    padding: spacing.sm,
-    minHeight: 50,
+    padding: spacing.md,
+    minHeight: 56,
     justifyContent: 'center',
+    backgroundColor: colors.white,
   },
   selectButtonText: {
     fontSize: 16,
@@ -623,6 +667,42 @@ const styles = StyleSheet.create({
   map: {
     width: '100%',
     height: '100%',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.xl,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  emptyCard: {
+    padding: spacing.xl,
+    alignItems: 'center',
+  },
+  emptyStateCard: {
+    padding: spacing.xl * 2,
+    alignItems: 'center',
+    marginTop: spacing.xl,
+  },
+  emptyStateIcon: {
+    fontSize: 64,
+    marginBottom: spacing.lg,
+  },
+  emptyStateTitle: {
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+  },
+  emptyStateText: {
+    textAlign: 'center',
   },
   plotCard: {
     padding: spacing.md,
@@ -651,14 +731,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.xs,
   },
-  priceReviewButton: {
+  profitButton: {
     backgroundColor: colors.primary,
     padding: spacing.sm,
     borderRadius: borderRadius.sm,
     alignItems: 'center',
     marginTop: spacing.sm,
   },
-  priceReviewButtonText: {
+  profitButtonText: {
     color: '#fff',
     fontWeight: '600',
     fontSize: 14,
@@ -689,6 +769,53 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     color: colors.textDark,
   },
+  farmerModalItem: {
+    padding: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  farmerModalName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.textDark,
+    marginBottom: 4,
+  },
+  farmerModalEmail: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 2,
+  },
+  farmerModalPhone: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  farmerModalStats: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 4,
+    fontWeight: '600',
+  },
+  planModalItem: {
+    padding: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  planModalItemText: {
+    fontSize: 16,
+    color: colors.textDark,
+  },
+  modalCloseButton: {
+    marginTop: spacing.md,
+    padding: spacing.md,
+    backgroundColor: colors.backgroundLight,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  modalCloseButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.textDark,
+  },
   calculateButton: {
     backgroundColor: colors.primary,
     padding: spacing.md,
@@ -706,9 +833,6 @@ const styles = StyleSheet.create({
   },
   priceResults: {
     marginTop: spacing.md,
-    padding: spacing.md,
-    backgroundColor: colors.backgroundLight,
-    borderRadius: 8,
     maxHeight: 300,
   },
   resultsTitle: {
@@ -741,9 +865,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     color: colors.textDark,
   },
-  materialsList: {
-    maxHeight: 150,
-  },
   materialItem: {
     padding: spacing.sm,
     borderBottomWidth: 1,
@@ -765,29 +886,4 @@ const styles = StyleSheet.create({
     color: colors.primary,
     marginTop: 4,
   },
-  planModalItem: {
-    padding: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  planModalItemText: {
-    fontSize: 16,
-    color: colors.textDark,
-  },
-  planModalItemSubtext: {
-    color: colors.textSecondary,
-  },
-  modalCloseButton: {
-    marginTop: spacing.md,
-    padding: spacing.md,
-    backgroundColor: colors.backgroundLight,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  modalCloseButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textDark,
-  },
 });
-

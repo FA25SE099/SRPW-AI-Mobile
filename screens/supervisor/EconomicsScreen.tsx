@@ -13,8 +13,14 @@ import {
   FlatList,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import { getStandardPlans, calculateStandardPlanProfitAnalysis } from '@/libs/supervisor';
-import { getCurrentFarmerPlots } from '@/libs/farmer';
+import { 
+  getStandardPlans, 
+  calculateStandardPlanProfitAnalysis, 
+  getFarmers, 
+  getFarmerPlots,
+  Farmer,
+  GetFarmerPlotsParams
+} from '@/libs/supervisor';
 import { StandardPlan, StandardPlanProfitAnalysisRequest } from '@/types/api';
 import { colors, spacing } from '@/theme';
 import { Container } from '@/components/ui';
@@ -27,12 +33,21 @@ export const EconomicsScreen = () => {
   const [selectedPlot, setSelectedPlot] = useState<string>('');
   const [selectedPlotName, setSelectedPlotName] = useState<string>('');
   const [showPlotModal, setShowPlotModal] = useState(false);
+  const [selectedFarmer, setSelectedFarmer] = useState<string>('');
+  const [selectedFarmerData, setSelectedFarmerData] = useState<Farmer | null>(null);
+  const [showFarmerModal, setShowFarmerModal] = useState(false);
   const [area, setArea] = useState('');
   const [pricePerKg, setPricePerKg] = useState('7500');
   const [expectedYield, setExpectedYield] = useState('6000');
   const [otherCosts, setOtherCosts] = useState('0');
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [isCalculating, setIsCalculating] = useState(false);
+
+  // Fetch farmers list
+  const { data: farmers, isLoading: isFarmersLoading } = useQuery({
+    queryKey: ['farmers-list'],
+    queryFn: () => getFarmers(),
+  });
 
   // Fetch standard plans
   const { data: standardPlans, isLoading: isLoadingPlans, error: plansError } = useQuery({
@@ -41,11 +56,17 @@ export const EconomicsScreen = () => {
     retry: 1,
   });
 
-  // Fetch plots only if usePlot is true
+  // Fetch plots for selected farmer (only if usePlot is true and a farmer is selected)
   const { data: plotsData, isLoading: isLoadingPlots } = useQuery({
-    queryKey: ['farmer-plots'],
-    queryFn: () => getCurrentFarmerPlots({ pageSize: 100 }),
-    enabled: usePlot,
+    queryKey: ['farmer-plots', selectedFarmer],
+    queryFn: () => selectedFarmer 
+      ? getFarmerPlots({ 
+          farmerId: selectedFarmer,
+          currentPage: 1,
+          pageSize: 100,
+        }) 
+      : Promise.resolve([]),
+    enabled: usePlot && !!selectedFarmer,
   });
 
   const plots = plotsData || [];
@@ -209,11 +230,34 @@ export const EconomicsScreen = () => {
           </View>
         </View>
 
+        {/* Farmer Selection (only show when usePlot is true) */}
+        {usePlot && (
+          <View style={styles.section}>
+            <Text style={styles.label}>Select Farmer *</Text>
+            {isFarmersLoading ? (
+              <ActivityIndicator />
+            ) : (
+              <TouchableOpacity
+                style={styles.selectButton}
+                onPress={() => setShowFarmerModal(true)}
+              >
+                <Text style={styles.selectButtonText}>
+                  {selectedFarmerData
+                    ? selectedFarmerData.fullName || selectedFarmerData.farmCode || 'Unknown Farmer'
+                    : '-- Select Farmer --'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
         {/* Plot or Area Selection */}
         {usePlot ? (
           <View style={styles.section}>
             <Text style={styles.label}>Select Plot *</Text>
-            {isLoadingPlots ? (
+            {!selectedFarmer ? (
+              <Text style={styles.helperText}>Please select a farmer first</Text>
+            ) : isLoadingPlots ? (
               <ActivityIndicator />
             ) : (
               <TouchableOpacity
@@ -251,18 +295,18 @@ export const EconomicsScreen = () => {
               <Text style={styles.modalTitle}>Select Plot</Text>
               <FlatList
                 data={plots}
-                keyExtractor={(item: any) => item.id}
+                keyExtractor={(item: any) => item.plotId}
                 renderItem={({ item }: any) => (
                   <TouchableOpacity
                     style={styles.modalItem}
                     onPress={() => {
-                      setSelectedPlot(item.id);
-                      setSelectedPlotName(`${item.name || 'Plot'} (${item.area} ha)`);
+                      setSelectedPlot(item.plotId);
+                      setSelectedPlotName(`Thửa ${item.soThua}, Tờ ${item.soTo} (${item.area} ha)`);
                       setShowPlotModal(false);
                     }}
                   >
                     <Text style={styles.modalItemText}>
-                      {item.name || 'Plot'} ({item.area} ha)
+                      Thửa {item.soThua}, Tờ {item.soTo} ({item.area} ha)
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -270,6 +314,52 @@ export const EconomicsScreen = () => {
               <TouchableOpacity
                 style={styles.modalCloseButton}
                 onPress={() => setShowPlotModal(false)}
+              >
+                <Text style={styles.modalCloseButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Farmer Selection Modal */}
+        <Modal
+          visible={showFarmerModal}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setShowFarmerModal(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Select Farmer</Text>
+              <FlatList
+                data={farmers || []}
+                keyExtractor={(item) => item.farmerId}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.modalItem}
+                    onPress={() => {
+                      setSelectedFarmer(item.farmerId);
+                      setSelectedFarmerData(item);
+                      setSelectedPlot('');
+                      setSelectedPlotName('');
+                      setShowFarmerModal(false);
+                    }}
+                  >
+                    <Text style={styles.modalItemText}>
+                      {item.fullName || item.farmCode || 'Unknown Farmer'}
+                    </Text>
+                    {item.address && (
+                      <Text style={styles.modalItemSubtext}>{item.address}</Text>
+                    )}
+                    {item.phoneNumber && (
+                      <Text style={styles.modalItemSubtext}>📞 {item.phoneNumber}</Text>
+                    )}
+                  </TouchableOpacity>
+                )}
+              />
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setShowFarmerModal(false)}
               >
                 <Text style={styles.modalCloseButtonText}>Cancel</Text>
               </TouchableOpacity>
@@ -498,6 +588,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  helperText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+    marginTop: spacing.xs,
   },
   input: {
     borderWidth: 1,
