@@ -43,6 +43,8 @@ export const FarmersListScreen = () => {
       pageSize: 100,
       searchTerm: searchTerm || undefined,
     }),
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   const handleFarmerPress = (farmer: Farmer) => {

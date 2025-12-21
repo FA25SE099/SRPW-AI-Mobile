@@ -142,6 +142,8 @@ export const FarmerPlotsScreen = () => {
         pageSize: 100,
       }),
     enabled: !!params.farmerId,
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   const plots = plotsData || [];

@@ -40,10 +40,17 @@ export default function SupervisorTabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="plans"
+        options={{
+          title: 'Plans',
+          tabBarIcon: () => <Text>📋</Text>,
+        }}
+      />
+      <Tabs.Screen
         name="tasks"
         options={{
           title: 'Tasks',
-          tabBarIcon: () => <Text>📋</Text>,
+          tabBarIcon: () => <Text>✅</Text>,
         }}
       />
       <Tabs.Screen

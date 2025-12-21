@@ -117,6 +117,8 @@ export const FarmersWithPlotsScreen = () => {
   const { data: farmers, isLoading: isFarmersLoading } = useQuery({
     queryKey: ['farmers-list'],
     queryFn: () => getFarmers(),
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   // Fetch standard plans

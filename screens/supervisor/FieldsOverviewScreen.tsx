@@ -91,6 +91,8 @@ export const FieldsOverviewScreen = () => {
   const { data: farmers, isLoading: isFarmersLoading } = useQuery({
     queryKey: ['farmers-list'],
     queryFn: () => getFarmers(),
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   // Fetch standard plans
@@ -790,4 +792,3 @@ const styles = StyleSheet.create({
     color: colors.textDark,
   },
 });
-
