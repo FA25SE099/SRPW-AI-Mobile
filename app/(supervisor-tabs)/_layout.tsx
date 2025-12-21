@@ -47,38 +47,10 @@ export default function SupervisorTabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="tasks"
-        options={{
-          title: 'Tasks',
-          tabBarIcon: () => <Text>✅</Text>,
-        }}
-      />
-      <Tabs.Screen
-        name="farm-logs"
-        options={{
-          title: 'Logs',
-          tabBarIcon: () => <Text>📝</Text>,
-        }}
-      />
-      <Tabs.Screen
-        name="fields"
-        options={{
-          title: 'Fields',
-          tabBarIcon: () => <Text>🌾</Text>,
-        }}
-      />
-      <Tabs.Screen
         name="economics"
         options={{
           title: 'Economics',
           tabBarIcon: () => <Text>💰</Text>,
-        }}
-      />
-      <Tabs.Screen
-        name="alerts"
-        options={{
-          title: 'Alerts',
-          tabBarIcon: () => <Text>🔔</Text>,
         }}
       />
       <Tabs.Screen
@@ -91,4 +63,3 @@ export default function SupervisorTabsLayout() {
     </Tabs>
   );
 }
-
