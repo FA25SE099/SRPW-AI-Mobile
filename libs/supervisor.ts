@@ -782,25 +782,24 @@ export type ProductionPlanDetail = {
 
 export type FarmLogByTask = {
   farmLogId: string;
-  plotId: string;
+  cultivationTaskName: string;
   plotName: string;
-  farmerName: string;
-  farmerId: string;
-  taskName: string;
-  logDate: string;
+  loggedDate: string;
   workDescription?: string;
-  actualAreaCovered: number;
   completionPercentage: number;
-  actualCost?: number;
-  materials: Array<{
-    materialName: string;
-    quantity: number;
-    unit: string;
-    cost?: number;
-  }>;
+  actualAreaCovered: number;
+  serviceCost?: number;
+  serviceNotes?: string;
   photoUrls: string[];
-  status: 'Pending' | 'Approved' | 'Rejected';
-  notes?: string;
+  weatherConditions?: string;
+  interruptionReason?: string;
+  materialsUsed: {
+    materialName: string;
+    actualQuantityUsed: number;
+    actualCost: number;
+    notes?: string;
+  }[];
+  farmerName?: string;
 };
 
 // Group Detail Types (matching web app)
@@ -962,7 +961,7 @@ export const getFarmLogsByProductionPlanTask = async (params: {
   currentPage: number;
   pageSize: number;
 }> => {
-  const response = await api.post<PagedResult<FarmLogByTask[]>>('/farmlog/farm-logs/by-production-plan-task', {
+  const response = await api.post<PagedResult<FarmLogByTask[]>>('/Farmlog/farm-logs/by-production-plan-task', {
     productionPlanTaskId: params.productionPlanTaskId,
     currentPage: params.currentPage ?? 1,
     pageSize: params.pageSize ?? 10,
@@ -1069,24 +1068,27 @@ export type CultivationPlanDetail = {
 };
 
 export type FarmLogMaterialUsed = {
-  materialId: string;
   materialName: string;
-  quantity: number;
-  unit: string;
-  costPerUnit?: number;
-  totalCost?: number;
+  actualQuantityUsed: number;
+  actualCost: number;
+  notes?: string;
 };
 
 export type FarmLogByCultivation = {
   farmLogId: string;
-  taskName: string;
-  taskType: string;
-  logDate: string;
-  notes?: string;
-  farmerName: string;
-  materialsUsed: FarmLogMaterialUsed[];
+  cultivationTaskName: string;
+  plotName: string;
+  loggedDate: string;
+  workDescription?: string;
+  completionPercentage: number;
+  actualAreaCovered: number;
   serviceCost?: number;
-  totalCost?: number;
+  serviceNotes?: string;
+  photoUrls: string[];
+  weatherConditions?: string;
+  interruptionReason?: string;
+  materialsUsed: FarmLogMaterialUsed[];
+  farmerName?: string;
 };
 
 /**
@@ -1130,10 +1132,8 @@ export const getFarmLogsByCultivation = async (params: {
   pageSize: number;
 }> => {
   console.log('🔍 [getFarmLogsByCultivation] Fetching farm logs for:', params);
-  
-  // For PagedResult, the interceptor returns the full object (including pagination fields)
-  // It does NOT unwrap to just .data, but it does strip the axios response wrapper
-  const response = await api.post<PagedResult<FarmLogByCultivation[]>>('/farmlog/farm-logs/by-cultivation', {
+
+  const response = await api.post<PagedResult<FarmLogByCultivation[]>>('/Farmlog/farm-logs/by-cultivation', {
     plotCultivationId: params.plotCultivationId,
     currentPage: params.currentPage ?? 1,
     pageSize: params.pageSize ?? 10,

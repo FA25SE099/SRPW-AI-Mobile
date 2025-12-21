@@ -33,7 +33,6 @@ import {
   getFarmLogsByCultivation,
   type CultivationPlanStage,
   type CultivationPlanTask,
-  type FarmLogByCultivation,
 } from '@/libs/supervisor';
 
 export const PlotCultivationDetailScreen = () => {
@@ -262,7 +261,18 @@ export const PlotCultivationDetailScreen = () => {
           <Spacer size="lg" />
 
           {/* Stages and Tasks */}
-          <H4>Cultivation Stages & Tasks</H4>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <H4>Cultivation Stages & Tasks</H4>
+            <TouchableOpacity onPress={() => router.push({
+              pathname: '/supervisor/farm-logs',
+              params: {
+                plotCultivationId: cultivationPlan.plotCultivationId,
+                plotName: cultivationPlan.plotName
+              }
+            })}>
+              <BodySmall style={{ color: colors.primary }}>View All Logs</BodySmall>
+            </TouchableOpacity>
+          </View>
           <Spacer size="md" />
 
           {cultivationPlan.stages.map((stage) => (
@@ -339,18 +349,6 @@ const TaskItem = ({
   getTaskIcon: (taskType: string) => any;
   formatDate: (date?: string) => string;
 }) => {
-  const [showFarmLogs, setShowFarmLogs] = useState(false);
-
-  const { data: farmLogsData, isLoading: logsLoading } = useQuery({
-    queryKey: ['farm-logs-cultivation', plotCultivationId],
-    queryFn: () => getFarmLogsByCultivation({
-      plotCultivationId: plotCultivationId,
-      currentPage: 1,
-      pageSize: 10,
-    }),
-    enabled: showFarmLogs,
-  });
-
   return (
     <View style={styles.taskContainer}>
       <TouchableOpacity onPress={onToggle} style={styles.taskHeader}>
@@ -407,47 +405,6 @@ const TaskItem = ({
                   </BodySmall>
                 </View>
               ))}
-            </>
-          )}
-
-          <Spacer size="sm" />
-          <TouchableOpacity
-            onPress={() => setShowFarmLogs(!showFarmLogs)}
-            style={styles.farmLogsButton}
-          >
-            <BodySemibold style={{ color: colors.primary }}>
-              {showFarmLogs ? 'Hide' : 'Show'} Farm Logs
-            </BodySemibold>
-            <Ionicons
-              name={showFarmLogs ? 'chevron-up' : 'chevron-down'}
-              size={16}
-              color={colors.primary}
-            />
-          </TouchableOpacity>
-
-          {showFarmLogs && (
-            <>
-              <Spacer size="sm" />
-              {logsLoading ? (
-                <ActivityIndicator size="small" color={colors.primary} />
-              ) : farmLogsData && farmLogsData.data.length > 0 ? (
-                <View style={styles.farmLogsList}>
-                  {farmLogsData.data.map((log) => (
-                    <View key={log.farmLogId} style={styles.farmLogItem}>
-                      <View style={styles.farmLogHeader}>
-                        <BodySemibold>{log.taskName}</BodySemibold>
-                        <BodySmall>{formatDate(log.logDate)}</BodySmall>
-                      </View>
-                      {log.notes && (
-                        <BodySmall style={styles.farmLogNotes}>{log.notes}</BodySmall>
-                      )}
-                      <BodySmall style={styles.farmLogFarmer}>By: {log.farmerName}</BodySmall>
-                    </View>
-                  ))}
-                </View>
-              ) : (
-                <BodySmall style={styles.noLogs}>No farm logs available</BodySmall>
-              )}
             </>
           )}
         </View>

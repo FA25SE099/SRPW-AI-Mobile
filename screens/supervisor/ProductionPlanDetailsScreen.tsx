@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   Modal,
   FlatList,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -44,6 +45,7 @@ export const ProductionPlanDetailsScreen = () => {
   const [expandedTasks, setExpandedTasks] = useState<{ [key: string]: boolean }>({});
   const [selectedTask, setSelectedTask] = useState<ProductionPlanTask | null>(null);
   const [showFarmLogsModal, setShowFarmLogsModal] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 
   const { data: planDetail, isLoading } = useQuery({
     queryKey: ['production-plan-detail', params.planId],
@@ -140,6 +142,8 @@ export const ProductionPlanDetailsScreen = () => {
       </SafeAreaView>
     );
   }
+
+  const logs = farmLogsData?.data || [];
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -387,25 +391,19 @@ export const ProductionPlanDetailsScreen = () => {
             </View>
           ) : (
             <ScrollView style={styles.modalContent}>
-              {farmLogsData && farmLogsData.data.length > 0 ? (
-                farmLogsData.data.map((log) => (
+              {logs.length > 0 ? (
+                logs.map((log) => (
                   <Card key={log.farmLogId} style={styles.farmLogCard}>
                     <View style={styles.farmLogHeader}>
                       <View>
-                        <BodySemibold>{log.farmerName}</BodySemibold>
+                        <BodySemibold>{log.farmerName || 'Farmer'}</BodySemibold>
                         <BodySmall style={styles.farmLogPlot}>{log.plotName}</BodySmall>
                       </View>
                       <Badge
-                        variant={
-                          log.status === 'Approved'
-                            ? 'success'
-                            : log.status === 'Rejected'
-                            ? 'error'
-                            : 'warning'
-                        }
+                        variant="neutral"
                         size="sm"
                       >
-                        {log.status}
+                        Logged
                       </Badge>
                     </View>
 
@@ -414,7 +412,7 @@ export const ProductionPlanDetailsScreen = () => {
                     <View style={styles.farmLogDetails}>
                       <View style={styles.farmLogRow}>
                         <BodySmall style={styles.farmLogLabel}>Date:</BodySmall>
-                        <BodySmall>{formatDate(log.logDate)}</BodySmall>
+                        <BodySmall>{formatDate(log.loggedDate)}</BodySmall>
                       </View>
                       <View style={styles.farmLogRow}>
                         <BodySmall style={styles.farmLogLabel}>Area Covered:</BodySmall>
@@ -424,12 +422,6 @@ export const ProductionPlanDetailsScreen = () => {
                         <BodySmall style={styles.farmLogLabel}>Progress:</BodySmall>
                         <BodySmall>{log.completionPercentage.toFixed(0)}%</BodySmall>
                       </View>
-                      {log.actualCost && (
-                        <View style={styles.farmLogRow}>
-                          <BodySmall style={styles.farmLogLabel}>Cost:</BodySmall>
-                          <BodySmall>{formatCurrency(log.actualCost)}</BodySmall>
-                        </View>
-                      )}
                     </View>
 
                     {log.workDescription && (
@@ -441,32 +433,33 @@ export const ProductionPlanDetailsScreen = () => {
                       </>
                     )}
 
-                    {log.materials.length > 0 && (
+                    {log.materialsUsed && log.materialsUsed.length > 0 && (
                       <>
                         <Spacer size="sm" />
                         <BodySmall style={styles.materialsTitle}>Materials Used:</BodySmall>
-                        {log.materials.map((material, idx) => (
+                        {log.materialsUsed.map((material, idx) => (
                           <View key={idx} style={styles.materialRow}>
                             <BodySmall>
-                              • {material.materialName}: {material.quantity} {material.unit}
+                              • {material.materialName}: {material.actualQuantityUsed}
                             </BodySmall>
-                            {material.cost && (
-                              <BodySmall>{formatCurrency(material.cost)}</BodySmall>
+                            {material.actualCost > 0 && (
+                              <BodySmall>{formatCurrency(material.actualCost)}</BodySmall>
                             )}
                           </View>
                         ))}
                       </>
                     )}
 
-                    {log.photoUrls.length > 0 && (
+                    {log.photoUrls && log.photoUrls.length > 0 && (
                       <>
                         <Spacer size="sm" />
-                        <View style={styles.photoIndicator}>
-                          <Ionicons name="images" size={16} color={colors.primary} />
-                          <BodySmall style={{ color: colors.primary }}>
-                            {log.photoUrls.length} photos
-                          </BodySmall>
-                        </View>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                          {log.photoUrls.map((url, idx) => (
+                            <TouchableOpacity key={idx} onPress={() => setSelectedPhoto(url)}>
+                              <Image source={{ uri: url }} style={styles.logPhoto} />
+                            </TouchableOpacity>
+                          ))}
+                        </ScrollView>
                       </>
                     )}
                   </Card>
@@ -482,6 +475,36 @@ export const ProductionPlanDetailsScreen = () => {
             </ScrollView>
           )}
         </SafeAreaView>
+      </Modal>
+
+      {/* Full Screen Image Modal */}
+      <Modal
+        visible={!!selectedPhoto}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setSelectedPhoto(null)}
+      >
+        <View style={styles.fullScreenImageContainer}>
+          <TouchableOpacity
+            style={styles.fullScreenImageBackground}
+            activeOpacity={1}
+            onPress={() => setSelectedPhoto(null)}
+          >
+            <TouchableOpacity
+              style={styles.fullScreenImageClose}
+              onPress={() => setSelectedPhoto(null)}
+            >
+              <Ionicons name="close" size={30} color={colors.white} />
+            </TouchableOpacity>
+            {selectedPhoto && (
+              <Image
+                source={{ uri: selectedPhoto }}
+                style={styles.fullScreenImage}
+                resizeMode="contain"
+              />
+            )}
+          </TouchableOpacity>
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -793,6 +816,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xs,
   },
+  logPhoto: {
+    width: 80,
+    height: 80,
+    borderRadius: borderRadius.sm,
+    marginRight: spacing.sm,
+    backgroundColor: colors.backgroundSecondary,
+  },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -800,5 +830,25 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     color: colors.textSecondary,
+  },
+  fullScreenImageContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+  },
+  fullScreenImageBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenImage: {
+    width: '100%',
+    height: '80%',
+  },
+  fullScreenImageClose: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 10,
+    padding: 10,
   },
 });
