@@ -13,6 +13,8 @@ import {
   FlatList,
   Modal,
   Image,
+  Alert,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -35,6 +37,7 @@ import {
   getFarmLogsByCultivation,
   getCultivationVersions,
   getFarmLogsByCultivationTask,
+  createLateFarmerRecord,
   type CultivationPlanStage,
   type CultivationPlanTask,
 } from '@/libs/supervisor';
@@ -369,6 +372,7 @@ export const PlotCultivationDetailScreen = () => {
                         getTaskIcon={getTaskIcon}
                         formatDate={formatDate}
                         onViewImages={handleViewImages}
+                        selectedVersionId={selectedVersionId}
                       />
                     ))}
                   </>
@@ -451,6 +455,7 @@ const TaskItem = ({
   getTaskIcon,
   formatDate,
   onViewImages,
+  selectedVersionId,
 }: {
   task: CultivationPlanTask;
   plotCultivationId: string;
@@ -460,10 +465,14 @@ const TaskItem = ({
   getTaskIcon: (taskType: string) => any;
   formatDate: (date?: string) => string;
   onViewImages: (urls: string[]) => void;
+  selectedVersionId: string | null;
 }) => {
   const [logs, setLogs] = useState<any[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [logsLoaded, setLogsLoaded] = useState(false);
+  const [creatingLateRecord, setCreatingLateRecord] = useState(false);
+  const [showNotesModal, setShowNotesModal] = useState(false);
+  const [lateNotes, setLateNotes] = useState('');
 
   const handleExpand = async () => {
     onToggle();
@@ -479,6 +488,33 @@ const TaskItem = ({
         setLogsLoaded(true);
       } catch (e) { console.error(e); }
       finally { setLoadingLogs(false); }
+    }
+  };
+
+  const handleCreateLateRecord = () => {
+    setLateNotes(`Late farmer record for task: ${task.taskName}`);
+    setShowNotesModal(true);
+  };
+
+  const handleSubmitLateRecord = async () => {
+    setShowNotesModal(false);
+    setCreatingLateRecord(true);
+    try {
+      const result = await createLateFarmerRecord({
+        cultivationTaskId: task.taskId,
+        notes: lateNotes || `Late farmer record for task: ${task.taskName}`,
+      });
+      
+      // Check for success based on response structure or HTTP success
+      if (result && (result.succeeded === true || result.succeeded !== false)) {
+        Alert.alert('Success', result.message || 'Late farmer record created successfully');
+      } else {
+        Alert.alert('Error', result.message || 'Failed to create late farmer record');
+      }
+    } catch (error: any) {
+      Alert.alert('Error', error?.message || 'Failed to create late farmer record');
+    } finally {
+      setCreatingLateRecord(false);
     }
   };
 
@@ -580,8 +616,78 @@ const TaskItem = ({
               </BodySmall>
             )}
           </View>
+
+          {/* Report Late Button - Only shown for latest version */}
+          {selectedVersionId === null && (
+            <>
+              <Spacer size="sm" />
+              <TouchableOpacity
+                style={[
+                  styles.reportLateButton,
+                  creatingLateRecord && styles.reportLateButtonDisabled,
+                ]}
+                onPress={handleCreateLateRecord}
+                disabled={creatingLateRecord}
+              >
+                {creatingLateRecord ? (
+                  <ActivityIndicator size="small" color={colors.white} />
+                ) : (
+                  <>
+                    <Ionicons name="alert-circle-outline" size={18} color={colors.white} />
+                    <BodySmall style={styles.reportLateButtonText}>Report Late Farmer</BodySmall>
+                  </>
+                )}
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       )}
+
+      {/* Notes Input Modal */}
+      <Modal
+        visible={showNotesModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowNotesModal(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setShowNotesModal(false)}
+        >
+          <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.notesModalContent}>
+              <H4 style={styles.modalTitle}>Report Late Farmer</H4>
+              <BodySmall style={{ marginBottom: spacing.sm, color: colors.textSecondary }}>
+                Enter notes for this lateness record:
+              </BodySmall>
+              <TextInput
+                style={styles.notesInput}
+                value={lateNotes}
+                onChangeText={setLateNotes}
+                placeholder="Enter notes..."
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
+              <View style={styles.modalButtons}>
+                <TouchableOpacity 
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => setShowNotesModal(false)}
+                >
+                  <Body style={{ color: colors.textPrimary }}>Cancel</Body>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.modalButton, styles.submitButton]}
+                  onPress={handleSubmitLateRecord}
+                >
+                  <Body style={{ color: colors.white }}>Submit</Body>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 };
@@ -833,5 +939,54 @@ const styles = StyleSheet.create({
     top: 40,
     right: 20,
     zIndex: 10,
+  },
+  reportLateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.warning,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+    marginTop: spacing.xs,
+  },
+  reportLateButtonDisabled: {
+    opacity: 0.6,
+  },
+  reportLateButtonText: {
+    color: colors.white,
+    fontWeight: '600',
+  },
+  notesModalContent: {
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.md,
+    padding: spacing.lg,
+    marginHorizontal: spacing.lg,
+  },
+  notesInput: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.sm,
+    padding: spacing.sm,
+    fontSize: 14,
+    minHeight: 100,
+    marginBottom: spacing.md,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.sm,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: colors.backgroundSecondary,
+  },
+  submitButton: {
+    backgroundColor: colors.warning,
   },
 });

@@ -1041,6 +1041,31 @@ export const getFarmLogsByCultivationTask = async (params: {
 };
 
 /**
+ * Create a late farmer record for a cultivation task
+ */
+export const createLateFarmerRecord = async (params: {
+  cultivationTaskId: string;
+  notes?: string;
+}): Promise<{
+  succeeded: boolean;
+  data: string;
+  message: string;
+  errors: any[];
+}> => {
+  const response = await api.post<{
+    succeeded: boolean;
+    data: string;
+    message: string;
+    errors: any[];
+  }>('/LateFarmerRecord', {
+    cultivationTaskId: params.cultivationTaskId,
+    notes: params.notes || '',
+  }, { timeout: 15000 });
+
+  return response;
+};
+
+/**
  * Get plot cultivation plan details
  */
 export const getPlotCultivationPlan = async (params: {
