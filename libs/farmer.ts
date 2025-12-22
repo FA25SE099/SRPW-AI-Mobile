@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system';
-import { api } from './api-client';
+import { api, uploadFile } from './api-client';
 import { env } from '@/configs/env';
 import { tokenStorage } from './token-storage';
 import {
@@ -150,16 +150,6 @@ export const createFarmLog = async (
     formData.append('FarmerId', request.farmerId);
   }
 
-  // Add images
-  images.forEach((image) => {
-    const uri = Platform.OS === 'android' ? image.uri.replace('file://', '') : image.uri;
-    formData.append('ProofImages', {
-      uri,
-      type: image.type,
-      name: image.name,
-    } as any);
-  });
-
   // Add materials
   if (request.materials && request.materials.length > 0) {
     request.materials.forEach((material, index) => {
@@ -174,7 +164,16 @@ export const createFarmLog = async (
     });
   }
 
-  // Axios will automatically set Content-Type with boundary for FormData
+  // Add images
+  for (const image of images) {
+    formData.append('ProofImages', {
+      uri: image.uri,
+      type: image.type,
+      name: image.name,
+    } as any);
+  }
+
+  // Use uploadFile helper for better Android FormData support (like createEmergencyReport)
   console.log('📤 [createFarmLog] Sending POST request to /Farmlog/farm-logs');
   console.log('📦 [createFarmLog] FormData fields:', {
     hasCultivationTaskId: !!request.cultivationTaskId,
@@ -184,33 +183,31 @@ export const createFarmLog = async (
   });
   
   try {
-    const response = await api.post<string>('/Farmlog/farm-logs', formData);
+    const response = await uploadFile('/Farmlog/farm-logs', formData);
     console.log('✅ [createFarmLog] Success');
     return response as unknown as string;
   } catch (error: any) {
     // If 405 error, try alternative endpoint
-    if (error?.response?.status === 405) {
+    if (error?.status === 405 || error?.response?.status === 405) {
       console.log('⚠️ [createFarmLog] Got 405, trying alternative endpoint /Farmer/create-farm-log');
       try {
-        const response = await api.post<string>('/Farmer/create-farm-log', formData);
+        const response = await uploadFile('/Farmer/create-farm-log', formData);
         console.log('✅ [createFarmLog] Success with alternative endpoint');
         return response as unknown as string;
       } catch (fallbackError: any) {
         console.error('❌ [createFarmLog] Alternative endpoint also failed:', {
-          status: fallbackError?.response?.status,
-          statusText: fallbackError?.response?.statusText,
-          data: fallbackError?.response?.data,
+          status: fallbackError?.status || fallbackError?.response?.status,
+          statusText: fallbackError?.statusText || fallbackError?.response?.statusText,
+          data: fallbackError?.response?.data || fallbackError?.data,
         });
         throw fallbackError;
       }
     }
     console.error('❌ [createFarmLog] Error:', {
-      status: error?.response?.status,
-      statusText: error?.response?.statusText,
-      data: error?.response?.data,
+      status: error?.status || error?.response?.status,
+      statusText: error?.statusText || error?.response?.statusText,
+      data: error?.response?.data || error?.data,
       message: error?.message,
-      url: error?.config?.url,
-      method: error?.config?.method,
     });
     throw error;
   }

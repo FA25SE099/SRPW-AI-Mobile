@@ -31,7 +31,10 @@ type PolygonMapboxProps = {
   tasks: PolygonTask[];
   drawnPolygon: Array<{ latitude: number; longitude: number }>;
   focusedPlotId: string | null;
+  isDrawing?: boolean;
+  lockedZoomLevel?: number | null;
   onMapPress: (coordinate: { latitude: number; longitude: number }) => void;
+  onPlotPress?: (plot: PlotDTO, coordinate: { latitude: number; longitude: number }) => void;
 };
 
 const getStatusColor = (status: PlotStatus): string => {
@@ -100,21 +103,83 @@ export const PolygonMapbox: React.FC<PolygonMapboxProps> = ({
   tasks,
   drawnPolygon,
   focusedPlotId,
+  isDrawing = false,
+  lockedZoomLevel = null,
   onMapPress,
+  onPlotPress,
 }) => {
   useEffect(() => {
-    // Update camera when initial region changes
-    if (cameraRef.current) {
+    // Update camera when initial region changes (only when not drawing)
+    if (!isDrawing && cameraRef.current) {
       cameraRef.current.setCamera({
         centerCoordinate: [initialRegion.longitude, initialRegion.latitude],
         zoomLevel: 13,
         animationDuration: 1000,
       });
     }
-  }, [initialRegion, cameraRef]);
+  }, [initialRegion, cameraRef, isDrawing]);
 
-  const handleMapPress = (feature: any) => {
-    const { geometry } = feature;
+  const handleShapeSourcePress = (event: any) => {
+    console.log('🔵 ShapeSource onPress event:', JSON.stringify(event, null, 2));
+    
+    // Mapbox ShapeSource onPress provides event with features array
+    const features = event?.features || [];
+    console.log('🔵 Features found:', features.length);
+    
+    if (features.length === 0) {
+      console.warn('⚠️ No features in ShapeSource press event');
+      return;
+    }
+    
+    // Get the first feature (the polygon that was tapped)
+    const feature = features[0];
+    const { geometry, properties } = feature || {};
+    
+    console.log('🔵 Feature properties:', properties);
+    console.log('🔵 Feature geometry type:', geometry?.type);
+    
+    // Check if this is a plot polygon tap
+    if (properties && properties.plotId && onPlotPress) {
+      const plot = plots.find(p => p.plotId === properties.plotId);
+      if (plot) {
+        // Get center coordinate from the polygon
+        let latitude: number, longitude: number;
+        if (geometry?.type === 'Polygon' && geometry.coordinates?.[0]?.[0]) {
+          // Get center of polygon (average of coordinates)
+          const coords = geometry.coordinates[0];
+          const centerLng = coords.reduce((sum: number, c: number[]) => sum + c[0], 0) / coords.length;
+          const centerLat = coords.reduce((sum: number, c: number[]) => sum + c[1], 0) / coords.length;
+          longitude = centerLng;
+          latitude = centerLat;
+        } else if (geometry?.coordinates) {
+          [longitude, latitude] = geometry.coordinates;
+        } else {
+          console.warn('⚠️ Invalid geometry for plot polygon');
+          return;
+        }
+        console.log('✅ Plot polygon tapped:', plot.plotId, `(${plot.soThua}/${plot.soTo})`);
+        onPlotPress(plot, { latitude, longitude });
+        return; // Don't proceed with regular map press
+      } else {
+        console.warn('⚠️ Plot not found for plotId:', properties.plotId);
+      }
+    } else {
+      console.warn('⚠️ No plotId in properties or onPlotPress not provided');
+    }
+  };
+
+  const handleMapPress = (event: any) => {
+    // MapView onPress can receive either:
+    // 1. A feature object with geometry.coordinates (point)
+    // 2. An event object with features array (if shapes were tapped)
+    
+    // If event has features, it means a shape was tapped - ignore (ShapeSource will handle it)
+    if (event?.features && event.features.length > 0) {
+      return;
+    }
+    
+    // Regular map press (empty area)
+    const geometry = event?.geometry || event;
     if (geometry && geometry.coordinates) {
       const [longitude, latitude] = geometry.coordinates;
       onMapPress({ latitude, longitude });
@@ -223,6 +288,7 @@ export const PolygonMapbox: React.FC<PolygonMapboxProps> = ({
               type: 'FeatureCollection',
               features: plotBoundaries as any,
             }}
+            onPress={handleShapeSourcePress}
           >
             {/* Fill layer */}
             <Mapbox.FillLayer
@@ -325,6 +391,8 @@ export const PolygonMapbox: React.FC<PolygonMapboxProps> = ({
             key={`point-${index}`}
             id={`point-${index}`}
             coordinate={[point.longitude, point.latitude]}
+            anchor={{ x: 0.5, y: 0.5 }}
+            selected={false}
           >
             <View style={[styles.pointMarker, { backgroundColor: colors.primary }]} />
           </Mapbox.PointAnnotation>

@@ -59,6 +59,34 @@ const greenTheme = {
   border: '#C8E6C9', // Light green border
 };
 
+// Helper functions
+const getStatusColor = (status: string) => {
+  switch (status?.toLowerCase()) {
+    case 'completed':
+      return colors.success;
+    case 'in progress':
+    case 'inprogress':
+      return '#FF9500';
+    case 'pending':
+      return colors.info;
+    default:
+      return colors.textSecondary;
+  }
+};
+
+const getPriorityColor = (priority: string) => {
+  switch (priority?.toLowerCase()) {
+    case 'high':
+      return colors.error;
+    case 'normal':
+      return '#FF9500';
+    case 'low':
+      return colors.success;
+    default:
+      return colors.textSecondary;
+  }
+};
+
 export const UavOrderDetailScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -184,32 +212,6 @@ export const UavOrderDetailScreen = () => {
     );
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'completed':
-        return colors.success;
-      case 'in progress':
-      case 'inprogress':
-        return '#FF9500';
-      case 'pending':
-        return colors.info;
-      default:
-        return colors.textSecondary;
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority?.toLowerCase()) {
-      case 'high':
-        return colors.error;
-      case 'normal':
-        return '#FF9500';
-      case 'low':
-        return colors.success;
-      default:
-        return colors.textSecondary;
-    }
-  };
 
   const canStartExecution =
     order.status === 'Pending' || order.status === 'InProgress' || order.status === 'In Progress';

@@ -37,15 +37,17 @@ import { Alert } from 'react-native';
 export const FarmerTasksScreen = () => {
   const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
-  const [selectedFilter, setSelectedFilter] = useState<'in-progress' | 'approved' | 'completed'>(
+  const [selectedFilter, setSelectedFilter] = useState<'in-progress' | 'approved' | 'completed' | 'emergency' | 'emergency-approval'>(
     'in-progress',
   );
   const [selectedPlotId, setSelectedPlotId] = useState<string>('all');
   const [isPlotPickerOpen, setIsPlotPickerOpen] = useState(false);
-  const [filterCounts, setFilterCounts] = useState<Record<'in-progress' | 'approved' | 'completed', number>>({
+  const [filterCounts, setFilterCounts] = useState<Record<'in-progress' | 'approved' | 'completed' | 'emergency' | 'emergency-approval', number>>({
     'in-progress': 0,
     approved: 0,
     completed: 0,
+    emergency: 0,
+    'emergency-approval': 0,
   });
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
   const [isDetailVisible, setIsDetailVisible] = useState(false);
@@ -54,10 +56,12 @@ export const FarmerTasksScreen = () => {
   // Responsive styles
   const responsiveStyles = getResponsiveStyles(screenWidth);
 
-  const statusFilterMap: Record<'in-progress' | 'approved' | 'completed', string> = {
+  const statusFilterMap: Record<'in-progress' | 'approved' | 'completed' | 'emergency' | 'emergency-approval', string> = {
     'in-progress': 'InProgress',
     approved: 'Approved',
     completed: 'Completed',
+    emergency: 'Emergency',
+    'emergency-approval': 'EmergencyApproval',
   };
 
   const apiStatusFilter = statusFilterMap[selectedFilter];
@@ -150,6 +154,11 @@ export const FarmerTasksScreen = () => {
       case 'pending':
       case 'todo':
         return colors.info;
+      case 'emergency':
+        return colors.error; // Red for emergency
+      case 'emergencyapproval':
+      case 'emergency-approval':
+        return '#EF4444'; // Dark red for emergency approval
       default:
         return colors.textSecondary;
     }
@@ -165,6 +174,10 @@ export const FarmerTasksScreen = () => {
         return 'pending';
       case 'approved':
         return 'approved';
+      case 'emergency':
+        return 'emergency';
+      case 'emergencyapproval':
+        return 'emergency-approval';
       default:
         return status?.toLowerCase() || 'pending';
     }
@@ -340,7 +353,12 @@ export const FarmerTasksScreen = () => {
         <Spacer size="lg" />
 
         {/* Filter Tabs */}
-        <View style={styles.filterContainer}>
+        <View style={styles.filterWrapper}>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterContainer}
+          >
           <TouchableOpacity
             onPress={() => setSelectedFilter('in-progress')}
             style={[
@@ -424,6 +442,74 @@ export const FarmerTasksScreen = () => {
               </View>
             )}
           </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setSelectedFilter('emergency')}
+            style={[
+              styles.filterTab,
+              selectedFilter === 'emergency' && [
+                styles.filterTabActive,
+                { backgroundColor: colors.error + '15' }
+              ],
+            ]}
+          >
+            <Body
+              color={selectedFilter === 'emergency' ? colors.error : colors.textSecondary}
+              style={styles.filterTabText}
+            >
+              Khẩn cấp
+            </Body>
+            {filterCounts['emergency'] > 0 && (
+              <View style={[
+                styles.filterBadge,
+                selectedFilter === 'emergency' && styles.filterBadgeActive,
+                { backgroundColor: selectedFilter === 'emergency' ? colors.error : greenTheme.border }
+              ]}>
+                <BodySmall style={[
+                  styles.filterBadgeText,
+                  selectedFilter === 'emergency' && styles.filterBadgeTextActive,
+                  { color: selectedFilter === 'emergency' ? colors.white : colors.error }
+                ]}>
+                  {filterCounts['emergency']}
+                </BodySmall>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setSelectedFilter('emergency-approval')}
+            style={[
+              styles.filterTab,
+              styles.filterTabLast,
+              selectedFilter === 'emergency-approval' && [
+                styles.filterTabActive,
+                { backgroundColor: '#EF4444' + '15' }
+              ],
+            ]}
+          >
+            <Body
+              color={selectedFilter === 'emergency-approval' ? '#EF4444' : colors.textSecondary}
+              style={styles.filterTabText}
+            >
+              Duyệt khẩn
+            </Body>
+            {filterCounts['emergency-approval'] > 0 && (
+              <View style={[
+                styles.filterBadge,
+                selectedFilter === 'emergency-approval' && styles.filterBadgeActive,
+                { backgroundColor: selectedFilter === 'emergency-approval' ? '#EF4444' : greenTheme.border }
+              ]}>
+                <BodySmall style={[
+                  styles.filterBadgeText,
+                  selectedFilter === 'emergency-approval' && styles.filterBadgeTextActive,
+                  { color: selectedFilter === 'emergency-approval' ? colors.white : '#EF4444' }
+                ]}>
+                  {filterCounts['emergency-approval']}
+                </BodySmall>
+              </View>
+            )}
+          </TouchableOpacity>
+          </ScrollView>
         </View>
 
         <Spacer size="xl" />
@@ -642,6 +728,22 @@ export const FarmerTasksScreen = () => {
                         </View>
                       </TouchableOpacity>
                     )}
+                    {/* Show Confirm Completion for emergency tasks */}
+                    {normalizeStatus(task.status) === 'emergency' && (
+                      <TouchableOpacity
+                        style={[styles.primaryActionButton, { backgroundColor: colors.error }]}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          handleConfirmTask(task);
+                        }}
+                      >
+                        <View style={styles.primaryActionButtonContent}>
+                          <BodySemibold style={styles.primaryActionButtonText}>
+                            Xác nhận hoàn thành
+                          </BodySemibold>
+                        </View>
+                      </TouchableOpacity>
+                    )}
                     {/* Show Start Task for pending tasks */}
                     {normalizeStatus(task.status) === 'pending' && (
                       <TouchableOpacity
@@ -753,6 +855,10 @@ const styles = StyleSheet.create({
   headerRight: {
     width: scale(40),
   },
+  filterWrapper: {
+    width: '100%',
+    minHeight: scale(50),
+  },
   filterContainer: {
     flexDirection: 'row',
     backgroundColor: greenTheme.cardBackground,
@@ -765,16 +871,21 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 2,
+    alignItems: 'center',
+    paddingHorizontal: getSpacing(spacing.xs),
   },
   filterTab: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: getSpacing(spacing.sm),
-    paddingHorizontal: getSpacing(spacing.xs),
+    paddingHorizontal: getSpacing(spacing.md),
     borderRadius: moderateScale(borderRadius.md),
-    gap: getSpacing(spacing.xs),
+    marginRight: getSpacing(spacing.xs),
+    minWidth: scale(100),
+  },
+  filterTabLast: {
+    marginRight: 0,
   },
   filterTabActive: {
     backgroundColor: greenTheme.primaryLighter,

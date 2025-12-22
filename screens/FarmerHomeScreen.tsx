@@ -27,7 +27,7 @@ const quickActions = [
   { id: '3', title: 'Công việc', iconName: 'checkbox', iconType: 'Ionicons', gradient: ['#10b981', '#059669'] as const, route: '/(farmer-tabs)/tasks' },
   { id: '4', title: 'Quét sâu bệnh', iconName: 'scan', iconType: 'Ionicons', gradient: ['#10b981', '#059669'] as const, route: '/farmer/disease-scanner' },
   { id: '5', title: 'Báo cáo', iconName: 'document-text', iconType: 'Ionicons', gradient: ['#10b981', '#059669'] as const, route: '/farmer/reports' },
-  { id: '6', title: 'Kinh tế', iconName: 'cash', iconType: 'Ionicons', gradient: ['#10b981', '#059669'] as const, route: '/farmer/economics' },
+  // { id: '6', title: 'Kinh tế', iconName: 'cash', iconType: 'Ionicons', gradient: ['#10b981', '#059669'] as const, route: '/farmer/economics' },
 ];
 
 const recentActivities = [
@@ -92,7 +92,7 @@ export const FarmerHomeScreen = () => {
               </View>
 
               {/* Stats Cards */}
-              <View style={styles.statsRow}>
+              {/* <View style={styles.statsRow}>
                 <View style={styles.statCard}>
                   <Text style={styles.statLabel}>Diện tích</Text>
                   <Text style={styles.statValue}>{mockStats.totalFields}m²</Text>
@@ -105,7 +105,7 @@ export const FarmerHomeScreen = () => {
                   <Text style={styles.statLabel}>Tuổi cây</Text>
                   <Text style={styles.statValue}>{mockStats.activeAlerts} Days</Text>
                 </View>
-              </View>
+              </View> */}
             </View>
           </ImageBackground>
 
@@ -141,7 +141,7 @@ export const FarmerHomeScreen = () => {
             <Spacer size="xl" />
 
             {/* Season Progress Card */}
-            <View style={styles.seasonCard}>
+            {/* <View style={styles.seasonCard}>
               <View style={styles.seasonHeader}>
                 <View>
                   <Text style={styles.seasonTitle}>Mùa hiện tại</Text>
@@ -166,10 +166,10 @@ export const FarmerHomeScreen = () => {
               </Text>
             </View>
 
-            <Spacer size="xl" />
+            <Spacer size="xl" /> */}
 
             {/* Recent Activities */}
-            <View style={styles.sectionHeader}>
+            {/* <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Hoạt động gần đây</Text>
               <TouchableOpacity onPress={() => router.push('/farmer/farm-log' as any)}>
                 <Text style={styles.viewAllText}>Xem tất cả →</Text>
@@ -218,10 +218,10 @@ export const FarmerHomeScreen = () => {
               );
             })}
 
-            <Spacer size="xl" />
+            <Spacer size="xl" /> */}
 
             {/* Economic Performance CTA */}
-            <TouchableOpacity 
+            {/* <TouchableOpacity 
               onPress={() => router.push('/farmer/economics' as any)}
               activeOpacity={0.8}
             >
@@ -242,7 +242,7 @@ export const FarmerHomeScreen = () => {
                 </View>
                 <Ionicons name="chevron-forward" size={24} color="#FFFFFF" />
               </LinearGradient>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
 
             <Spacer size="3xl" />
           </Container>

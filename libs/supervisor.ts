@@ -430,7 +430,12 @@ export type PlotDTO = {
  * Get polygon drawing tasks
  */
 export const getPolygonTasks = async (): Promise<PolygonTask[]> => {
-  const response = await api.get<PolygonTask[]>('/Supervisor/polygon-tasks?status=Pending', { timeout: 15000 });
+  const response = await api.get<PolygonTask[]>('/Supervisor/polygon-tasks', {
+    params: {
+      status: 'Pending',
+    },
+    timeout: 15000,
+  });
   return Array.isArray(response) ? response : [];
 };
 
@@ -443,7 +448,13 @@ export const getPlots = async (): Promise<PlotDTO[]> => {
     data: PlotDTO[];
     currentPage: number;
     totalCount: number;
-  }>('/Plot?pageNumber=1&pageSize=500', { timeout: 15000 });
+  }>('/Plot', {
+    params: {
+      pageNumber: 1,
+      pageSize: 500,
+    },
+    timeout: 15000,
+  });
   
   if (response && 'data' in response && Array.isArray(response.data)) {
     return response.data;

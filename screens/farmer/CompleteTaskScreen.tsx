@@ -36,7 +36,6 @@ import {
 import { CreateFarmLogRequest, FarmLogMaterialRequest, TodayTaskResponse } from '../../types/api';
 import { createFarmLog } from '../../libs/farmer';
 import { useUser } from '../../libs/auth';
-import { uploadFile } from '../../libs/api-client';
 
 export const CompleteTaskScreen = () => {
   const router = useRouter();
@@ -84,106 +83,43 @@ export const CompleteTaskScreen = () => {
         });
       }
 
-      // iOS: Use api.post method (createFarmLog function)
-      if (Platform.OS === 'ios') {
-        console.log('🍎 [iOS] Creating farm log using api.post method');
-        const request: CreateFarmLogRequest = {
-          cultivationTaskId: formData.cultivationTaskId,
-          plotCultivationId: formData.plotCultivationId,
-          workDescription: formData.workDescription || null,
-          actualAreaCovered: formData.actualAreaCovered,
-          serviceCost: formData.serviceCost,
-          serviceNotes: formData.serviceNotes || null,
-          weatherConditions: formData.weatherConditions || null,
-          interruptionReason: formData.interruptionReason || null,
-          materials: materials.length > 0 ? materials : undefined,
-          farmerId: user?.id || null,
-        };
-        try {
-          const result = await createFarmLog(request, images);
-          console.log('✅ [iOS] Farm log created successfully');
-          return result;
-        } catch (error: any) {
-          console.error('❌ [iOS] Error creating farm log:', {
-            status: error?.response?.status,
-            statusText: error?.response?.statusText,
-            data: error?.response?.data,
-            message: error?.message,
-            url: error?.config?.url,
-            method: error?.config?.method,
-          });
-          throw error;
+      // Build request body
+      const request: CreateFarmLogRequest = {
+        cultivationTaskId: formData.cultivationTaskId,
+        plotCultivationId: formData.plotCultivationId,
+        workDescription: formData.workDescription || null,
+        actualAreaCovered: formData.actualAreaCovered,
+        serviceCost: formData.serviceCost,
+        serviceNotes: formData.serviceNotes || null,
+        weatherConditions: formData.weatherConditions || null,
+        interruptionReason: formData.interruptionReason || null,
+        materials: materials.length > 0 ? materials : undefined,
+        farmerId: user?.id || null,
+      };
+
+      // Normalize images similar to CreateReportScreen so each has a valid content-type
+      const normalizedImages = images.map((img, index) => {
+        const uri = img.uri;
+        const fileName = img.name || uri.split('/').pop() || `proof_${index}.jpg`;
+        const ext = fileName.split('.').pop()?.toLowerCase() || 'jpg';
+
+        let type: string;
+        if (ext === 'png') {
+          type = 'image/png';
+        } else {
+          // Treat jpg / jpeg / others as jpeg
+          type = 'image/jpeg';
         }
-      }
 
-      // Android: Use uploadFile method (old way)
-      console.log('🤖 [Android] Creating farm log using uploadFile method');
-      const data = new FormData();
-      data.append('CultivationTaskId', formData.cultivationTaskId);
-      data.append('PlotCultivationId', formData.plotCultivationId);
-      if (formData.workDescription) data.append('WorkDescription', formData.workDescription);
-      if (formData.actualAreaCovered !== undefined && formData.actualAreaCovered !== null) {
-        data.append('ActualAreaCovered', formData.actualAreaCovered.toString());
-      }
-      if (formData.serviceCost !== undefined && formData.serviceCost !== null) {
-        data.append('ServiceCost', formData.serviceCost.toString());
-      }
-      if (formData.serviceNotes) data.append('ServiceNotes', formData.serviceNotes);
-      if (formData.weatherConditions) data.append('WeatherConditions', formData.weatherConditions);
-      if (formData.interruptionReason) data.append('InterruptionReason', formData.interruptionReason);
-      if (user?.id) data.append('FarmerId', user.id);
-
-      // Add materials as indexed FormData fields (not JSON string)
-      if (materials.length > 0) {
-        materials.forEach((material, index) => {
-          data.append(`Materials[${index}].MaterialId`, material.materialId);
-          data.append(
-            `Materials[${index}].ActualQuantityUsed`,
-            material.actualQuantityUsed.toString(),
-          );
-          if (material.notes) {
-            data.append(`Materials[${index}].Notes`, material.notes);
-          }
-        });
-      }
-
-      // Add images with proper URI handling for Android
-      images.forEach((img, index) => {
-        const uri = img.uri.replace('file://', ''); // Remove file:// prefix for Android
-        data.append('ProofImages', {
+        return {
           uri,
-          type: img.type || 'image/jpeg',
-          name: img.name || `proof_${index}.jpg`,
-        } as any);
+          type,
+          name: fileName,
+        };
       });
 
-      console.log('📤 [Android] Sending FormData to /Farmer/create-farm-log');
-      try {
-        const result = await uploadFile('/Farmer/create-farm-log', data);
-        console.log('✅ [Android] Farm log created successfully');
-        return result;
-      } catch (error: any) {
-        // If 405 error, try alternative endpoint
-        if (error?.status === 405 || error?.response?.status === 405) {
-          console.log('⚠️ [Android] Got 405, trying alternative endpoint /Farmer/create-farm-log');
-          try {
-            const result = await uploadFile('/Farmer/create-farm-log', data);
-            console.log('✅ [Android] Farm log created successfully with alternative endpoint');
-            return result;
-          } catch (fallbackError: any) {
-            console.error('❌ [Android] Alternative endpoint also failed:', {
-              message: fallbackError?.message,
-              status: fallbackError?.response?.status || fallbackError?.status,
-            });
-            throw fallbackError;
-          }
-        }
-        console.error('❌ [Android] Error creating farm log:', {
-          message: error?.message,
-          status: error?.response?.status || error?.status,
-        });
-        throw error;
-      }
+      console.log('📤 [createFarmLog] Using shared API on', Platform.OS);
+      return createFarmLog(request, normalizedImages);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['today-tasks'] });

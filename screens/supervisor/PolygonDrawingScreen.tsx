@@ -6,6 +6,7 @@
 
 import React, { useState, useRef, useMemo } from 'react';
 import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Mapbox from '@rnmapbox/maps';
@@ -63,6 +64,9 @@ export const PolygonDrawingScreen = () => {
   const [validationResult, setValidationResult] = useState<ValidatePolygonAreaResponse['data'] | null>(null);
   const [isValidating, setIsValidating] = useState(false);
   const [editingPlot, setEditingPlot] = useState<PlotDTO | null>(null);
+  const [lockedZoomLevel, setLockedZoomLevel] = useState<number | null>(null);
+  const [tappedPlot, setTappedPlot] = useState<{ plot: PlotDTO; coordinate: Coordinate } | null>(null);
+  const plotPressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Queries
   const { data: tasks = [], isLoading: tasksLoading, refetch: refetchTasks } = useQuery({
@@ -89,6 +93,7 @@ export const PolygonDrawingScreen = () => {
       setValidationResult(null);
       setIsValidating(false);
       setFocusedPlotId(null);
+      setLockedZoomLevel(null);
       
       // Force immediate cache invalidation and refetch
       queryClient.invalidateQueries({ queryKey: ['plots'] });
@@ -123,6 +128,7 @@ export const PolygonDrawingScreen = () => {
       setValidationResult(null);
       setIsValidating(false);
       setFocusedPlotId(null);
+      setLockedZoomLevel(null);
       
       // Force immediate cache invalidation and refetch
       queryClient.invalidateQueries({ queryKey: ['plots'] });
@@ -171,6 +177,17 @@ export const PolygonDrawingScreen = () => {
       };
 
   const handleMapPress = (coordinate: Coordinate) => {
+    // Clear tapped plot when tapping empty area (with small delay to avoid clearing plot tag immediately)
+    if (plotPressTimeoutRef.current) {
+      clearTimeout(plotPressTimeoutRef.current);
+      plotPressTimeoutRef.current = null;
+    }
+    
+    // Delay clearing to allow plot press to set the tag first
+    plotPressTimeoutRef.current = setTimeout(() => {
+      setTappedPlot(null);
+    }, 100);
+    
     // Allow drawing for both task AND editing modes
     if (!isDrawing || (!selectedTask && !editingPlot)) {
       console.log('⚠️ Map press ignored:', { isDrawing, hasTask: !!selectedTask, hasEditingPlot: !!editingPlot });
@@ -191,6 +208,32 @@ export const PolygonDrawingScreen = () => {
       // Clear validation if less than 3 points
       setValidationResult(null);
     }
+  };
+
+  const handlePlotPress = (plot: PlotDTO, coordinate: Coordinate) => {
+    console.log('📍 Plot pressed:', plot.plotId, `(${plot.soThua}/${plot.soTo})`);
+    
+    // Cancel any pending map press timeout
+    if (plotPressTimeoutRef.current) {
+      clearTimeout(plotPressTimeoutRef.current);
+      plotPressTimeoutRef.current = null;
+    }
+    
+    // Don't show plot tag if drawing (to avoid interference)
+    if (isDrawing) {
+      // If drawing, treat plot tap as regular map press
+      handleMapPress(coordinate);
+      return;
+    }
+    
+    // Show plot information tag
+    console.log('📋 Setting tapped plot:', plot);
+    setTappedPlot({ plot, coordinate });
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+      setTappedPlot(null);
+    }, 5000);
   };
 
   const validatePolygon = async (polygon: Coordinate[]) => {
@@ -230,9 +273,11 @@ export const PolygonDrawingScreen = () => {
     if (plot && cameraRef.current) {
       const coord = getCoordinatesFromGeoJSON(plot.coordinateGeoJson || '');
       if (coord) {
+        const zoomLevel = 16;
+        setLockedZoomLevel(zoomLevel);
         cameraRef.current.setCamera({
           centerCoordinate: [coord.longitude, coord.latitude],
-          zoomLevel: 16,
+          zoomLevel: zoomLevel,
           animationDuration: 1000,
         });
       }
@@ -253,9 +298,11 @@ export const PolygonDrawingScreen = () => {
     if (cameraRef.current) {
       const coord = getCoordinatesFromGeoJSON(plot.coordinateGeoJson || '');
       if (coord) {
+        const zoomLevel = 16;
+        setLockedZoomLevel(zoomLevel);
         cameraRef.current.setCamera({
           centerCoordinate: [coord.longitude, coord.latitude],
-          zoomLevel: 16,
+          zoomLevel: zoomLevel,
           animationDuration: 1000,
         });
       }
@@ -270,6 +317,7 @@ export const PolygonDrawingScreen = () => {
     setPolygonArea(0);
     setValidationResult(null);
     setIsValidating(false);
+    setLockedZoomLevel(null);
     setBottomSheetExpanded(true);
   };
 
@@ -418,7 +466,10 @@ export const PolygonDrawingScreen = () => {
           tasks={tasks}
           drawnPolygon={drawnPolygon}
           focusedPlotId={focusedPlotId}
+          isDrawing={isDrawing}
+          lockedZoomLevel={lockedZoomLevel}
           onMapPress={handleMapPress}
+          onPlotPress={handlePlotPress}
         />
 
         {/* Drawing Controls */}
@@ -435,6 +486,38 @@ export const PolygonDrawingScreen = () => {
             onRemoveLastPoint={removeLastPoint}
             onFinish={finishDrawing}
           />
+        )}
+
+        {/* Plot Info Tag */}
+        {tappedPlot && !isDrawing && (
+          <View style={styles.plotTagContainer}>
+            <View style={styles.plotTag}>
+              <TouchableOpacity
+                style={styles.plotTagClose}
+                onPress={() => setTappedPlot(null)}
+              >
+                <Ionicons name="close" size={18} color={colors.textSecondary} />
+              </TouchableOpacity>
+              <BodySemibold style={styles.plotTagTitle}>
+                {tappedPlot.plot.soThua || tappedPlot.plot.soTo
+                  ? `So thua ${tappedPlot.plot.soThua ?? '-'} / So to ${tappedPlot.plot.soTo ?? '-'}`
+                  : 'Plot'}
+              </BodySemibold>
+              <BodySmall color={colors.textSecondary} style={styles.plotTagInfo}>
+                Area: {tappedPlot.plot.area.toFixed(2)} ha
+              </BodySmall>
+              {tappedPlot.plot.status && (
+                <BodySmall color={colors.textSecondary} style={styles.plotTagInfo}>
+                  Status: {tappedPlot.plot.status}
+                </BodySmall>
+              )}
+              {tappedPlot.plot.farmerName && (
+                <BodySmall color={colors.textSecondary} style={styles.plotTagInfo}>
+                  Farmer: {tappedPlot.plot.farmerName}
+                </BodySmall>
+              )}
+            </View>
+          </View>
         )}
 
         {/* Floating Action Button */}
@@ -548,5 +631,46 @@ const styles = StyleSheet.create({
   fabBadgeText: {
     fontSize: 10,
     fontWeight: 'bold',
+  },
+  plotTagContainer: {
+    position: 'absolute',
+    top: spacing.lg,
+    left: spacing.md,
+    right: spacing.md,
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  plotTag: {
+    backgroundColor: greenTheme.cardBackground,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+    minWidth: 200,
+    alignItems: 'center',
+    position: 'relative',
+  },
+  plotTagClose: {
+    position: 'absolute',
+    top: spacing.xs,
+    right: spacing.xs,
+    padding: spacing.xs,
+    zIndex: 10,
+  },
+  plotTagTitle: {
+    fontSize: 16,
+    color: greenTheme.primary,
+    marginBottom: spacing.xs,
+    textAlign: 'center',
+  },
+  plotTagInfo: {
+    fontSize: 12,
+    marginTop: 2,
   },
 });
