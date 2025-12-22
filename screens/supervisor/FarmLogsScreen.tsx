@@ -126,6 +126,10 @@ export const FarmLogsScreen = () => {
                       <View key={idx} style={styles.materialRow}>
                         <BodySmall>• {m.materialName}</BodySmall>
                         <BodySmall>{m.actualQuantityUsed}</BodySmall>
+                        {m.actualCost > 0 && (
+                          <BodySmall style={{color: colors.textTertiary, fontSize: 11}}> ({new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(m.actualCost)})</BodySmall>
+                        )}
+                        {m.notes && <BodySmall style={{fontStyle: 'italic', fontSize: 11}}> - {m.notes}</BodySmall>}
                       </View>
                     ))}
                     <Spacer size="sm" />
@@ -238,7 +242,8 @@ const styles = StyleSheet.create({
   materialRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingLeft: spacing.sm,
+    paddingLeft: spacing.sm, 
+    flexWrap: 'wrap',
   },
   photos: {
     marginTop: spacing.sm,

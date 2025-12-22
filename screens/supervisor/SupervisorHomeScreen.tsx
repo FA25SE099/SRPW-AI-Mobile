@@ -52,6 +52,13 @@ const quickActions = [
     route: '/(supervisor-tabs)/farmers',
   },
   {
+    id: '2',
+    title: 'Late Management',
+    icon: '⏰',
+    color: '#FF3B30',
+    route: '/supervisor/late-management',
+  },
+  {
     id: '6',
     title: 'Draw Polygons',
     icon: '🗺️',

@@ -54,6 +54,13 @@ export default function SupervisorTabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="late"
+        options={{
+          title: 'Late',
+          tabBarIcon: () => <Text>⏰</Text>,
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
