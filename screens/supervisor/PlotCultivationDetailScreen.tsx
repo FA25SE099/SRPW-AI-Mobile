@@ -11,6 +11,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   FlatList,
+  Modal,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -31,6 +33,8 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   getCultivationPlanByGroupPlot,
   getFarmLogsByCultivation,
+  getCultivationVersions,
+  getFarmLogsByCultivationTask,
   type CultivationPlanStage,
   type CultivationPlanTask,
 } from '@/libs/supervisor';
@@ -43,15 +47,37 @@ export const PlotCultivationDetailScreen = () => {
     plotName?: string;
   }>();
 
+  // Versioning State
+  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
+  const [versions, setVersions] = useState<any[]>([]);
+  const [showVersionPicker, setShowVersionPicker] = useState(false);
+  const [viewerImages, setViewerImages] = useState<string[]>([]);
+  const [showImageViewer, setShowImageViewer] = useState(false);
+
   const [expandedStages, setExpandedStages] = useState<{ [key: string]: boolean }>({});
   const [expandedTasks, setExpandedTasks] = useState<{ [key: string]: boolean }>({});
 
   const { data: cultivationPlan, isLoading, error, refetch } = useQuery({
-    queryKey: ['cultivation-plan', params.plotId, params.groupId],
-    queryFn: () => getCultivationPlanByGroupPlot({
-      plotId: params.plotId!,
-      groupId: params.groupId!,
-    }),
+    queryKey: ['cultivation-plan', params.plotId, params.groupId, selectedVersionId],
+    queryFn: async () => {
+      const data = await getCultivationPlanByGroupPlot({
+        plotId: params.plotId!,
+        groupId: params.groupId!,
+        versionId: selectedVersionId,
+      });
+      
+      // Fetch versions if we have a plotCultivationId and haven't fetched them yet
+      if (data?.plotCultivationId && versions.length === 0) {
+        try {
+          const vData = await getCultivationVersions(data.plotCultivationId);
+          setVersions(vData.sort((a: any, b: any) => b.versionOrder - a.versionOrder));
+        } catch (e) {
+          console.warn('Failed to fetch versions', e);
+        }
+      }
+      
+      return data;
+    },
     enabled: !!params.plotId && !!params.groupId,
     staleTime: 0,
     refetchOnMount: true,
@@ -101,10 +127,20 @@ export const PlotCultivationDetailScreen = () => {
     setExpandedTasks(prev => ({ ...prev, [taskId]: !prev[taskId] }));
   };
 
+  const handleViewImages = (images: string[]) => {
+    setViewerImages(images);
+    setShowImageViewer(true);
+  };
+
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <Container>
+          <Spacer size="md" />
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color={colors.dark} />
+            <BodySemibold style={styles.backText}>Back</BodySemibold>
+          </TouchableOpacity>
           <Spacer size="md" />
           <H3>{params.plotName || 'Plot Cultivation'}</H3>
           <Spacer size="xl" />
@@ -120,6 +156,11 @@ export const PlotCultivationDetailScreen = () => {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <Container>
+          <Spacer size="md" />
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color={colors.dark} />
+            <BodySemibold style={styles.backText}>Back</BodySemibold>
+          </TouchableOpacity>
           <Spacer size="md" />
           <H3>{params.plotName || 'Plot Cultivation'}</H3>
           <Spacer size="xl" />
@@ -141,6 +182,11 @@ export const PlotCultivationDetailScreen = () => {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <Container>
+          <Spacer size="md" />
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color={colors.dark} />
+            <BodySemibold style={styles.backText}>Back</BodySemibold>
+          </TouchableOpacity>
           <Spacer size="md" />
           <H3>{params.plotName || 'Plot Cultivation'}</H3>
           <Spacer size="xl" />
@@ -168,6 +214,24 @@ export const PlotCultivationDetailScreen = () => {
 
           {/* Header */}
           <H3>{cultivationPlan.plotName || params.plotName || 'Plot Cultivation'}</H3>
+          
+          {/* Version Selector */}
+          <TouchableOpacity 
+            style={styles.versionSelector}
+            onPress={() => setShowVersionPicker(true)}
+          >
+            <Ionicons name="time-outline" size={16} color={colors.primary} />
+            <BodySmall style={{ color: colors.primary }}>
+              {selectedVersionId 
+                ? `Version: ${versions.find(v => v.id === selectedVersionId)?.versionName || 'Unknown'}`
+                : 'Latest Version (Active)'}
+            </BodySmall>
+            <Ionicons name="chevron-down" size={16} color={colors.primary} />
+          </TouchableOpacity>
+          
+          {selectedVersionId && (
+            <BodySmall style={styles.versionWarning}>Viewing historical version</BodySmall>
+          )}
 
           <Spacer size="lg" />
 
@@ -261,18 +325,7 @@ export const PlotCultivationDetailScreen = () => {
           <Spacer size="lg" />
 
           {/* Stages and Tasks */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <H4>Cultivation Stages & Tasks</H4>
-            <TouchableOpacity onPress={() => router.push({
-              pathname: '/supervisor/farm-logs',
-              params: {
-                plotCultivationId: cultivationPlan.plotCultivationId,
-                plotName: cultivationPlan.plotName
-              }
-            })}>
-              <BodySmall style={{ color: colors.primary }}>View All Logs</BodySmall>
-            </TouchableOpacity>
-          </View>
+          <H4>Cultivation Stages & Tasks</H4>
           <Spacer size="md" />
 
           {cultivationPlan.stages.map((stage) => (
@@ -315,6 +368,7 @@ export const PlotCultivationDetailScreen = () => {
                         getStatusColor={getStatusColor}
                         getTaskIcon={getTaskIcon}
                         formatDate={formatDate}
+                        onViewImages={handleViewImages}
                       />
                     ))}
                   </>
@@ -327,6 +381,62 @@ export const PlotCultivationDetailScreen = () => {
           <Spacer size="xl" />
         </Container>
       </ScrollView>
+
+      {/* Version Picker Modal */}
+      <Modal
+        visible={showVersionPicker}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowVersionPicker(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setShowVersionPicker(false)}
+        >
+          <View style={styles.modalContent}>
+            <H4 style={styles.modalTitle}>Select Plan Version</H4>
+            <TouchableOpacity 
+              style={styles.versionItem}
+              onPress={() => { setSelectedVersionId(null); setShowVersionPicker(false); }}
+            >
+              <Body>Latest Version</Body>
+              {!selectedVersionId && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+            </TouchableOpacity>
+            {versions.map((v) => (
+              <TouchableOpacity key={v.id} style={styles.versionItem} onPress={() => { setSelectedVersionId(v.id); setShowVersionPicker(false); }}>
+                <Body>v{v.versionName} {v.isActive ? '(Active)' : ''}</Body>
+                {selectedVersionId === v.id && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Image Viewer Modal */}
+      <Modal
+        visible={showImageViewer}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowImageViewer(false)}
+      >
+        <View style={styles.fullScreenImageContainer}>
+          <TouchableOpacity 
+            style={styles.closeButton} 
+            onPress={() => setShowImageViewer(false)}
+          >
+            <Ionicons name="close" size={30} color={colors.white} />
+          </TouchableOpacity>
+          <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
+            {viewerImages.map((url, index) => (
+              <View key={index} style={{ width: 400, justifyContent: 'center', alignItems: 'center' }}>
+                <Image source={{ uri: url }} style={styles.fullScreenImage} resizeMode="contain" />
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 };
@@ -340,6 +450,7 @@ const TaskItem = ({
   getStatusColor,
   getTaskIcon,
   formatDate,
+  onViewImages,
 }: {
   task: CultivationPlanTask;
   plotCultivationId: string;
@@ -348,10 +459,32 @@ const TaskItem = ({
   getStatusColor: (status: string) => keyof typeof colors;
   getTaskIcon: (taskType: string) => any;
   formatDate: (date?: string) => string;
+  onViewImages: (urls: string[]) => void;
 }) => {
+  const [logs, setLogs] = useState<any[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+  const [logsLoaded, setLogsLoaded] = useState(false);
+
+  const handleExpand = async () => {
+    onToggle();
+    if (!isExpanded && !logsLoaded) {
+      setLoadingLogs(true);
+      try {
+        const data = await getFarmLogsByCultivationTask({ 
+          cultivationTaskId: task.taskId,
+          currentPage: 1,
+          pageSize: 10
+        });
+        setLogs(data?.data || []);
+        setLogsLoaded(true);
+      } catch (e) { console.error(e); }
+      finally { setLoadingLogs(false); }
+    }
+  };
+
   return (
     <View style={styles.taskContainer}>
-      <TouchableOpacity onPress={onToggle} style={styles.taskHeader}>
+      <TouchableOpacity onPress={handleExpand} style={styles.taskHeader}>
         <View style={styles.taskHeaderLeft}>
           <Ionicons
             name={isExpanded ? 'chevron-down' : 'chevron-forward'}
@@ -407,6 +540,46 @@ const TaskItem = ({
               ))}
             </>
           )}
+
+          {/* Farm Logs Section */}
+          <Spacer size="sm" />
+          <View style={styles.logsSection}>
+            <BodySmall style={styles.label}>Farm Logs</BodySmall>
+            {loadingLogs ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : logs.length > 0 ? (
+              logs.map((log) => (
+                <View key={log.farmLogId} style={styles.farmLogItem}>
+                  <View style={styles.farmLogHeader}>
+                    <BodySmall style={{fontWeight: '600'}}>{formatDate(log.loggedDate)}</BodySmall>
+                    <BodySmall style={{color: colors.primary}}>{log.completionPercentage}%</BodySmall>
+                  </View>
+                  {(log.soThua || log.soTo) && (
+                    <BodySmall style={styles.logPlotName}>Thửa {log.soThua}, Tờ {log.soTo}</BodySmall>
+                  )}
+                  <BodySmall style={styles.logDesc}>{log.workDescription}</BodySmall>
+                  {log.materialsUsed?.map((m: any, idx: number) => (
+                    <BodySmall key={idx} style={styles.logMaterial}>
+                      • {m.materialName}: {m.actualQuantityUsed}
+                    </BodySmall>
+                  ))}
+                  {log.photoUrls?.length > 0 && (
+                    <TouchableOpacity 
+                      style={styles.viewPhotosBtn}
+                      onPress={() => onViewImages(log.photoUrls)}
+                    >
+                      <Ionicons name="images-outline" size={14} color={colors.primary} />
+                      <BodySmall style={{color: colors.primary}}>View {log.photoUrls.length} Photos</BodySmall>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ))
+            ) : (
+              <BodySmall style={{color: colors.textTertiary, fontStyle: 'italic'}}>
+                No logs recorded yet.
+              </BodySmall>
+            )}
+          </View>
         </View>
       )}
     </View>
@@ -583,5 +756,82 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: colors.textSecondary,
     paddingVertical: spacing.md,
+  },
+  versionSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.backgroundSecondary,
+    padding: spacing.xs,
+    borderRadius: borderRadius.sm,
+    alignSelf: 'flex-start',
+  },
+  versionWarning: {
+    color: colors.warning,
+    marginTop: 4,
+    fontSize: 12,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: spacing.lg,
+  },
+  modalContent: {
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+  },
+  modalTitle: {
+    marginBottom: spacing.md,
+    textAlign: 'center',
+  },
+  versionItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  logsSection: {
+    marginTop: spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: spacing.sm,
+  },
+  logDesc: {
+    color: colors.textPrimary,
+    marginBottom: 2,
+  },
+  logPlotName: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  logMaterial: {
+    color: colors.textSecondary,
+    fontSize: 11,
+  },
+  viewPhotosBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+  },
+  fullScreenImageContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenImage: {
+    width: 350,
+    height: 500,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    zIndex: 10,
   },
 });

@@ -34,7 +34,6 @@ import {
   getProductionPlanDetail,
   getFarmLogsByProductionPlanTask,
   ProductionPlanTask,
-  FarmLogByTask,
 } from '@/libs/supervisor';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -42,28 +41,14 @@ export const ProductionPlanDetailsScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams<{ planId: string; planName: string }>();
   const [expandedStage, setExpandedStage] = useState<string | null>(null);
-  const [expandedTasks, setExpandedTasks] = useState<{ [key: string]: boolean }>({});
-  const [selectedTask, setSelectedTask] = useState<ProductionPlanTask | null>(null);
-  const [showFarmLogsModal, setShowFarmLogsModal] = useState(false);
+  
+  // Global image viewer state
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 
   const { data: planDetail, isLoading } = useQuery({
     queryKey: ['production-plan-detail', params.planId],
     queryFn: () => getProductionPlanDetail(params.planId),
     enabled: !!params.planId,
-    staleTime: 0,
-    refetchOnMount: true,
-  });
-
-  const { data: farmLogsData, isLoading: farmLogsLoading } = useQuery({
-    queryKey: ['farm-logs-by-task', selectedTask?.taskId],
-    queryFn: () =>
-      getFarmLogsByProductionPlanTask({
-        productionPlanTaskId: selectedTask!.taskId,
-        currentPage: 1,
-        pageSize: 20,
-      }),
-    enabled: !!selectedTask && showFarmLogsModal,
     staleTime: 0,
     refetchOnMount: true,
   });
@@ -99,10 +84,6 @@ export const ProductionPlanDetailsScreen = () => {
       default:
         return colors.textSecondary;
     }
-  };
-
-  const toggleTask = (taskId: string) => {
-    setExpandedTasks((prev) => ({ ...prev, [taskId]: !prev[taskId] }));
   };
 
   if (isLoading) {
@@ -142,8 +123,6 @@ export const ProductionPlanDetailsScreen = () => {
       </SafeAreaView>
     );
   }
-
-  const logs = farmLogsData?.data || [];
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -253,92 +232,14 @@ export const ProductionPlanDetailsScreen = () => {
                       <>
                         <Spacer size="md" />
                         {stage.tasks.map((task) => (
-                          <View key={task.taskId} style={styles.taskItem}>
-                            <TouchableOpacity
-                              onPress={() => toggleTask(task.taskId)}
-                              style={styles.taskHeader}
-                            >
-                              <View style={styles.taskLeft}>
-                                <Ionicons
-                                  name={
-                                    task.status === 'Completed'
-                                      ? 'checkmark-circle'
-                                      : task.status === 'InProgress'
-                                      ? 'sync-circle'
-                                      : 'ellipse-outline'
-                                  }
-                                  size={20}
-                                  color={getStatusColor(task.status)}
-                                />
-                                <View style={styles.taskInfo}>
-                                  <BodySemibold style={styles.taskName}>
-                                    {task.taskName}
-                                  </BodySemibold>
-                                  <BodySmall style={styles.taskType}>
-                                    {task.taskType} • {formatDate(task.scheduledDate)}
-                                  </BodySmall>
-                                </View>
-                              </View>
-                              <View style={styles.taskRight}>
-                                <Badge
-                                  variant={task.status === 'Completed' ? 'success' : 'neutral'}
-                                  size="sm"
-                                >
-                                  {task.status}
-                                </Badge>
-                                <Ionicons
-                                  name={expandedTasks[task.taskId] ? 'chevron-down' : 'chevron-forward'}
-                                  size={16}
-                                  color={colors.textTertiary}
-                                  style={{ marginLeft: spacing.xs }}
-                                />
-                              </View>
-                            </TouchableOpacity>
-
-                            {expandedTasks[task.taskId] && (
-                              <View style={styles.taskDetails}>
-                                <Spacer size="sm" />
-                                {task.description && (
-                                  <>
-                                    <BodySmall style={styles.label}>Description</BodySmall>
-                                    <Body>{task.description}</Body>
-                                    <Spacer size="sm" />
-                                  </>
-                                )}
-
-                                {task.materials && task.materials.length > 0 && (
-                                  <>
-                                    <BodySmall style={styles.label}>Materials</BodySmall>
-                                    {task.materials.map((material, idx) => (
-                                      <View key={idx} style={styles.materialItem}>
-                                        <Body style={styles.materialName}>{material.materialName}</Body>
-                                        <BodySmall style={styles.materialQuantity}>
-                                          {material.quantityPerHa} {material.unit}/ha
-                                        </BodySmall>
-                                      </View>
-                                    ))}
-                                    <Spacer size="sm" />
-                                  </>
-                                )}
-
-                                <View style={styles.taskFooter}>
-                                  <BodySmall style={styles.taskCost}>
-                                    Est. Cost: {formatCurrency(task.estimatedCost)}
-                                  </BodySmall>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onPress={() => {
-                                      setSelectedTask(task);
-                                      setShowFarmLogsModal(true);
-                                    }}
-                                  >
-                                    View Farm Logs
-                                  </Button>
-                                </View>
-                              </View>
-                            )}
-                          </View>
+                          <ProductionPlanTaskItem 
+                            key={task.taskId} 
+                            task={task} 
+                            getStatusColor={getStatusColor}
+                            formatDate={formatDate}
+                            formatCurrency={formatCurrency}
+                            onViewImage={(url) => setSelectedPhoto(url)}
+                          />
                         ))}
                       </>
                     )}
@@ -350,132 +251,6 @@ export const ProductionPlanDetailsScreen = () => {
           <Spacer size="xl" />
         </Container>
       </ScrollView>
-
-      {/* Farm Logs Modal */}
-      <Modal
-        visible={showFarmLogsModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowFarmLogsModal(false)}
-      >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity
-              onPress={() => setShowFarmLogsModal(false)}
-              style={styles.modalClose}
-            >
-              <Ionicons name="close" size={24} color={colors.dark} />
-            </TouchableOpacity>
-            <H4 style={styles.modalTitle}>Farm Logs</H4>
-            <View style={{ width: 24 }} />
-          </View>
-
-          <Spacer size="sm" />
-
-          {selectedTask && (
-            <View style={styles.modalTaskInfo}>
-              <BodySemibold>{selectedTask.taskName}</BodySemibold>
-              <BodySmall style={styles.modalTaskType}>
-                {selectedTask.taskType}
-              </BodySmall>
-            </View>
-          )}
-
-          <Spacer size="md" />
-
-          {farmLogsLoading ? (
-            <View style={styles.centered}>
-              <ActivityIndicator size="large" color={colors.primary} />
-              <Spacer size="md" />
-              <BodySmall>Loading farm logs...</BodySmall>
-            </View>
-          ) : (
-            <ScrollView style={styles.modalContent}>
-              {logs.length > 0 ? (
-                logs.map((log) => (
-                  <Card key={log.farmLogId} style={styles.farmLogCard}>
-                    <View style={styles.farmLogHeader}>
-                      <View>
-                        <BodySemibold>{log.farmerName || 'Farmer'}</BodySemibold>
-                        <BodySmall style={styles.farmLogPlot}>{log.plotName}</BodySmall>
-                      </View>
-                      <Badge
-                        variant="neutral"
-                        size="sm"
-                      >
-                        Logged
-                      </Badge>
-                    </View>
-
-                    <Spacer size="sm" />
-
-                    <View style={styles.farmLogDetails}>
-                      <View style={styles.farmLogRow}>
-                        <BodySmall style={styles.farmLogLabel}>Date:</BodySmall>
-                        <BodySmall>{formatDate(log.loggedDate)}</BodySmall>
-                      </View>
-                      <View style={styles.farmLogRow}>
-                        <BodySmall style={styles.farmLogLabel}>Area Covered:</BodySmall>
-                        <BodySmall>{log.actualAreaCovered.toFixed(2)} ha</BodySmall>
-                      </View>
-                      <View style={styles.farmLogRow}>
-                        <BodySmall style={styles.farmLogLabel}>Progress:</BodySmall>
-                        <BodySmall>{log.completionPercentage.toFixed(0)}%</BodySmall>
-                      </View>
-                    </View>
-
-                    {log.workDescription && (
-                      <>
-                        <Spacer size="sm" />
-                        <BodySmall style={styles.farmLogDescription}>
-                          {log.workDescription}
-                        </BodySmall>
-                      </>
-                    )}
-
-                    {log.materialsUsed && log.materialsUsed.length > 0 && (
-                      <>
-                        <Spacer size="sm" />
-                        <BodySmall style={styles.materialsTitle}>Materials Used:</BodySmall>
-                        {log.materialsUsed.map((material, idx) => (
-                          <View key={idx} style={styles.materialRow}>
-                            <BodySmall>
-                              • {material.materialName}: {material.actualQuantityUsed}
-                            </BodySmall>
-                            {material.actualCost > 0 && (
-                              <BodySmall>{formatCurrency(material.actualCost)}</BodySmall>
-                            )}
-                          </View>
-                        ))}
-                      </>
-                    )}
-
-                    {log.photoUrls && log.photoUrls.length > 0 && (
-                      <>
-                        <Spacer size="sm" />
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                          {log.photoUrls.map((url, idx) => (
-                            <TouchableOpacity key={idx} onPress={() => setSelectedPhoto(url)}>
-                              <Image source={{ uri: url }} style={styles.logPhoto} />
-                            </TouchableOpacity>
-                          ))}
-                        </ScrollView>
-                      </>
-                    )}
-                  </Card>
-                ))
-              ) : (
-                <View style={styles.emptyState}>
-                  <Ionicons name="document-text-outline" size={48} color={colors.lightGray} />
-                  <Spacer size="md" />
-                  <Body style={styles.emptyText}>No farm logs found</Body>
-                </View>
-              )}
-              <Spacer size="xl" />
-            </ScrollView>
-          )}
-        </SafeAreaView>
-      </Modal>
 
       {/* Full Screen Image Modal */}
       <Modal
@@ -507,6 +282,137 @@ export const ProductionPlanDetailsScreen = () => {
         </View>
       </Modal>
     </SafeAreaView>
+  );
+};
+
+// Extracted Task Item Component to handle local state for logs
+const ProductionPlanTaskItem = ({ task, getStatusColor, formatDate, formatCurrency, onViewImage }: any) => {
+  const [expanded, setExpanded] = useState(false);
+  const [logs, setLogs] = useState<any[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+  const [logsLoaded, setLogsLoaded] = useState(false);
+
+  const toggleExpand = async () => {
+    const newExpanded = !expanded;
+    setExpanded(newExpanded);
+
+    if (newExpanded && !logsLoaded) {
+      setLoadingLogs(true);
+      try {
+        const data = await getFarmLogsByProductionPlanTask({
+          productionPlanTaskId: task.taskId,
+          currentPage: 1,
+          pageSize: 20
+        });
+        setLogs(data?.data || []);
+        setLogsLoaded(true);
+      } catch (error) {
+        console.error("Failed to load logs", error);
+      } finally {
+        setLoadingLogs(false);
+      }
+    }
+  };
+
+  return (
+    <View style={styles.taskItem}>
+      <TouchableOpacity onPress={toggleExpand} style={styles.taskHeader}>
+        <View style={styles.taskLeft}>
+          <Ionicons
+            name={task.status === 'Completed' ? 'checkmark-circle' : task.status === 'InProgress' ? 'sync-circle' : 'ellipse-outline'}
+            size={20}
+            color={getStatusColor(task.status)}
+          />
+          <View style={styles.taskInfo}>
+            <BodySemibold style={styles.taskName}>{task.taskName}</BodySemibold>
+            <BodySmall style={styles.taskType}>{task.taskType} • {formatDate(task.scheduledDate)}</BodySmall>
+          </View>
+        </View>
+        <View style={styles.taskRight}>
+          <Badge variant={task.status === 'Completed' ? 'success' : 'neutral'} size="sm">{task.status}</Badge>
+          <Ionicons name={expanded ? 'chevron-down' : 'chevron-forward'} size={16} color={colors.textTertiary} style={{ marginLeft: spacing.xs }} />
+        </View>
+      </TouchableOpacity>
+
+      {expanded && (
+        <View style={styles.taskDetails}>
+          <Spacer size="sm" />
+          {task.description && (
+            <>
+              <BodySmall style={styles.label}>Description</BodySmall>
+              <Body>{task.description}</Body>
+              <Spacer size="sm" />
+            </>
+          )}
+
+          {task.materials && task.materials.length > 0 && (
+            <>
+              <BodySmall style={styles.label}>Materials</BodySmall>
+              {task.materials.map((material: any, idx: number) => (
+                <View key={idx} style={styles.materialItem}>
+                  <Body style={styles.materialName}>{material.materialName}</Body>
+                  <BodySmall style={styles.materialQuantity}>{material.quantityPerHa} {material.unit}/ha</BodySmall>
+                </View>
+              ))}
+              <Spacer size="sm" />
+            </>
+          )}
+
+          <View style={styles.taskFooter}>
+            <BodySmall style={styles.taskCost}>Est. Cost: {formatCurrency(task.estimatedCost)}</BodySmall>
+          </View>
+
+          {/* Inline Farm Logs */}
+          <Spacer size="md" />
+          <BodySmall style={styles.label}>Farm Logs</BodySmall>
+          {loadingLogs ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : logs.length > 0 ? (
+            logs.map((log) => (
+              <View key={log.farmLogId} style={styles.inlineLogCard}>
+                <View style={styles.farmLogHeader}>
+                  <View>
+                    <BodySemibold style={{fontSize: 13}}>{log.farmerName || 'Farmer'}</BodySemibold>
+                    {(log.soThua || log.soTo) && (
+                      <BodySmall style={styles.farmLogPlot}>Thửa {log.soThua}, Tờ {log.soTo}</BodySmall>
+                    )}
+                  </View>
+                  <BodySmall style={{color: colors.primary, fontWeight: '600'}}>{log.completionPercentage}%</BodySmall>
+                </View>
+                
+                <Spacer size="xs" />
+                <BodySmall style={{color: colors.textSecondary}}>{formatDate(log.loggedDate)}</BodySmall>
+                {log.workDescription && <BodySmall style={styles.farmLogDescription}>{log.workDescription}</BodySmall>}
+                
+                {log.materialsUsed?.length > 0 && (
+                  <View style={{marginTop: 4}}>
+                    {log.materialsUsed.map((m: any, i: number) => (
+                      <BodySmall key={i} style={{fontSize: 11, color: colors.textSecondary}}>
+                        • {m.materialName}: {m.actualQuantityUsed}
+                      </BodySmall>
+                    ))}
+                  </View>
+                )}
+
+                {log.photoUrls?.length > 0 && (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginTop: 8}}>
+                    {log.photoUrls.map((url: string, idx: number) => (
+                      <TouchableOpacity key={idx} onPress={() => onViewImage(url)}>
+                        <Image source={{ uri: url }} style={styles.logPhoto} />
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                )}
+              </View>
+            ))
+          ) : (
+            <View style={{padding: 10, alignItems: 'center'}}>
+              <BodySmall style={{color: colors.textTertiary}}>No logs recorded</BodySmall>
+            </View>
+          )}
+        </View>
+      )}
+    </View>
   );
 };
 
@@ -799,6 +705,14 @@ const styles = StyleSheet.create({
   farmLogDescription: {
     color: colors.textPrimary,
     fontStyle: 'italic',
+  },
+  inlineLogCard: {
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.sm,
+    padding: spacing.sm,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   materialsTitle: {
     color: colors.textPrimary,

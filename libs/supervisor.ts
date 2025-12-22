@@ -783,7 +783,8 @@ export type ProductionPlanDetail = {
 export type FarmLogByTask = {
   farmLogId: string;
   cultivationTaskName: string;
-  plotName: string;
+  soThua?: number;
+  soTo?: number;
   loggedDate: string;
   workDescription?: string;
   completionPercentage: number;
@@ -963,6 +964,61 @@ export const getFarmLogsByProductionPlanTask = async (params: {
 }> => {
   const response = await api.post<PagedResult<FarmLogByTask[]>>('/Farmlog/farm-logs/by-production-plan-task', {
     productionPlanTaskId: params.productionPlanTaskId,
+    currentPage: params.currentPage ?? 1,
+    pageSize: params.pageSize ?? 10,
+  }, { timeout: 15000 });
+
+  if (response && Array.isArray(response.data)) {
+    return {
+      data: response.data,
+      totalCount: response.totalCount || 0,
+      currentPage: response.currentPage || 1,
+      pageSize: response.pageSize || 10,
+    };
+  }
+
+  return {
+    data: [],
+    totalCount: 0,
+    currentPage: 1,
+    pageSize: 10,
+  };
+};
+
+/**
+ * Get cultivation versions
+ */
+export const getCultivationVersions = async (plotCultivationId: string): Promise<any[]> => {
+  const response = await api.get<any>(
+    `/cultivation-version/by-plot-cultivation/${plotCultivationId}`,
+    { timeout: 15000 }
+  );
+  
+  if (Array.isArray(response)) {
+    return response;
+  }
+
+  if (response && response.succeeded && Array.isArray(response.data)) {
+    return response.data;
+  }
+  return [];
+};
+
+/**
+ * Get farm logs by cultivation task
+ */
+export const getFarmLogsByCultivationTask = async (params: {
+  cultivationTaskId: string;
+  currentPage?: number;
+  pageSize?: number;
+}): Promise<{
+  data: FarmLogByTask[];
+  totalCount: number;
+  currentPage: number;
+  pageSize: number;
+}> => {
+  const response = await api.post<PagedResult<FarmLogByTask[]>>('/Farmlog/farm-logs/by-cultivation-task', {
+    cultivationTaskId: params.cultivationTaskId,
     currentPage: params.currentPage ?? 1,
     pageSize: params.pageSize ?? 10,
   }, { timeout: 15000 });
