@@ -43,17 +43,29 @@ import {
 } from '@/libs/supervisor';
 import { Ionicons } from '@expo/vector-icons';
 
+// Green theme colors for nature-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
+
 // Helper function to determine status color
 const getStatusColor = (status: string) => {
   switch (status?.toLowerCase()) {
     case 'active':
-      return colors.success;
+      return greenTheme.success;
     case 'pendingpolygon':
       return colors.warning;
     case 'inactive':
       return colors.lightGray;
     default:
-      return colors.primary;
+      return greenTheme.primary;
   }
 };
 
@@ -297,7 +309,7 @@ export const FarmerPlotsScreen = () => {
           <H3>{params.farmerName}'s Plots</H3>
           <Spacer size="xl" />
           <View style={styles.centered}>
-            <ActivityIndicator size="large" color={colors.primary[600]} />
+            <ActivityIndicator size="large" color={greenTheme.primary} />
           </View>
         </Container>
       </SafeAreaView>
@@ -402,7 +414,7 @@ export const FarmerPlotsScreen = () => {
                     onPress={() => handleMarkerPress(plot.plotId)}
                     style={styles.viewButton}
                   >
-                    <Ionicons name="location" size={16} color={colors.primary} />
+                    <Ionicons name="location" size={16} color={greenTheme.primary} />
                     <BodySmall style={styles.viewButtonText}>View on Map</BodySmall>
                   </TouchableOpacity>
 
@@ -492,7 +504,7 @@ export const FarmerPlotsScreen = () => {
       {/* Loading Overlay */}
       {isCalculatingPrice && (
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator size="large" color={greenTheme.primary} />
           <Spacer size="md" />
           <Body style={styles.loadingText}>Calculating...</Body>
         </View>
@@ -504,7 +516,7 @@ export const FarmerPlotsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.background,
   },
   centered: {
     flex: 1,
@@ -517,7 +529,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   backText: {
-    color: colors.dark,
+    color: greenTheme.primary,
   },
   subtitle: {
     color: colors.textSecondary,
@@ -527,6 +539,14 @@ const styles = StyleSheet.create({
     padding: 0,
     overflow: 'hidden',
     height: 300,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   map: {
     flex: 1,
@@ -535,9 +555,21 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     padding: spacing.md,
     borderLeftWidth: 3,
+    borderLeftColor: greenTheme.primary,
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   selectedPlotCard: {
     borderLeftWidth: 4,
+    borderLeftColor: greenTheme.primary,
+    backgroundColor: greenTheme.primaryLighter,
   },
   plotHeader: {
     flexDirection: 'row',
@@ -566,7 +598,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   viewButtonText: {
-    color: colors.primary,
+    color: greenTheme.primary,
   },
   emptyState: {
     alignItems: 'center',
@@ -582,7 +614,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: colors.white,
+    backgroundColor: greenTheme.cardBackground,
     borderTopLeftRadius: borderRadius.lg,
     borderTopRightRadius: borderRadius.lg,
     padding: spacing.lg,
@@ -590,7 +622,7 @@ const styles = StyleSheet.create({
   },
   planItem: {
     padding: spacing.md,
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.primaryLighter,
     borderRadius: borderRadius.md,
     marginBottom: spacing.sm,
   },
@@ -606,11 +638,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: greenTheme.border,
   },
   materialName: {
     flex: 1,
-    color: colors.textPrimary,
+    color: greenTheme.primary,
   },
   totalRow: {
     flexDirection: 'row',
@@ -618,7 +650,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: spacing.md,
     borderTopWidth: 2,
-    borderTopColor: colors.borderDark,
+    borderTopColor: greenTheme.border,
   },
   loadingOverlay: {
     position: 'absolute',

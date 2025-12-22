@@ -30,6 +30,18 @@ import {
 import { getSupervisorGroups, SupervisorGroup } from '@/libs/supervisor';
 import { Ionicons } from '@expo/vector-icons';
 
+// Green theme colors for nature-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
+
 const getStatusVariant = (status: string): 'primary' | 'success' | 'warning' | 'error' | 'neutral' => {
   switch (status) {
     case 'Completed':
@@ -106,7 +118,7 @@ export const ProductionPlansListScreen = () => {
               <Ionicons
                 name="people"
                 size={24}
-                color={colors.primary}
+                color={greenTheme.primary}
               />
               <View style={styles.groupInfo}>
                 <BodySemibold>{group.groupName}</BodySemibold>
@@ -172,7 +184,7 @@ export const ProductionPlansListScreen = () => {
           <H3>My Groups</H3>
           <Spacer size="xl" />
           <View style={styles.centered}>
-            <ActivityIndicator size="large" color={colors.primary} />
+            <ActivityIndicator size="large" color={greenTheme.primary} />
           </View>
         </Container>
       </SafeAreaView>
@@ -214,7 +226,7 @@ export const ProductionPlansListScreen = () => {
             <RefreshControl
               refreshing={isRefetching}
               onRefresh={refetch}
-              colors={[colors.primary]}
+              colors={[greenTheme.primary]}
             />
           }
           ListEmptyComponent={
@@ -236,7 +248,7 @@ export const ProductionPlansListScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.background,
   },
   centered: {
     flex: 1,
@@ -250,9 +262,10 @@ const styles = StyleSheet.create({
   infoCard: {
     flexDirection: 'row',
     padding: spacing.md,
-    backgroundColor: colors.infoLight,
-    borderColor: colors.info,
+    backgroundColor: greenTheme.primaryLighter,
+    borderColor: greenTheme.primary,
     borderWidth: 1,
+    borderRadius: borderRadius.md,
   },
   infoIcon: {
     marginRight: spacing.sm,
@@ -261,7 +274,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   infoMessage: {
-    color: colors.info,
+    color: greenTheme.primary,
   },
   list: {
     paddingBottom: spacing.xl,
@@ -269,6 +282,15 @@ const styles = StyleSheet.create({
   groupCard: {
     marginBottom: spacing.md,
     padding: spacing.md,
+    backgroundColor: greenTheme.cardBackground,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    borderRadius: borderRadius.md,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   groupHeader: {
     flexDirection: 'row',

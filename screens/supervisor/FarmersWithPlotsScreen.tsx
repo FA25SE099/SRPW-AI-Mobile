@@ -46,6 +46,18 @@ import {
   PlotListResponse
 } from '../../libs/supervisor';
 
+// Green theme colors for nature-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
+
 // Helper functions from FieldsScreen
 const parsePointWkt = (wkt?: string | null): { latitude: number; longitude: number } | null => {
   if (!wkt) return null;
@@ -235,12 +247,12 @@ export const FarmersWithPlotsScreen = () => {
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'active':
-        return colors.success;
+        return greenTheme.success;
       case 'needs-attention':
       case 'emergency':
         return colors.error;
       case 'completed':
-        return colors.info;
+        return greenTheme.primary;
       default:
         return colors.textSecondary;
     }
@@ -348,7 +360,7 @@ export const FarmersWithPlotsScreen = () => {
             <Card variant="elevated" style={styles.mapCard}>
               {plotsLoading ? (
                 <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="large" color={colors.primary} />
+                  <ActivityIndicator size="large" color={greenTheme.primary} />
                 </View>
               ) : plots.length > 0 ? (
                 <MapboxMap
@@ -632,7 +644,7 @@ export const FarmersWithPlotsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.background,
   },
   header: {
     flexDirection: 'row',
@@ -650,12 +662,12 @@ const styles = StyleSheet.create({
   },
   selectButton: {
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
+    borderColor: greenTheme.border,
+    borderRadius: borderRadius.md,
     padding: spacing.md,
     minHeight: 56,
     justifyContent: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: greenTheme.cardBackground,
   },
   selectButtonText: {
     fontSize: 16,
@@ -665,6 +677,13 @@ const styles = StyleSheet.create({
     height: 300,
     overflow: 'hidden',
     borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   map: {
     width: '100%',
@@ -708,10 +727,20 @@ const styles = StyleSheet.create({
   },
   plotCard: {
     padding: spacing.md,
+    backgroundColor: greenTheme.cardBackground,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    borderRadius: borderRadius.md,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   plotCardSelected: {
     borderWidth: 2,
-    borderColor: colors.primary,
+    borderColor: greenTheme.primary,
+    backgroundColor: greenTheme.primaryLighter,
   },
   plotHeader: {
     flexDirection: 'row',
@@ -734,7 +763,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   profitButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: greenTheme.primary,
     padding: spacing.sm,
     borderRadius: borderRadius.sm,
     alignItems: 'center',
@@ -752,34 +781,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: borderRadius.lg,
     padding: spacing.lg,
     width: '90%',
     maxHeight: '80%',
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: spacing.md,
-    color: colors.textDark,
+    color: greenTheme.primary,
   },
   modalLabel: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: spacing.xs,
     marginTop: spacing.sm,
-    color: colors.textDark,
+    color: greenTheme.primary,
   },
   farmerModalItem: {
     padding: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: greenTheme.border,
   },
   farmerModalName: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.textDark,
+    color: greenTheme.primary,
     marginBottom: 4,
   },
   farmerModalEmail: {
@@ -800,28 +831,28 @@ const styles = StyleSheet.create({
   planModalItem: {
     padding: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: greenTheme.border,
   },
   planModalItemText: {
     fontSize: 16,
-    color: colors.textDark,
+    color: greenTheme.primary,
   },
   modalCloseButton: {
     marginTop: spacing.md,
     padding: spacing.md,
-    backgroundColor: colors.backgroundLight,
-    borderRadius: 8,
+    backgroundColor: greenTheme.primaryLighter,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
   },
   modalCloseButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.textDark,
+    color: greenTheme.primary,
   },
   calculateButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: greenTheme.primary,
     padding: spacing.md,
-    borderRadius: 8,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
     marginVertical: spacing.md,
   },
@@ -841,7 +872,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: spacing.sm,
-    color: colors.primary,
+    color: greenTheme.primary,
   },
   resultRow: {
     flexDirection: 'row',
@@ -854,7 +885,7 @@ const styles = StyleSheet.create({
   },
   resultValue: {
     fontSize: 14,
-    color: colors.textDark,
+    color: greenTheme.primary,
   },
   bold: {
     fontWeight: 'bold',
@@ -865,17 +896,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: spacing.md,
     marginBottom: spacing.sm,
-    color: colors.textDark,
+    color: greenTheme.primary,
   },
   materialItem: {
     padding: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: greenTheme.border,
   },
   materialName: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.textDark,
+    color: greenTheme.primary,
   },
   materialDetail: {
     fontSize: 12,
@@ -885,7 +916,7 @@ const styles = StyleSheet.create({
   materialCost: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.primary,
+    color: greenTheme.primary,
     marginTop: 4,
   },
 });

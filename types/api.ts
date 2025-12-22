@@ -522,6 +522,7 @@ export type FarmLogMaterialRecord = {
   materialName: string;
   actualQuantityUsed: number;
   actualCost: number;
+  notes?: string | null;
 };
 
 export type FarmLogDetailResponse = {
@@ -536,6 +537,7 @@ export type FarmLogDetailResponse = {
   serviceNotes?: string | null;
   photoUrls?: string[] | null;
   weatherConditions?: string | null;
+  interruptionReason?: string | null;
   materialsUsed: FarmLogMaterialRecord[];
 };
 
@@ -919,3 +921,36 @@ export type FarmerProfileResponse = {
   farmCode: string | null;
   plotCount: number;
 };
+
+// Farmer Report Types
+export type FarmerReport = {
+  id: string;
+  plotId: string;
+  plotName: string;
+  plotArea: number;
+  cultivationPlanId: string;
+  cultivationPlanName: string;
+  reportType: string;
+  severity: string;
+  title: string;
+  description: string;
+  reportedBy: string;
+  reportedByRole: string;
+  reportedAt: string; // ISO date string
+  status: string;
+  images: string[];
+  coordinates: string;
+  resolvedBy: string | null;
+  resolvedAt: string | null;
+  resolutionNotes: string | null;
+  farmerName: string;
+  clusterName: string;
+};
+
+export type GetFarmerReportsRequest = {
+  currentPage?: number;
+  pageSize?: number;
+  reportType?: 'pest' | 'disease' | 'weather' | 'other' | string;
+};
+
+export type GetFarmerReportsResponse = PagedResult<FarmerReport[]>;

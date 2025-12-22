@@ -38,6 +38,18 @@ import {
 } from '@/libs/supervisor';
 import { Ionicons } from '@expo/vector-icons';
 
+// Green theme colors for nature-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
+
 export const ProductionPlanDetailsScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams<{ planId: string; planName: string }>();
@@ -87,9 +99,9 @@ export const ProductionPlanDetailsScreen = () => {
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'completed':
-        return colors.success;
+        return greenTheme.success;
       case 'inprogress':
-        return colors.primary;
+        return greenTheme.primary;
       case 'pending':
         return colors.warning;
       case 'approved':
@@ -111,12 +123,12 @@ export const ProductionPlanDetailsScreen = () => {
         <Container>
           <Spacer size="md" />
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={colors.dark} />
+            <Ionicons name="arrow-back" size={24} color={greenTheme.primary} />
             <BodySemibold style={styles.backText}>Back</BodySemibold>
           </TouchableOpacity>
           <Spacer size="xl" />
           <View style={styles.centered}>
-            <ActivityIndicator size="large" color={colors.primary} />
+            <ActivityIndicator size="large" color={greenTheme.primary} />
             <Spacer size="md" />
             <BodySmall>Loading plan details...</BodySmall>
           </View>
@@ -131,7 +143,7 @@ export const ProductionPlanDetailsScreen = () => {
         <Container>
           <Spacer size="md" />
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={colors.dark} />
+            <Ionicons name="arrow-back" size={24} color={greenTheme.primary} />
             <BodySemibold style={styles.backText}>Back</BodySemibold>
           </TouchableOpacity>
           <Spacer size="xl" />
@@ -153,7 +165,7 @@ export const ProductionPlanDetailsScreen = () => {
 
           {/* Header */}
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={colors.dark} />
+            <Ionicons name="arrow-back" size={24} color={greenTheme.primary} />
             <BodySemibold style={styles.backText}>Back to Plans</BodySemibold>
           </TouchableOpacity>
 
@@ -364,7 +376,7 @@ export const ProductionPlanDetailsScreen = () => {
               onPress={() => setShowFarmLogsModal(false)}
               style={styles.modalClose}
             >
-              <Ionicons name="close" size={24} color={colors.dark} />
+              <Ionicons name="close" size={24} color={greenTheme.primary} />
             </TouchableOpacity>
             <H4 style={styles.modalTitle}>Farm Logs</H4>
             <View style={{ width: 24 }} />
@@ -385,7 +397,7 @@ export const ProductionPlanDetailsScreen = () => {
 
           {farmLogsLoading ? (
             <View style={styles.centered}>
-              <ActivityIndicator size="large" color={colors.primary} />
+              <ActivityIndicator size="large" color={greenTheme.primary} />
               <Spacer size="md" />
               <BodySmall>Loading farm logs...</BodySmall>
             </View>
@@ -513,7 +525,7 @@ export const ProductionPlanDetailsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.background,
   },
   centered: {
     flex: 1,
@@ -526,7 +538,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   backText: {
-    color: colors.dark,
+    color: greenTheme.primary,
   },
   subtitle: {
     color: colors.textSecondary,
@@ -541,6 +553,15 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: '48%',
     padding: spacing.md,
+    backgroundColor: greenTheme.cardBackground,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    borderRadius: borderRadius.md,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   summaryLabel: {
     color: colors.textSecondary,
@@ -560,19 +581,19 @@ const styles = StyleSheet.create({
   },
   progressBarSmall: {
     height: 4,
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: greenTheme.primaryLighter,
     borderRadius: borderRadius.sm,
     overflow: 'hidden',
     marginTop: spacing.xs,
   },
   progressFillSmall: {
     height: '100%',
-    backgroundColor: colors.primary,
+    backgroundColor: greenTheme.primary,
   },
   tabs: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: greenTheme.border,
   },
   tab: {
     flex: 1,
@@ -582,13 +603,13 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   tabActive: {
-    borderBottomColor: colors.primary,
+    borderBottomColor: greenTheme.primary,
   },
   tabText: {
     color: colors.textSecondary,
   },
   tabTextActive: {
-    color: colors.primary,
+    color: greenTheme.primary,
     fontWeight: '600',
   },
   tabContent: {
@@ -597,6 +618,15 @@ const styles = StyleSheet.create({
   stageCard: {
     padding: spacing.md,
     marginBottom: spacing.md,
+    backgroundColor: greenTheme.cardBackground,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    borderRadius: borderRadius.md,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   stageHeader: {
     flexDirection: 'row',
@@ -622,7 +652,7 @@ const styles = StyleSheet.create({
   },
   taskItem: {
     padding: spacing.sm,
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: greenTheme.primaryLighter,
     borderRadius: borderRadius.md,
     marginBottom: spacing.sm,
   },
@@ -670,7 +700,7 @@ const styles = StyleSheet.create({
   },
   plotItem: {
     padding: spacing.md,
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: greenTheme.primaryLighter,
     borderRadius: borderRadius.md,
     marginBottom: spacing.sm,
   },
@@ -687,7 +717,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   plotStage: {
-    color: colors.primary,
+    color: greenTheme.primary,
     fontStyle: 'italic',
   },
   plotProgress: {
@@ -699,10 +729,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: greenTheme.border,
   },
   economicsRowHighlight: {
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: greenTheme.primaryLighter,
     paddingHorizontal: spacing.sm,
     borderRadius: borderRadius.md,
     marginTop: spacing.sm,
@@ -716,7 +746,7 @@ const styles = StyleSheet.create({
   marginBadge: {
     flexDirection: 'row',
     gap: spacing.sm,
-    backgroundColor: colors.successLight,
+    backgroundColor: greenTheme.success + '20',
     padding: spacing.sm,
     borderRadius: borderRadius.md,
   },
@@ -743,7 +773,7 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.background,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -752,7 +782,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: greenTheme.border,
     paddingBottom: spacing.md,
   },
   modalClose: {
@@ -775,6 +805,15 @@ const styles = StyleSheet.create({
   farmLogCard: {
     padding: spacing.md,
     marginBottom: spacing.md,
+    backgroundColor: greenTheme.cardBackground,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    borderRadius: borderRadius.md,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   farmLogHeader: {
     flexDirection: 'row',
@@ -821,7 +860,7 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: borderRadius.sm,
     marginRight: spacing.sm,
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: greenTheme.primaryLighter,
   },
   emptyState: {
     alignItems: 'center',

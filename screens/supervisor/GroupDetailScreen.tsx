@@ -29,6 +29,18 @@ import {
 import { getGroupDetail, GroupDetail } from '@/libs/supervisor';
 import { Ionicons } from '@expo/vector-icons';
 
+// Green theme colors for nature-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
+
 const getStatusVariant = (status: string): 'primary' | 'success' | 'warning' | 'error' | 'neutral' => {
   switch (status) {
     case 'Completed':
@@ -92,7 +104,7 @@ export const GroupDetailScreen = () => {
           <H3>{params.groupName || 'Group Details'}</H3>
           <Spacer size="xl" />
           <View style={styles.centered}>
-            <ActivityIndicator size="large" color={colors.primary} />
+            <ActivityIndicator size="large" color={greenTheme.primary} />
           </View>
         </Container>
       </SafeAreaView>
@@ -122,7 +134,7 @@ export const GroupDetailScreen = () => {
           <Spacer size="md" />
 
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={colors.dark} />
+            <Ionicons name="arrow-back" size={24} color={greenTheme.primary} />
             <BodySemibold style={styles.backText}>Back</BodySemibold>
           </TouchableOpacity>
           <Spacer size="sm" />
@@ -260,7 +272,7 @@ export const GroupDetailScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.white,
+    backgroundColor: greenTheme.background,
   },
   centered: {
     flex: 1,
@@ -274,7 +286,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   backText: {
-    color: colors.dark,
+    color: greenTheme.primary,
   },
   subtitle: {
     color: colors.textSecondary,

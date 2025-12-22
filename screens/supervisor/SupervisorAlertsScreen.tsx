@@ -28,6 +28,18 @@ import {
 } from '../../components/ui';
 import { useUser } from '../../libs/auth';
 
+// Green theme colors for nature-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
+
 // Mock data - will be replaced with API calls
 const mockAlerts = [
   {
@@ -330,7 +342,7 @@ export const SupervisorAlertsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.background,
   },
   header: {
     flexDirection: 'row',
@@ -352,20 +364,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.full,
-    backgroundColor: colors.white,
+    backgroundColor: greenTheme.cardBackground,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: greenTheme.border,
   },
   filterChipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: greenTheme.primary,
+    borderColor: greenTheme.primary,
   },
   alertCard: {
     padding: spacing.md,
+    backgroundColor: greenTheme.cardBackground,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    borderRadius: borderRadius.md,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   alertCardUnread: {
     borderLeftWidth: 4,
-    borderLeftColor: colors.primary,
+    borderLeftColor: greenTheme.primary,
   },
   alertHeader: {
     flexDirection: 'row',
@@ -375,7 +396,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: borderRadius.md,
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: greenTheme.primaryLighter,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -404,7 +425,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.primary,
+    backgroundColor: greenTheme.primary,
   },
 });
 

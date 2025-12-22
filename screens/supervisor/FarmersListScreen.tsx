@@ -30,6 +30,18 @@ import {
 import { getFarmers, Farmer } from '../../libs/supervisor';
 import { Ionicons } from '@expo/vector-icons';
 
+// Green theme colors for nature-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
+
 export const FarmersListScreen = () => {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
@@ -66,7 +78,7 @@ export const FarmersListScreen = () => {
       <Card style={styles.farmerCard}>
         <View style={styles.farmerHeader}>
           <View style={styles.farmerIcon}>
-            <Ionicons name="person" size={24} color={colors.primary} />
+            <Ionicons name="person" size={24} color={greenTheme.primary} />
           </View>
           <View style={styles.farmerInfo}>
             <BodySemibold>{farmer.fullName}</BodySemibold>
@@ -135,7 +147,7 @@ export const FarmersListScreen = () => {
           <H3>Farmers</H3>
           <Spacer size="xl" />
           <View style={styles.centered}>
-            <ActivityIndicator size="large" color={colors.primary} />
+            <ActivityIndicator size="large" color={greenTheme.primary} />
           </View>
         </Container>
       </SafeAreaView>
@@ -162,7 +174,7 @@ export const FarmersListScreen = () => {
             <RefreshControl
               refreshing={isRefetching}
               onRefresh={refetch}
-              colors={[colors.primary]}
+              colors={[greenTheme.primary]}
             />
           }
           ListEmptyComponent={
@@ -181,7 +193,7 @@ export const FarmersListScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.background,
   },
   centered: {
     flex: 1,
@@ -198,6 +210,15 @@ const styles = StyleSheet.create({
   farmerCard: {
     marginBottom: spacing.md,
     padding: spacing.md,
+    backgroundColor: greenTheme.cardBackground,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    borderRadius: borderRadius.md,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   farmerHeader: {
     flexDirection: 'row',
@@ -207,7 +228,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: colors.backgroundLight || '#F5F5F5',
+    backgroundColor: greenTheme.primaryLighter,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.sm,

@@ -22,6 +22,18 @@ import {
 } from '../../components/ui';
 import { useUser } from '../../libs/auth';
 
+// Green theme colors for nature-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
+
 // Mock data - will be replaced with API calls
 const mockStats = {
   totalFarmers: 12,
@@ -36,14 +48,14 @@ const quickActions = [
     id: '1',
     title: 'Farmers',
     icon: '👥',
-    color: colors.primary,
+    color: greenTheme.primary,
     route: '/(supervisor-tabs)/farmers',
   },
   {
     id: '6',
     title: 'Draw Polygons',
     icon: '🗺️',
-    color: '#9B59B6',
+    color: greenTheme.primaryLight,
     route: '/supervisor/polygon-drawing',
   },
 ];
@@ -81,7 +93,7 @@ export const SupervisorHomeScreen = () => {
 
           {/* Stats Cards */}
           <View style={styles.statsRow}>
-            <Card variant="elevated" style={[styles.statCard, { backgroundColor: colors.primary }]}>
+            <Card variant="elevated" style={[styles.statCard, { backgroundColor: greenTheme.primary }]}>
               <Body color={colors.white} style={styles.statNumber}>
                 {mockStats.totalFarmers}
               </Body>
@@ -144,7 +156,7 @@ export const SupervisorHomeScreen = () => {
                 <H4>Overall Progress</H4>
                 <BodySmall color={colors.textSecondary}>All supervised farmers</BodySmall>
               </View>
-              <Badge variant="primary" size="sm">
+              <Badge variant="primary" size="sm" style={{ backgroundColor: greenTheme.primary }}>
                 {mockStats.overallProgress}%
               </Badge>
             </View>
@@ -154,7 +166,7 @@ export const SupervisorHomeScreen = () => {
                 <View
                   style={[
                     styles.progressBarFill,
-                    { width: `${mockStats.overallProgress}%`, backgroundColor: colors.primary },
+                    { width: `${mockStats.overallProgress}%`, backgroundColor: greenTheme.primary },
                   ]}
                 />
               </View>
@@ -173,7 +185,7 @@ export const SupervisorHomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.background,
   },
   header: {
     flexDirection: 'row',
@@ -193,6 +205,11 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: spacing.lg,
     alignItems: 'center',
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   statNumber: {
     fontSize: 24,
@@ -210,6 +227,14 @@ const styles = StyleSheet.create({
   quickActionCardInner: {
     padding: spacing.md,
     alignItems: 'center',
+    backgroundColor: greenTheme.cardBackground,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   quickActionIcon: {
     width: 48,
@@ -227,6 +252,14 @@ const styles = StyleSheet.create({
   },
   progressCard: {
     padding: spacing.lg,
+    backgroundColor: greenTheme.cardBackground,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   progressCardHeader: {
     flexDirection: 'row',
@@ -239,7 +272,7 @@ const styles = StyleSheet.create({
   progressBarBg: {
     width: '100%',
     height: 8,
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: greenTheme.primaryLighter,
     borderRadius: borderRadius.full,
     overflow: 'hidden',
   },

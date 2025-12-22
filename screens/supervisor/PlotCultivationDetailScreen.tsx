@@ -35,6 +35,18 @@ import {
   type CultivationPlanTask,
 } from '@/libs/supervisor';
 
+// Green theme colors for nature-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
+
 export const PlotCultivationDetailScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams<{
@@ -57,16 +69,16 @@ export const PlotCultivationDetailScreen = () => {
     refetchOnMount: true,
   });
 
-  const getStatusColor = (status: string): keyof typeof colors => {
+  const getStatusColor = (status: string): string => {
     switch (status) {
       case 'Completed':
-        return 'success';
+        return greenTheme.success;
       case 'InProgress':
-        return 'primary';
+        return greenTheme.primary;
       case 'Pending':
-        return 'textTertiary';
+        return colors.textTertiary;
       default:
-        return 'textSecondary';
+        return colors.textSecondary;
     }
   };
 
@@ -109,7 +121,7 @@ export const PlotCultivationDetailScreen = () => {
           <H3>{params.plotName || 'Plot Cultivation'}</H3>
           <Spacer size="xl" />
           <View style={styles.centered}>
-            <ActivityIndicator size="large" color={colors.primary} />
+            <ActivityIndicator size="large" color={greenTheme.primary} />
           </View>
         </Container>
       </SafeAreaView>
@@ -129,7 +141,7 @@ export const PlotCultivationDetailScreen = () => {
             <Body style={styles.errorText}>Failed to load cultivation plan</Body>
             <Spacer size="sm" />
             <TouchableOpacity onPress={() => refetch()}>
-              <BodySemibold style={{ color: colors.primary }}>Retry</BodySemibold>
+              <BodySemibold style={{ color: greenTheme.primary }}>Retry</BodySemibold>
             </TouchableOpacity>
           </Card>
         </Container>
@@ -161,7 +173,7 @@ export const PlotCultivationDetailScreen = () => {
           <Spacer size="md" />
 
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={colors.dark} />
+            <Ionicons name="arrow-back" size={24} color={greenTheme.primary} />
             <BodySemibold style={styles.backText}>Back</BodySemibold>
           </TouchableOpacity>
           <Spacer size="sm" />
@@ -174,14 +186,14 @@ export const PlotCultivationDetailScreen = () => {
           {/* Overview Cards */}
           <View style={styles.overviewGrid}>
             <Card style={styles.overviewCard}>
-              <Ionicons name="map-outline" size={32} color={colors.primary} />
+              <Ionicons name="map-outline" size={32} color={greenTheme.primary} />
               <Spacer size="xs" />
               <BodySmall style={styles.overviewLabel}>Area</BodySmall>
               <BodySemibold>{cultivationPlan.plotArea.toFixed(2)} ha</BodySemibold>
             </Card>
 
             <Card style={styles.overviewCard}>
-              <Ionicons name="leaf-outline" size={32} color={colors.success} />
+              <Ionicons name="leaf-outline" size={32} color={greenTheme.success} />
               <Spacer size="xs" />
               <BodySmall style={styles.overviewLabel}>Variety</BodySmall>
               <BodySemibold style={styles.overviewValueSmall}>
@@ -197,10 +209,10 @@ export const PlotCultivationDetailScreen = () => {
             </Card>
 
             <Card style={styles.overviewCard}>
-              <Ionicons name="trending-up-outline" size={32} color={colors.info} />
+              <Ionicons name="trending-up-outline" size={32} color={greenTheme.primary} />
               <Spacer size="xs" />
               <BodySmall style={styles.overviewLabel}>Status</BodySmall>
-              <Badge variant="primary" style={{ alignSelf: 'center' }}>
+              <Badge variant="primary" style={{ alignSelf: 'center', backgroundColor: greenTheme.primary }}>
                 {cultivationPlan.status}
               </Badge>
             </Card>
@@ -238,13 +250,13 @@ export const PlotCultivationDetailScreen = () => {
                 <BodySmall style={styles.progressLabel}>Total</BodySmall>
               </View>
               <View style={styles.progressItem}>
-                <BodySemibold style={[styles.progressValue, { color: colors.success }]}>
+                <BodySemibold style={[styles.progressValue, { color: greenTheme.success }]}>
                   {cultivationPlan.progress.completedTasks}
                 </BodySemibold>
                 <BodySmall style={styles.progressLabel}>Completed</BodySmall>
               </View>
               <View style={styles.progressItem}>
-                <BodySemibold style={[styles.progressValue, { color: colors.primary }]}>
+                <BodySemibold style={[styles.progressValue, { color: greenTheme.primary }]}>
                   {cultivationPlan.progress.inProgressTasks}
                 </BodySemibold>
                 <BodySmall style={styles.progressLabel}>In Progress</BodySmall>
@@ -270,7 +282,7 @@ export const PlotCultivationDetailScreen = () => {
                 plotName: cultivationPlan.plotName
               }
             })}>
-              <BodySmall style={{ color: colors.primary }}>View All Logs</BodySmall>
+              <BodySmall style={{ color: greenTheme.primary }}>View All Logs</BodySmall>
             </TouchableOpacity>
           </View>
           <Spacer size="md" />
@@ -290,7 +302,7 @@ export const PlotCultivationDetailScreen = () => {
                     />
                     <BodySemibold>{stage.stageName}</BodySemibold>
                   </View>
-                  <Badge variant="primary">{stage.tasks.length} tasks</Badge>
+                    <Badge variant="primary" style={{ backgroundColor: greenTheme.primary }}>{stage.tasks.length} tasks</Badge>
                 </TouchableOpacity>
 
                 {stage.description && expandedStages[stage.stageId] && (
@@ -358,10 +370,10 @@ const TaskItem = ({
             size={18}
             color={colors.textSecondary}
           />
-          <Ionicons name={getTaskIcon(task.taskType)} size={18} color={colors.primary} />
+          <Ionicons name={getTaskIcon(task.taskType)} size={18} color={greenTheme.primary} />
           <Body style={styles.taskName}>{task.taskName}</Body>
         </View>
-        <Badge variant="primary" style={{ backgroundColor: colors[getStatusColor(task.status)] }}>
+        <Badge variant="primary" style={{ backgroundColor: getStatusColor(task.status) }}>
           {task.status}
         </Badge>
       </TouchableOpacity>
@@ -416,7 +428,7 @@ const TaskItem = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.white,
+    backgroundColor: greenTheme.background,
   },
   centered: {
     flex: 1,
@@ -430,7 +442,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   backText: {
-    color: colors.dark,
+    color: greenTheme.primary,
   },
   errorCard: {
     padding: spacing.xl,
@@ -458,6 +470,15 @@ const styles = StyleSheet.create({
     minWidth: '45%',
     padding: spacing.md,
     alignItems: 'center',
+    backgroundColor: greenTheme.cardBackground,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    borderRadius: borderRadius.md,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   overviewLabel: {
     color: colors.textSecondary,
@@ -539,7 +560,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.sm,
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: greenTheme.primaryLighter,
     borderRadius: borderRadius.sm,
     marginTop: spacing.xs,
   },
@@ -563,7 +584,7 @@ const styles = StyleSheet.create({
   },
   farmLogItem: {
     padding: spacing.sm,
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: greenTheme.primaryLighter,
     borderRadius: borderRadius.sm,
   },
   farmLogHeader: {

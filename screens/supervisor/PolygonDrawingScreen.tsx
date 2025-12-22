@@ -10,7 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Mapbox from '@rnmapbox/maps';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { colors, spacing } from '../../theme';
+import { colors, spacing, borderRadius } from '../../theme';
 import { H3, Body, BodySmall, BodySemibold, Spinner } from '../../components/ui';
 import {
   PolygonMapbox,
@@ -34,6 +34,17 @@ import {
   createPolygonWKT,
 } from '../../utils/polygon-utils';
 import { Coordinate } from '../../types/coordinates';
+
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
 
 export const PolygonDrawingScreen = () => {
   const router = useRouter();
@@ -393,7 +404,7 @@ export const PolygonDrawingScreen = () => {
           onPress={toggleBottomSheet}
           style={styles.tasksButton}
         >
-          <BodySemibold color={colors.primary}>{tasks.length}</BodySemibold>
+          <BodySemibold color={greenTheme.primary}>{tasks.length}</BodySemibold>
         </TouchableOpacity>
       </View>
 
@@ -468,7 +479,7 @@ export const PolygonDrawingScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.background,
   },
   loadingContainer: {
     flex: 1,
@@ -480,9 +491,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.white,
+    backgroundColor: greenTheme.cardBackground,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: greenTheme.border,
   },
   backButton: {
     padding: spacing.sm,
@@ -498,6 +509,8 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     minWidth: 40,
     alignItems: 'center',
+    backgroundColor: greenTheme.primaryLighter,
+    borderRadius: borderRadius.md,
   },
   mapContainer: {
     flex: 1,
@@ -510,10 +523,10 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.primary,
+    backgroundColor: greenTheme.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: greenTheme.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

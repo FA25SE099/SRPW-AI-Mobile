@@ -253,6 +253,13 @@ export const uploadFile = async (endpoint: string, formData: FormData) => {
   const token = await tokenStorage.getAccessToken();
   const url = `${env.API_URL}${endpoint}`;
 
+  console.log('📤 [uploadFile] Sending request:', {
+    url,
+    endpoint,
+    method: 'POST',
+    hasToken: !!token,
+  });
+
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', url);
@@ -265,23 +272,43 @@ export const uploadFile = async (endpoint: string, formData: FormData) => {
     xhr.onreadystatechange = () => {
       if (xhr.readyState !== 4) return;
 
+      console.log('📥 [uploadFile] Response:', {
+        status: xhr.status,
+        statusText: xhr.statusText,
+        url: xhr.responseURL,
+      });
+
       if (xhr.status >= 200 && xhr.status < 300) {
         try {
           const response = JSON.parse(xhr.responseText);
+          console.log('✅ [uploadFile] Success');
           resolve(response);
         } catch (e) {
           resolve(xhr.responseText);
         }
       } else {
         let errorMessage = 'Network request failed';
+        let errorData: any = null;
         try {
           const errorJson = JSON.parse(xhr.responseText);
+          errorData = errorJson;
           // Handle ASP.NET Core ProblemDetails or standard API error format
           errorMessage = errorJson.detail || errorJson.title || errorJson.message || errorMessage;
         } catch (e) {
           errorMessage = xhr.responseText || errorMessage;
         }
-        reject(new Error(errorMessage));
+        console.error('❌ [uploadFile] Error:', {
+          status: xhr.status,
+          statusText: xhr.statusText,
+          message: errorMessage,
+          data: errorData,
+          responseText: xhr.responseText,
+        });
+        const error = new Error(errorMessage) as any;
+        error.status = xhr.status;
+        error.statusText = xhr.statusText;
+        error.response = { data: errorData, status: xhr.status, statusText: xhr.statusText };
+        reject(error);
       }
     };
 

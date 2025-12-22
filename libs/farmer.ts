@@ -17,6 +17,8 @@ import {
   StartTaskRequest,
   StartTaskResponse,
   FarmerProfileResponse,
+  GetFarmerReportsRequest,
+  GetFarmerReportsResponse,
 } from '@/types/api';
 
 type GetFarmerPlotsParams = {
@@ -102,14 +104,13 @@ export const getFarmLogsByCultivation = async ({
   currentPage = 1,
   pageSize = 10,
 }: GetFarmLogsByCultivationParams): Promise<PagedResult<FarmLogDetailResponse[]>> => {
-  const response = await api.get<PagedResult<FarmLogDetailResponse[]>>(
+  // API expects POST with JSON body (not GET with query params)
+  const response = await api.post<PagedResult<FarmLogDetailResponse[]>>(
     '/Farmlog/farm-logs/by-cultivation',
     {
-      params: {
-        PlotCultivationId: plotCultivationId,
-        CurrentPage: currentPage,
-        PageSize: pageSize,
-      },
+      plotCultivationId: plotCultivationId,
+      currentPage: currentPage,
+      pageSize: pageSize,
     },
   );
 
@@ -174,9 +175,45 @@ export const createFarmLog = async (
   }
 
   // Axios will automatically set Content-Type with boundary for FormData
-  const response = await api.post<string>('/Farmlog/farm-logs', formData);
-
-  return response as unknown as string;
+  console.log('📤 [createFarmLog] Sending POST request to /Farmlog/farm-logs');
+  console.log('📦 [createFarmLog] FormData fields:', {
+    hasCultivationTaskId: !!request.cultivationTaskId,
+    hasPlotCultivationId: !!request.plotCultivationId,
+    imagesCount: images.length,
+    materialsCount: request.materials?.length || 0,
+  });
+  
+  try {
+    const response = await api.post<string>('/Farmlog/farm-logs', formData);
+    console.log('✅ [createFarmLog] Success');
+    return response as unknown as string;
+  } catch (error: any) {
+    // If 405 error, try alternative endpoint
+    if (error?.response?.status === 405) {
+      console.log('⚠️ [createFarmLog] Got 405, trying alternative endpoint /Farmer/create-farm-log');
+      try {
+        const response = await api.post<string>('/Farmer/create-farm-log', formData);
+        console.log('✅ [createFarmLog] Success with alternative endpoint');
+        return response as unknown as string;
+      } catch (fallbackError: any) {
+        console.error('❌ [createFarmLog] Alternative endpoint also failed:', {
+          status: fallbackError?.response?.status,
+          statusText: fallbackError?.response?.statusText,
+          data: fallbackError?.response?.data,
+        });
+        throw fallbackError;
+      }
+    }
+    console.error('❌ [createFarmLog] Error:', {
+      status: error?.response?.status,
+      statusText: error?.response?.statusText,
+      data: error?.response?.data,
+      message: error?.message,
+      url: error?.config?.url,
+      method: error?.config?.method,
+    });
+    throw error;
+  }
 };
 
 export const createEmergencyReport = async (
@@ -266,11 +303,30 @@ export const detectPestInImage = async (
 };
 
 export const startTask = async (request: StartTaskRequest): Promise<StartTaskResponse> => {
-  const response = await api.post<StartTaskResponse>('/farmer/cultivation-tasks/start', {
+  console.log('🚀 [startTask] Starting task with:', {
     cultivationTaskId: request.cultivationTaskId,
-    weatherConditions: request.weatherConditions || null,
-    notes: request.notes || null,
+    weatherConditions: request.weatherConditions,
+    notes: request.notes,
   });
+
+  // Build request body, only including fields that are not null/undefined
+  const requestBody: {
+    cultivationTaskId: string;
+    weatherConditions?: string;
+    notes?: string;
+  } = {
+    cultivationTaskId: request.cultivationTaskId,
+  };
+
+  if (request.weatherConditions) {
+    requestBody.weatherConditions = request.weatherConditions;
+  }
+
+  if (request.notes) {
+    requestBody.notes = request.notes;
+  }
+
+  const response = await api.post<StartTaskResponse>('/farmer/cultivation-tasks/start', requestBody);
 
   return response as unknown as StartTaskResponse;
 };
@@ -279,5 +335,17 @@ export const getFarmerProfile = async (): Promise<FarmerProfileResponse> => {
   const response = await api.get<FarmerProfileResponse>('/Farmer/profile');
 
   return response as unknown as FarmerProfileResponse;
+};
+
+export const getFarmerReports = async (
+  request: GetFarmerReportsRequest = {},
+): Promise<GetFarmerReportsResponse> => {
+  const response = await api.post<GetFarmerReportsResponse>('/Farmer/reports', {
+    currentPage: request.currentPage || 1,
+    pageSize: request.pageSize || 10,
+    reportType: request.reportType || 'pest',
+  });
+
+  return response as unknown as GetFarmerReportsResponse;
 };
 

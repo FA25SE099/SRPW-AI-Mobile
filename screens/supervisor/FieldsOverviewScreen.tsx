@@ -38,6 +38,18 @@ import { useUser } from '../../libs/auth';
 import { FarmerPlot, StandardPlan, StandardPlanMaterialCostRequest } from '../../types/api';
 import { getFarmers, getFarmerPlots, getStandardPlans, calculateStandardPlanMaterialCost, Farmer, GetFarmerPlotsParams } from '../../libs/supervisor';
 
+// Green theme colors for nature-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
+
 // Mock function to parse WKT point
 const parsePointWkt = (wkt: string): { latitude: number; longitude: number } | null => {
   const match = wkt.match(/POINT\s*\(\s*([\d.]+)\s+([\d.]+)\s*\)/i);
@@ -226,12 +238,12 @@ export const FieldsOverviewScreen = () => {
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'active':
-        return colors.success;
+        return greenTheme.success;
       case 'needs-attention':
       case 'emergency':
         return colors.error;
       case 'completed':
-        return colors.info;
+        return greenTheme.primary;
       default:
         return colors.textSecondary;
     }
@@ -589,7 +601,7 @@ export const FieldsOverviewScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.background,
   },
   header: {
     flexDirection: 'row',
@@ -607,8 +619,8 @@ const styles = StyleSheet.create({
   },
   selectButton: {
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
+    borderColor: greenTheme.border,
+    borderRadius: borderRadius.md,
     padding: spacing.sm,
     minHeight: 50,
     justifyContent: 'center',
@@ -621,6 +633,13 @@ const styles = StyleSheet.create({
     height: 300,
     overflow: 'hidden',
     borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   map: {
     width: '100%',
@@ -628,10 +647,20 @@ const styles = StyleSheet.create({
   },
   plotCard: {
     padding: spacing.md,
+    backgroundColor: greenTheme.cardBackground,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    borderRadius: borderRadius.md,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   plotCardSelected: {
     borderWidth: 2,
-    borderColor: colors.primary,
+    borderColor: greenTheme.primary,
+    backgroundColor: greenTheme.primaryLighter,
   },
   plotHeader: {
     flexDirection: 'row',
@@ -654,7 +683,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   priceReviewButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: greenTheme.primary,
     padding: spacing.sm,
     borderRadius: borderRadius.sm,
     alignItems: 'center',
@@ -672,29 +701,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: borderRadius.lg,
     padding: spacing.lg,
     width: '90%',
     maxHeight: '80%',
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: spacing.md,
-    color: colors.textDark,
+    color: greenTheme.primary,
   },
   modalLabel: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: spacing.xs,
     marginTop: spacing.sm,
-    color: colors.textDark,
+    color: greenTheme.primary,
   },
   calculateButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: greenTheme.primary,
     padding: spacing.md,
-    borderRadius: 8,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
     marginVertical: spacing.md,
   },
@@ -709,15 +740,15 @@ const styles = StyleSheet.create({
   priceResults: {
     marginTop: spacing.md,
     padding: spacing.md,
-    backgroundColor: colors.backgroundLight,
-    borderRadius: 8,
+    backgroundColor: greenTheme.primaryLighter,
+    borderRadius: borderRadius.md,
     maxHeight: 300,
   },
   resultsTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: spacing.sm,
-    color: colors.primary,
+    color: greenTheme.primary,
   },
   resultRow: {
     flexDirection: 'row',
@@ -730,7 +761,7 @@ const styles = StyleSheet.create({
   },
   resultValue: {
     fontSize: 14,
-    color: colors.textDark,
+    color: greenTheme.primary,
   },
   bold: {
     fontWeight: 'bold',
@@ -741,7 +772,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: spacing.md,
     marginBottom: spacing.sm,
-    color: colors.textDark,
+    color: greenTheme.primary,
   },
   materialsList: {
     maxHeight: 150,
@@ -749,12 +780,12 @@ const styles = StyleSheet.create({
   materialItem: {
     padding: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: greenTheme.border,
   },
   materialName: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.textDark,
+    color: greenTheme.primary,
   },
   materialDetail: {
     fontSize: 12,
@@ -764,17 +795,17 @@ const styles = StyleSheet.create({
   materialCost: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.primary,
+    color: greenTheme.primary,
     marginTop: 4,
   },
   planModalItem: {
     padding: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: greenTheme.border,
   },
   planModalItemText: {
     fontSize: 16,
-    color: colors.textDark,
+    color: greenTheme.primary,
   },
   planModalItemSubtext: {
     color: colors.textSecondary,
@@ -782,13 +813,13 @@ const styles = StyleSheet.create({
   modalCloseButton: {
     marginTop: spacing.md,
     padding: spacing.md,
-    backgroundColor: colors.backgroundLight,
-    borderRadius: 8,
+    backgroundColor: greenTheme.primaryLighter,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
   },
   modalCloseButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.textDark,
+    color: greenTheme.primary,
   },
 });

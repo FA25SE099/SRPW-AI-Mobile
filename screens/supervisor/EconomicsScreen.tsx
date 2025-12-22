@@ -22,8 +22,20 @@ import {
   GetFarmerPlotsParams
 } from '@/libs/supervisor';
 import { StandardPlan, StandardPlanProfitAnalysisRequest } from '@/types/api';
-import { colors, spacing } from '@/theme';
+import { colors, spacing, borderRadius } from '@/theme';
 import { Container } from '@/components/ui';
+
+// Green theme colors for nature-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
 
 export const EconomicsScreen = () => {
   const [selectedPlan, setSelectedPlan] = useState<string>('');
@@ -198,15 +210,15 @@ export const EconomicsScreen = () => {
                     onPress={() => {
                       setSelectedPlan(item.id);
                       setSelectedPlanName(
-                        `${item.name}${item.riceVarietyName ? ` (${item.riceVarietyName})` : ''}`
-                      );
+                        `${item.name}${item.categoryName ? ` (${item.categoryName})` : ''}`
+                      ); 
                       setShowPlanModal(false);
                     }}
                   >
                     <Text style={styles.modalItemText}>
                       {item.name}
-                      {item.riceVarietyName && (
-                        <Text style={styles.modalItemSubtext}> ({item.riceVarietyName})</Text>
+                      {item.categoryName && (
+                        <Text style={styles.modalItemSubtext}> ({item.categoryName})</Text>
                       )}
                     </Text>
                   </TouchableOpacity>
@@ -513,12 +525,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: spacing.md,
+    backgroundColor: greenTheme.background,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: spacing.lg,
-    color: colors.textPrimary,
+    color: greenTheme.primary,
   },
   section: {
     marginBottom: spacing.md,
@@ -527,19 +540,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: spacing.xs,
-    color: colors.textPrimary,
+    color: greenTheme.primary,
   },
   selectButton: {
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
+    borderColor: greenTheme.border,
+    borderRadius: borderRadius.md,
     padding: spacing.sm,
     minHeight: 50,
     justifyContent: 'center',
+    backgroundColor: greenTheme.cardBackground,
   },
   selectButtonText: {
     fontSize: 16,
-    color: colors.textPrimary,
+    color: greenTheme.primary,
   },
   modalContainer: {
     flex: 1,
@@ -548,8 +562,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: borderRadius.lg,
     padding: spacing.lg,
     width: '90%',
     maxHeight: '80%',
@@ -558,16 +572,16 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: spacing.md,
-    color: colors.textPrimary,
+    color: greenTheme.primary,
   },
   modalItem: {
     padding: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: greenTheme.border,
   },
   modalItemText: {
     fontSize: 16,
-    color: colors.textPrimary,
+    color: greenTheme.primary,
   },
   modalItemSubtext: {
     color: colors.textSecondary,
@@ -575,14 +589,14 @@ const styles = StyleSheet.create({
   modalCloseButton: {
     marginTop: spacing.md,
     padding: spacing.md,
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: 8,
+    backgroundColor: greenTheme.primaryLighter,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
   },
   modalCloseButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.textPrimary,
+    color: greenTheme.primary,
   },
   switchRow: {
     flexDirection: 'row',
@@ -597,17 +611,23 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
+    borderColor: greenTheme.border,
+    borderRadius: borderRadius.md,
     padding: spacing.sm,
     fontSize: 16,
+    backgroundColor: greenTheme.cardBackground,
   },
   button: {
-    backgroundColor: colors.primary,
+    backgroundColor: greenTheme.primary,
     padding: spacing.md,
-    borderRadius: 8,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
     marginVertical: spacing.lg,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   buttonDisabled: {
     backgroundColor: colors.lightGray,
@@ -620,26 +640,33 @@ const styles = StyleSheet.create({
   results: {
     marginTop: spacing.lg,
     padding: spacing.md,
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: 8,
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   resultsTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: spacing.md,
-    color: colors.textPrimary,
+    color: greenTheme.primary,
   },
   resultSection: {
     marginBottom: spacing.lg,
     padding: spacing.md,
-    backgroundColor: '#fff',
-    borderRadius: 8,
+    backgroundColor: greenTheme.primaryLighter,
+    borderRadius: borderRadius.md,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: spacing.sm,
-    color: colors.primary,
+    color: greenTheme.primary,
   },
   resultRow: {
     flexDirection: 'row',
@@ -652,24 +679,24 @@ const styles = StyleSheet.create({
   },
   resultValue: {
     fontSize: 16,
-    color: colors.textPrimary,
+    color: greenTheme.primary,
   },
   bold: {
     fontWeight: 'bold',
   },
   profit: {
-    color: colors.success,
+    color: greenTheme.success,
   },
   errorContainer: {
     padding: spacing.md,
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: 8,
+    backgroundColor: greenTheme.primaryLighter,
+    borderRadius: borderRadius.md,
     borderLeftWidth: 4,
     borderLeftColor: colors.error,
   },
   errorText: {
     fontSize: 14,
-    color: colors.textPrimary,
+    color: greenTheme.primary,
     marginBottom: spacing.xs,
   },
   errorSubtext: {

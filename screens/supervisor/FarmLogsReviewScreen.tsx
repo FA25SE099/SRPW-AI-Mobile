@@ -30,6 +30,18 @@ import {
 } from '../../components/ui';
 import { useUser } from '../../libs/auth';
 
+// Green theme colors for nature-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
+
 // Mock data - will be replaced with API calls
 const mockFarmLogs = [
   {
@@ -308,7 +320,7 @@ export const FarmLogsReviewScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.background,
   },
   header: {
     flexDirection: 'row',
@@ -324,17 +336,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.full,
-    backgroundColor: colors.white,
+    backgroundColor: greenTheme.cardBackground,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: greenTheme.border,
   },
   filterChipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: greenTheme.primary,
+    borderColor: greenTheme.primary,
   },
   logCard: {
     padding: spacing.md,
     marginBottom: spacing.md,
+    backgroundColor: greenTheme.cardBackground,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    borderRadius: borderRadius.md,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   logHeader: {
     flexDirection: 'row',

@@ -26,7 +26,7 @@ const quickActions = [
   { id: '2', title: 'Lịch sử', iconName: 'book', iconType: 'Ionicons', gradient: ['#10b981', '#059669'] as const, route: '/farmer/farm-log' },
   { id: '3', title: 'Công việc', iconName: 'checkbox', iconType: 'Ionicons', gradient: ['#10b981', '#059669'] as const, route: '/(farmer-tabs)/tasks' },
   { id: '4', title: 'Quét sâu bệnh', iconName: 'scan', iconType: 'Ionicons', gradient: ['#10b981', '#059669'] as const, route: '/farmer/disease-scanner' },
-  { id: '5', title: 'Thời tiết', iconName: 'weather-partly-cloudy', iconType: 'MaterialCommunityIcons', gradient: ['#10b981', '#059669'] as const, route: '/farmer/weather' },
+  { id: '5', title: 'Báo cáo', iconName: 'document-text', iconType: 'Ionicons', gradient: ['#10b981', '#059669'] as const, route: '/farmer/reports' },
   { id: '6', title: 'Kinh tế', iconName: 'cash', iconType: 'Ionicons', gradient: ['#10b981', '#059669'] as const, route: '/farmer/economics' },
 ];
 

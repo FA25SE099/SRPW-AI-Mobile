@@ -112,8 +112,16 @@ export const FarmerTasksScreen = () => {
       Alert.alert('Success', 'Task started successfully');
     },
     onError: (error: any) => {
+      console.error('❌ [startTask] Error:', {
+        status: error?.response?.status,
+        statusText: error?.response?.statusText,
+        data: error?.response?.data,
+        message: error?.message,
+        url: error?.config?.url,
+        method: error?.config?.method,
+      });
       const errorMessage = error?.response?.data?.message || error?.message || 'Failed to start task';
-      Alert.alert('Error', errorMessage);
+      Alert.alert('Error', `Status: ${error?.response?.status || 'Unknown'}\n${errorMessage}`);
     },
   });
 

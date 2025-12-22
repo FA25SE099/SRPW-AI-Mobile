@@ -38,7 +38,7 @@ export default function FarmerTabsLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: 'Home',
+          title: 'Trang chủ',
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons 
               name={focused ? 'home' : 'home-outline'} 
@@ -51,7 +51,7 @@ export default function FarmerTabsLayout() {
       <Tabs.Screen
         name="fields"
         options={{
-          title: 'Fields',
+          title: 'Thửa đất',
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons 
               name={focused ? 'leaf' : 'leaf-outline'} 
@@ -64,7 +64,7 @@ export default function FarmerTabsLayout() {
       <Tabs.Screen
         name="tasks"
         options={{
-          title: 'Tasks',
+          title: 'Công việc',
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons 
               name={focused ? 'checkbox' : 'checkbox-outline'} 
@@ -77,7 +77,7 @@ export default function FarmerTabsLayout() {
       <Tabs.Screen
         name="scanner"
         options={{
-          title: 'Scanner',
+          title: 'Quét sâu bệnh',
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons 
               name={focused ? 'scan' : 'scan-outline'} 
@@ -91,7 +91,7 @@ export default function FarmerTabsLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: 'Hồ sơ',
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons 
               name={focused ? 'person' : 'person-outline'} 
