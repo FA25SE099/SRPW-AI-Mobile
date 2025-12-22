@@ -10,7 +10,12 @@ import {
   StandardPlanMaterialCostRequest,
   StandardPlanMaterialCostResponse,
   StandardPlanProfitAnalysisRequest,
-  StandardPlanProfitAnalysisResponse 
+  StandardPlanProfitAnalysisResponse,
+  LateFarmerRecord,
+  LatePlotRecord,
+  LateRecordDetail,
+  LateFarmerDetailResponse,
+  LatePlotDetailResponse,
 } from '@/types/api';
 
 // TODO: Define proper types based on backend API
@@ -1063,6 +1068,194 @@ export const createLateFarmerRecord = async (params: {
   }, { timeout: 15000 });
 
   return response;
+};
+
+/**
+ * Get late farmers by supervisor
+ */
+export const getLateFarmers = async (params: {
+  supervisorId?: string;
+  currentPage?: number;
+  pageSize?: number;
+}): Promise<PagedResult<LateFarmerRecord[]>> => {
+  try {
+    const queryParams = new URLSearchParams();
+    if (params.supervisorId) queryParams.append('supervisorId', params.supervisorId);
+    queryParams.append('pageNumber', String(params.currentPage ?? 1));
+    queryParams.append('pageSize', String(params.pageSize ?? 10));
+
+    const response = await api.get<PagedResult<LateFarmerRecord[]>>(
+      `/LateFarmerRecord/farmers?${queryParams.toString()}`,
+      { timeout: 15000 }
+    );
+
+    return response;
+  } catch (error) {
+    // Return empty result if endpoint doesn't exist
+    return {
+      data: [],
+      currentPage: 1,
+      pageSize: 10,
+      totalCount: 0,
+      totalPages: 0,
+      succeeded: false,
+      message: 'Endpoint not available',
+    } as any;
+  }
+};
+
+/**
+ * Get late plots by supervisor
+ */
+export const getLatePlots = async (params: {
+  supervisorId?: string;
+  currentPage?: number;
+  pageSize?: number;
+}): Promise<PagedResult<LatePlotRecord[]>> => {
+  try {
+    const queryParams = new URLSearchParams();
+    if (params.supervisorId) queryParams.append('supervisorId', params.supervisorId);
+    queryParams.append('pageNumber', String(params.currentPage ?? 1));
+    queryParams.append('pageSize', String(params.pageSize ?? 10));
+
+    const response = await api.get<PagedResult<LatePlotRecord[]>>(
+      `/LateFarmerRecord/plots?${queryParams.toString()}`,
+      { timeout: 15000 }
+    );
+
+    return response;
+  } catch (error) {
+    // Return empty result if endpoint doesn't exist
+    return {
+      data: [],
+      currentPage: 1,
+      pageSize: 10,
+      totalCount: 0,
+      totalPages: 0,
+      succeeded: false,
+      message: 'Endpoint not available',
+    } as any;
+  }
+};
+
+/**
+ * Get late record details for a farmer
+ */
+export const getLateFarmerDetails = async (
+  farmerId: string
+): Promise<PagedResult<LateRecordDetail[]>> => {
+  try {
+    const response = await api.get<any>(
+      `/LateFarmerRecord/farmer/${farmerId}/detail`,
+      { timeout: 15000 }
+    );
+
+    // Handle potentially multiple levels of wrapping
+    let detailData = response;
+
+    // First unwrap (Axios response or Result wrapper)
+    if (detailData && detailData.data) {
+      detailData = detailData.data;
+    }
+
+    // Second unwrap (Result wrapper inside Axios response)
+    if (detailData && !detailData.lateRecords && detailData.data) {
+      detailData = detailData.data;
+    }
+
+    if (detailData && detailData.lateRecords) {
+      return {
+        data: detailData.lateRecords,
+        currentPage: 1,
+        pageSize: detailData.lateRecords.length,
+        totalCount: detailData.totalLateCount || detailData.lateRecords.length,
+        totalPages: 1,
+        succeeded: true,
+        message: 'Success',
+      } as any;
+    }
+
+    return {
+      data: [],
+      currentPage: 1,
+      pageSize: 10,
+      totalCount: 0,
+      totalPages: 0,
+      succeeded: true,
+      message: 'No data',
+    } as any;
+  } catch (error) {
+    console.error('getLateFarmerDetails error:', error);
+    return {
+      data: [],
+      currentPage: 1,
+      pageSize: 10,
+      totalCount: 0,
+      totalPages: 0,
+      succeeded: false,
+      message: 'Endpoint not available',
+    } as any;
+  }
+};
+
+/**
+ * Get late record details for a plot
+ */
+export const getLatePlotDetails = async (
+  plotId: string
+): Promise<PagedResult<LateRecordDetail[]>> => {
+  try {
+    const response = await api.get<any>(
+      `/LateFarmerRecord/plot/${plotId}/detail`,
+      { timeout: 15000 }
+    );
+
+    // Handle potentially multiple levels of wrapping
+    let detailData = response;
+
+    // First unwrap (Axios response or Result wrapper)
+    if (detailData && detailData.data) {
+      detailData = detailData.data;
+    }
+
+    // Second unwrap (Result wrapper inside Axios response)
+    if (detailData && !detailData.lateRecords && detailData.data) {
+      detailData = detailData.data;
+    }
+
+    if (detailData && detailData.lateRecords) {
+      return {
+        data: detailData.lateRecords,
+        currentPage: 1,
+        pageSize: detailData.lateRecords.length,
+        totalCount: detailData.totalLateCount || detailData.lateRecords.length,
+        totalPages: 1,
+        succeeded: true,
+        message: 'Success',
+      } as any;
+    }
+
+    return {
+      data: [],
+      currentPage: 1,
+      pageSize: 10,
+      totalCount: 0,
+      totalPages: 0,
+      succeeded: true,
+      message: 'No data',
+    } as any;
+  } catch (error) {
+    console.error('getLatePlotDetails error:', error);
+    return {
+      data: [],
+      currentPage: 1,
+      pageSize: 10,
+      totalCount: 0,
+      totalPages: 0,
+      succeeded: false,
+      message: 'Endpoint not available',
+    } as any;
+  }
 };
 
 /**

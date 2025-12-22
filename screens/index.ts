@@ -9,4 +9,5 @@ export { TodaysTasksScreen } from './TodaysTasksScreen';
 export { AddProjectScreen } from './AddProjectScreen';
 export { ProfileScreen } from './ProfileScreen';
 export * from './farmer';
+export * from './supervisor';
 

@@ -11,6 +11,9 @@ export { TasksMonitoringScreen } from './TasksMonitoringScreen';
 export { FarmLogsReviewScreen } from './FarmLogsReviewScreen';
 export { FieldsOverviewScreen } from './FieldsOverviewScreen';
 export { EconomicsScreen } from './EconomicsScreen';
+export { LateManagementScreen } from './LateManagementScreen';
+export { LateFarmerDetailScreen } from './LateFarmerDetailScreen';
 // export { SupervisorAlertsScreen } from './SupervisorAlertsScreen';
 export { PolygonDrawingScreen } from './PolygonDrawingScreen';
+
 

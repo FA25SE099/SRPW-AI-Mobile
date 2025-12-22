@@ -919,3 +919,70 @@ export type FarmerProfileResponse = {
   farmCode: string | null;
   plotCount: number;
 };
+
+// Late Farmer Record Types
+export type LateFarmerRecord = {
+  farmerId: string;
+  fullName: string;
+  address: string | null;
+  phoneNumber: string;
+  isActive: boolean;
+  isVerified: boolean;
+  lastActivityAt: string | null;
+  farmCode: string | null;
+  plotCount: number;
+  lateCount: number;
+};
+
+export type LatePlotRecord = {
+  plotId: string;
+  plotName: string | null;
+  soThua: number | null;
+  soTo: number | null;
+  farmerId: string;
+  farmerName: string | null;
+  area: number | null;
+  lateCount: number;
+  isActive: boolean;
+};
+
+export type LateRecordDetail = {
+  id: string;
+  farmerId: string;
+  farmerName: string;
+  taskId: string;
+  taskName: string;
+  plotId: string;
+  soThua: number | null;
+  soTo: number | null;
+  plotCultivationId: string;
+  seasonId: string;
+  seasonName: string;
+  groupId: string;
+  groupName: string | null;
+  clusterId: string;
+  clusterName: string;
+  recordedAt: string;
+  notes: string | null;
+};
+
+// API response wrapper for late detail
+export type LateFarmerDetailResponse = {
+  farmerId: string;
+  fullName: string;
+  phoneNumber: string;
+  address: string | null;
+  farmCode: string | null;
+  totalLateCount: number;
+  lateRecords: LateRecordDetail[];
+};
+
+export type LatePlotDetailResponse = {
+  plotId: string;
+  plotName: string | null;
+  soThua: number | null;
+  soTo: number | null;
+  area: number | null;
+  totalLateCount: number;
+  lateRecords: LateRecordDetail[];
+};
