@@ -284,19 +284,37 @@ export const detectPestInImage = async (
     name: imageFile.name,
   } as any);
 
-  // AI image analysis can take 2+ minutes, so we need a longer timeout
-  const response = await api.post<PestDetectionResponse[]>('/rice/check-pest', formData, {
-    timeout: 240000, // 4 minutes timeout for AI processing
+  // Use uploadFile helper for better Android FormData support (like createFarmLog)
+  console.log('📤 [detectPestInImage] Sending POST request to /rice/check-pest');
+  console.log('📦 [detectPestInImage] FormData fields:', {
+    hasFile: !!imageFile.uri,
+    fileName: imageFile.name,
+    fileType: imageFile.type,
   });
+  
+  try {
+    // AI image analysis can take 2+ minutes, but uploadFile uses XMLHttpRequest
+    // which doesn't support timeout directly - timeout is handled at network level
+    const response = await uploadFile('/rice/check-pest', formData);
+    console.log('✅ [detectPestInImage] Success');
 
-  // Backend returns an array of results, we take the first one
-  const results = response as unknown as PestDetectionResponse[];
-  
-  if (!results || results.length === 0) {
-    throw new Error('No pest detection results returned from the server');
+    // Backend returns an array of results, we take the first one
+    const results = response as unknown as PestDetectionResponse[];
+    
+    if (!results || results.length === 0) {
+      throw new Error('No pest detection results returned from the server');
+    }
+    
+    return results[0];
+  } catch (error: any) {
+    console.error('❌ [detectPestInImage] Error:', {
+      status: error?.status || error?.response?.status,
+      statusText: error?.statusText || error?.response?.statusText,
+      data: error?.response?.data || error?.data,
+      message: error?.message,
+    });
+    throw error;
   }
-  
-  return results[0];
 };
 
 export const startTask = async (request: StartTaskRequest): Promise<StartTaskResponse> => {

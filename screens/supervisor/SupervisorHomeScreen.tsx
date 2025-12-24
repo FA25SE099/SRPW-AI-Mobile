@@ -65,6 +65,14 @@ const quickActions = [
     gradient: ['#4CAF50', '#388E3C'] as const, 
     route: '/supervisor/polygon-drawing' 
   },
+  { 
+    id: '6', 
+    title: 'Reports', 
+    iconName: 'document-text', 
+    iconType: 'Ionicons', 
+    gradient: ['#4CAF50', '#388E3C'] as const, 
+    route: '/supervisor/reports' 
+  },
 ];
 
 export const SupervisorHomeScreen = () => {
