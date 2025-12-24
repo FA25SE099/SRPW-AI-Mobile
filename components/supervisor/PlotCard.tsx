@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius } from '../../theme';
 import { BodySemibold, BodySmall, Button } from '../ui';
 import { PlotDTO, PlotStatus } from '../../libs/supervisor';
@@ -32,8 +33,7 @@ const getStatusColor = (status: PlotStatus): string => {
 
 export const PlotCard: React.FC<PlotCardProps> = ({ plot, isFocused, isEditing, onFocus, onEdit }) => {
   return (
-    <TouchableOpacity
-      onPress={() => onFocus(plot)}
+    <View
       style={[
         styles.card,
         isFocused && styles.cardFocused,
@@ -72,14 +72,22 @@ export const PlotCard: React.FC<PlotCardProps> = ({ plot, isFocused, isEditing, 
           ✓ Polygon available
         </BodySmall>
         <TouchableOpacity
-          onPress={(e) => {
-            e.stopPropagation();
-            onEdit(plot);
-          }}
+          onPress={() => onEdit(plot)}
           style={styles.editButton}
         >
           <BodySmall color={colors.primary} style={styles.editButtonText}>
             ✏️ Edit
+          </BodySmall>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.actionsRow}>
+        <TouchableOpacity
+          onPress={() => onFocus(plot)}
+          style={styles.viewOnMapButton}
+        >
+          <Ionicons name="location" size={16} color={colors.primary} />
+          <BodySmall color={colors.primary} style={styles.viewOnMapText}>
+            View on Map
           </BodySmall>
         </TouchableOpacity>
       </View>
@@ -88,7 +96,7 @@ export const PlotCard: React.FC<PlotCardProps> = ({ plot, isFocused, isEditing, 
           → Editing in progress...
         </BodySmall>
       )}
-    </TouchableOpacity>
+    </View>
   );
 };
 
@@ -145,6 +153,26 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
     fontSize: 12,
     fontWeight: '600',
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    marginTop: spacing.sm,
+    gap: spacing.xs,
+  },
+  viewOnMapButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.primaryLighter + '30',
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  viewOnMapText: {
+    fontWeight: '600',
+    fontSize: 12,
   },
 });
 

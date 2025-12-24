@@ -4,7 +4,7 @@
  * Allows profit calculation per plot
  */
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import * as Location from 'expo-location';
 import { useQuery } from '@tanstack/react-query';
 import { colors, spacing, borderRadius } from '@/theme';
 import {
@@ -137,6 +138,10 @@ export const FarmerPlotsScreen = () => {
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [isCalculatingPrice, setIsCalculatingPrice] = useState(false);
   const [priceResult, setPriceResult] = useState<any>(null);
+  const [currentLocation, setCurrentLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
 
   // Fetch standard plans
   const { data: standardPlans } = useQuery({
@@ -159,6 +164,32 @@ export const FarmerPlotsScreen = () => {
   });
 
   const plots = plotsData || [];
+
+  // Get current location
+  useEffect(() => {
+    const getCurrentLocation = async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          console.warn('Location permission not granted');
+          return;
+        }
+
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+
+        setCurrentLocation({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
+      } catch (error) {
+        console.warn('Error getting current location:', error);
+      }
+    };
+
+    getCurrentLocation();
+  }, []);
 
   // Map data processing
   const pointMarkers = useMemo(() => {
@@ -206,14 +237,27 @@ export const FarmerPlotsScreen = () => {
   }, [polygons, selectedPlot]);
 
   const mapboxMarkers = useMemo<MarkerData[]>(() => {
-    return pointMarkers.map((marker) => ({
+    const plotMarkers = pointMarkers.map((marker) => ({
       id: marker.plotId,
       coordinate: marker.coordinate,
       title: marker.plotName,
       description: marker.groupName,
       color: getStatusColor(marker.status),
     }));
-  }, [pointMarkers]);
+
+    // Add current location marker if available
+    if (currentLocation) {
+      plotMarkers.push({
+        id: 'current-location',
+        coordinate: currentLocation,
+        title: 'Vị trí hiện tại',
+        description: 'Vị trí của bạn',
+        color: '#007AFF', // Blue color for current location
+      });
+    }
+
+    return plotMarkers;
+  }, [pointMarkers, currentLocation]);
 
   const mapRegion = useMemo(() => {
     if (pointMarkers.length > 0) {
@@ -230,13 +274,24 @@ export const FarmerPlotsScreen = () => {
         longitudeDelta: 0.05,
       };
     }
+
+    // If no plots, use current location if available
+    if (currentLocation) {
+      return {
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      };
+    }
+
     return {
       latitude: 10.8231,
       longitude: 106.6297,
       latitudeDelta: 0.1,
       longitudeDelta: 0.1,
     };
-  }, [pointMarkers]);
+  }, [pointMarkers, currentLocation]);
 
   // Plot marker press handler
   const handleMarkerPress = (markerId: string) => {
@@ -252,6 +307,17 @@ export const FarmerPlotsScreen = () => {
         });
       }
     }
+  };
+
+  // Focus on current location
+  const focusOnCurrentLocation = () => {
+    if (!currentLocation || !cameraRef.current) return;
+
+    cameraRef.current.setCamera({
+      centerCoordinate: [currentLocation.longitude, currentLocation.latitude],
+      zoomLevel: 15,
+      animationDuration: 500,
+    });
   };
 
   // Price calculation
@@ -341,6 +407,14 @@ export const FarmerPlotsScreen = () => {
           {plots.length > 0 && (
             <>
               <Card style={styles.mapCard}>
+                {currentLocation && (
+                  <TouchableOpacity
+                    style={styles.currentLocationButton}
+                    onPress={focusOnCurrentLocation}
+                  >
+                    <Ionicons name="locate" size={24} color={greenTheme.primary} />
+                  </TouchableOpacity>
+                )}
                 <MapboxMap
                   mapRef={mapRef}
                   cameraRef={cameraRef}
@@ -550,6 +624,25 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
+  },
+  currentLocationButton: {
+    position: 'absolute',
+    bottom: spacing.md,
+    right: spacing.sm,
+    zIndex: 1,
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.full,
+    backgroundColor: greenTheme.cardBackground,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: greenTheme.primary,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   plotCard: {
     marginBottom: spacing.md,

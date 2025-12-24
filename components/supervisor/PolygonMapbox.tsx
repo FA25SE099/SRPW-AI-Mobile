@@ -33,6 +33,7 @@ type PolygonMapboxProps = {
   focusedPlotId: string | null;
   isDrawing?: boolean;
   lockedZoomLevel?: number | null;
+  currentLocation?: { latitude: number; longitude: number } | null;
   onMapPress: (coordinate: { latitude: number; longitude: number }) => void;
   onPlotPress?: (plot: PlotDTO, coordinate: { latitude: number; longitude: number }) => void;
 };
@@ -105,19 +106,24 @@ export const PolygonMapbox: React.FC<PolygonMapboxProps> = ({
   focusedPlotId,
   isDrawing = false,
   lockedZoomLevel = null,
+  currentLocation = null,
   onMapPress,
   onPlotPress,
 }) => {
+  const hasSetInitialRegion = useRef(false);
+  
   useEffect(() => {
-    // Update camera when initial region changes (only when not drawing)
-    if (!isDrawing && cameraRef.current) {
+    // Only set initial region once on mount, don't reset on every render or when dependencies change
+    if (!hasSetInitialRegion.current && !isDrawing && cameraRef.current) {
+      hasSetInitialRegion.current = true;
       cameraRef.current.setCamera({
         centerCoordinate: [initialRegion.longitude, initialRegion.latitude],
         zoomLevel: 13,
         animationDuration: 1000,
       });
     }
-  }, [initialRegion, cameraRef, isDrawing]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps - only run once on mount
 
   const handleShapeSourcePress = (event: any) => {
     console.log('🔵 ShapeSource onPress event:', JSON.stringify(event, null, 2));
@@ -361,6 +367,17 @@ export const PolygonMapbox: React.FC<PolygonMapboxProps> = ({
             />
           </Mapbox.PointAnnotation>
         ))}
+
+        {/* Current Location Marker */}
+        {currentLocation && (
+          <Mapbox.PointAnnotation
+            id="current-location-marker"
+            coordinate={[currentLocation.longitude, currentLocation.latitude]}
+            title="Vị trí hiện tại"
+          >
+            <View style={[styles.marker, { backgroundColor: '#007AFF' }]} />
+          </Mapbox.PointAnnotation>
+        )}
 
         {/* Drawn Polygon */}
         {drawnPolygonGeoJSON && (
