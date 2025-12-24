@@ -291,6 +291,69 @@ export const useLogout = () => {
   });
 };
 
+// Forgot Password
+export const forgotPasswordInputSchema = z.object({
+  email: z.string().min(1, 'Email is required').email('Invalid email'),
+});
+
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordInputSchema>;
+
+const forgotPassword = async (
+  data: ForgotPasswordInput,
+): Promise<{ message: string }> => {
+  return api.post('/Auth/forgot-password', { email: data.email });
+};
+
+export const useForgotPassword = () => {
+  return useMutation({
+    mutationFn: forgotPassword,
+    onError: (error: any) => {
+      // Error is already shown by api-client interceptor via Alert
+      // Just log it here for debugging
+      const errorMessage = error.response?.data?.errors?.[0] 
+        || error.response?.data?.message 
+        || error.message 
+        || 'Failed to send reset link';
+      console.error('[useForgotPassword] Error:', errorMessage);
+    },
+  });
+};
+
+// Change Password
+export const changePasswordInputSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Current password is required'),
+    newPassword: z.string().min(5, 'Password must be at least 5 characters'),
+    confirmPassword: z.string().min(1, 'Please confirm your password'),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  });
+
+export type ChangePasswordInput = z.infer<typeof changePasswordInputSchema>;
+
+const changePassword = async (
+  data: ChangePasswordInput,
+): Promise<{ message: string }> => {
+  return api.post('/Auth/change-password', data);
+};
+
+export const useChangePassword = () => {
+  return useMutation({
+    mutationFn: changePassword,
+    onError: (error: any) => {
+      // Error is already shown by api-client interceptor via Alert
+      // Just log it here for debugging
+      const errorMessage = error.response?.data?.errors?.[0] 
+        || error.response?.data?.message 
+        || error.message 
+        || 'Failed to change password';
+      console.error('[useChangePassword] Error:', errorMessage);
+    },
+  });
+};
+
 // AuthLoader component for Expo - shows loading state while checking auth
 export const AuthLoader = ({ children }: { children: React.ReactNode }) => {
   const { isLoading } = useUser();
