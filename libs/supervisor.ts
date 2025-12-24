@@ -631,15 +631,18 @@ export const getStandardPlans = async (): Promise<StandardPlan[]> => {
 
 /**
  * Calculate material cost for a standard plan
+ * Note: API client unwraps Result<T> wrapper automatically
  */
 export const calculateStandardPlanMaterialCost = async (
   request: StandardPlanMaterialCostRequest
-): Promise<StandardPlanMaterialCostResponse> => {
-  const response = await api.post<StandardPlanMaterialCostResponse>(
+): Promise<any> => {
+  const response = await api.post<any>(
     '/Material/calculate-standard-plan-material-cost',
     request
   );
-  return response as unknown as StandardPlanMaterialCostResponse;
+  
+  // API client already unwrapped the Result<T>, so response IS the data
+  return response;
 };
 
 /**

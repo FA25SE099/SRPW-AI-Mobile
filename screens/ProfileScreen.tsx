@@ -372,7 +372,7 @@ export const ProfileScreen = () => {
           Logout
         </Button>
         )} 
-        {isUavVendor && isFarmer && (
+        {(isUavVendor || isFarmer) && (
         <Button onPress={handleLogout} variant="outline" loading={logout.isPending} fullWidth>
           Đăng xuất
         </Button>
