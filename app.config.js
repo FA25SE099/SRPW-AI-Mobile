@@ -1,27 +1,27 @@
 module.exports = {
   expo: {
-    name: "MyApp",
-    slug: "MyApp",
+    name: "Duc Thanh Coop",
+    slug: "duc-thanh-coop",
     version: "1.0.0",
-    scheme: "myapp",
+    scheme: "duc-thanh-coop",
     orientation: "portrait",
-    icon: "./assets/icons/icon.png",
+    icon: "./assets/logo.png",
     userInterfaceStyle: "light",
     splash: {
-      image: "./assets/icons/splash-icon.png",
+      image: "./assets/logo.png",
       resizeMode: "contain",
       backgroundColor: "#ffffff"
     },
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.myapp"
+      bundleIdentifier: "com.ducthanhcoop"
     },
     android: {
       adaptiveIcon: {
         foregroundImage: "./assets/icons/adaptive-icon.png",
         backgroundColor: "#ffffff"
       },
-      package: "com.myapp",
+      package: "com.ducthanhcoop",
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false
     },
