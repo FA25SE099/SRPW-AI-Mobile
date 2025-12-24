@@ -25,60 +25,76 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onFocus,
   onStartDrawing,
 }) => {
+  // Debug logging
+  console.log('TaskCard render:', {
+    taskId: task.id,
+    isFocused,
+    isSelected,
+    shouldShowButton: !isSelected,
+  });
+
   return (
-    <TouchableOpacity
-      onPress={() => onFocus(task)}
+    <View
       style={[
         styles.card,
         isFocused && styles.cardFocused,
         isSelected && styles.cardSelected,
       ]}
     >
-      <View style={styles.header}>
-        <View style={styles.info}>
-          <BodySemibold>
-            Plot {task.soThua}/{task.soTo}
-          </BodySemibold>
-          <BodySmall color={colors.textSecondary}>
-            {task.farmerName || 'Unknown Farmer'}
-          </BodySmall>
+      <TouchableOpacity
+        onPress={() => {
+          console.log('Task card pressed:', task.id);
+          onFocus(task);
+        }}
+        activeOpacity={0.7}
+      >
+        <View style={styles.header}>
+          <View style={styles.info}>
+            <BodySemibold>
+              Plot {task.soThua}/{task.soTo}
+            </BodySemibold>
+            <BodySmall color={colors.textSecondary}>
+              {task.farmerName || 'Unknown Farmer'}
+            </BodySmall>
+          </View>
+          <View
+            style={[
+              styles.priorityBadge,
+              {
+                borderColor: getPriorityColor(task.priority),
+                borderWidth: 1,
+                backgroundColor: 'transparent',
+              },
+            ]}
+          >
+            <BodySmall style={{ color: getPriorityColor(task.priority) }}>
+              {getPriorityText(task.priority)}
+            </BodySmall>
+          </View>
         </View>
-        <View
-          style={[
-            styles.priorityBadge,
-            {
-              borderColor: getPriorityColor(task.priority),
-              borderWidth: 1,
-              backgroundColor: 'transparent',
-            },
-          ]}
-        >
-          <BodySmall style={{ color: getPriorityColor(task.priority) }}>
-            {getPriorityText(task.priority)}
-          </BodySmall>
-        </View>
-      </View>
 
-      <BodySmall color={colors.textSecondary}>
-        {dayjs(task.assignedAt).format('MMM DD, YYYY')}
-      </BodySmall>
+        <BodySmall color={colors.textSecondary}>
+          {dayjs(task.assignedAt).format('MMM DD, YYYY')}
+        </BodySmall>
+      </TouchableOpacity>
 
-      {isFocused && !isSelected && (
+      {!isSelected ? (
         <Button
           size="sm"
-          onPress={() => onStartDrawing(task)}
+          onPress={() => {
+            console.log('Start Drawing button pressed for task:', task.id);
+            onStartDrawing(task);
+          }}
           style={styles.startButton}
         >
           <BodySmall color={colors.white}>Start Drawing</BodySmall>
         </Button>
-      )}
-
-      {isSelected && (
+      ) : (
         <View style={styles.selectedIndicator}>
           <BodySmall color={colors.primary}>→ Drawing in progress...</BodySmall>
         </View>
       )}
-    </TouchableOpacity>
+    </View>
   );
 };
 
