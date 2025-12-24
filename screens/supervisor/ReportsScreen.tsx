@@ -189,6 +189,7 @@ export const ReportsScreen = () => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <Container>
+        <View>
         {/* Header with Back Button */}
         <View style={styles.headerRow}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -567,6 +568,7 @@ export const ReportsScreen = () => {
               <Ionicons name="close-circle" size={18} color={colors.error} />
             </TouchableOpacity>
           )}
+        </View>
         </View>
 
         <Spacer size="md" />
@@ -1110,4 +1112,3 @@ const styles = StyleSheet.create({
     height: '100%',
   },
 });
-
