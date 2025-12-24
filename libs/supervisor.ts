@@ -1471,3 +1471,97 @@ export const getFarmLogsByCultivation = async (params: {
     pageSize: 10,
   };
 };
+
+// ===================================
+// Supervisor Reports Types & API
+// ===================================
+
+export type ReportType = 'Pest' | 'Weather' | 'Disease' | 'Other';
+export type ReportSeverity = 'Low' | 'Medium' | 'High' | 'Critical';
+export type ReportStatus = 'Pending' | 'UnderReview' | 'Resolved' | 'Rejected';
+export type ReporterRole = 'Farmer' | 'Supervisor';
+
+export type Report = {
+  id: string;
+  plotId: string;
+  plotName: string;
+  plotArea: number;
+  cultivationPlanId: string;
+  cultivationPlanName: string;
+  reportType: ReportType;
+  severity: ReportSeverity;
+  title: string;
+  description: string;
+  reportedBy: string;
+  reportedByRole: ReporterRole;
+  reportedAt: string;
+  status: ReportStatus;
+  images?: string[];
+  coordinates?: string;
+  resolvedBy?: string;
+  resolvedAt?: string;
+  resolutionNotes?: string;
+  farmerName?: string;
+  clusterName?: string;
+};
+
+// Legacy type for backward compatibility
+export type ReportItemResponse = Report;
+
+export type GetSupervisorReportsParams = {
+  currentPage?: number;
+  pageSize?: number;
+  searchTerm?: string;
+  status?: string;
+  severity?: string;
+  reportType?: string;
+};
+
+export type SupervisorReportsResponse = {
+  succeeded: boolean;
+  data: ReportItemResponse[];
+  currentPage: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  message: string;
+};
+
+/**
+ * Get supervisor reports with pagination and filters
+ */
+export const getSupervisorReports = async (
+  params: GetSupervisorReportsParams = {}
+): Promise<SupervisorReportsResponse> => {
+  return api.post<SupervisorReportsResponse>('/supervisor/reports', {
+    currentPage: params.currentPage || 1,
+    pageSize: params.pageSize || 20,
+    searchTerm: params.searchTerm,
+    status: params.status,
+    severity: params.severity,
+    reportType: params.reportType,
+  }, { timeout: 15000 });
+};
+
+/**
+ * Get a single report by ID
+ * Uses the same endpoint pattern as web version: /reports/{reportId}
+ */
+export const getReport = async (reportId: string): Promise<Report> => {
+  // The interceptor unwraps single results and returns data directly
+  return api.get<Report>(`/reports/${reportId}`, {
+    timeout: 15000,
+  });
+};
+
+/**
+ * Resolve a report
+ */
+export const resolveReport = async (
+  reportId: string,
+  resolutionNotes?: string
+): Promise<void> => {
+  await api.post(`/reports/${reportId}/resolve`, {
+    resolutionNotes,
+  }, { timeout: 15000 });
+};
