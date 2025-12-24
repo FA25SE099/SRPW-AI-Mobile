@@ -18,7 +18,7 @@ module.exports = {
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: "./assets/icons/adaptive-icon.png",
+        foregroundImage: "./assets/logo.png",
         backgroundColor: "#ffffff"
       },
       package: "com.ducthanhcoop",
@@ -26,7 +26,7 @@ module.exports = {
       predictiveBackGestureEnabled: false
     },
     web: {
-      favicon: "./assets/icons/favicon.png",
+      favicon: "./assets/logo.png",
       bundler: "metro"
     },
     plugins: [

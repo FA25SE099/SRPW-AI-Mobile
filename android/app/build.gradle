@@ -95,9 +95,9 @@ packagingOptions {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.myapp'
+    namespace 'com.ducthanhcoop'
     defaultConfig {
-        applicationId 'com.myapp'
+        applicationId 'com.ducthanhcoop'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
