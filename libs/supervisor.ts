@@ -4,8 +4,8 @@
  */
 
 import { api } from './api-client';
-import { 
-  PagedResult, 
+import {
+  PagedResult,
   StandardPlan,
   StandardPlanMaterialCostRequest,
   StandardPlanMaterialCostResponse,
@@ -17,6 +17,29 @@ import {
   LateFarmerDetailResponse,
   LatePlotDetailResponse,
 } from '@/types/api';
+
+// Supervisor profile type
+export type SupervisorProfile = {
+  supervisorId: string;
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  address: string;
+  dateOfBirth: string | null;
+  clusterId: string;
+  clusterName: string;
+  totalGroupsSupervised: number;
+  activeGroupsThisSeason: number;
+  completedPolygonTasks: number;
+  pendingPolygonTasks: number;
+  createdAt: string;
+  isActive: boolean;
+};
+
+export const getSupervisorProfile = async (): Promise<SupervisorProfile> => {
+  const response = await api.get<SupervisorProfile>('/supervisor/profile');
+  return response as unknown as SupervisorProfile;
+};
 
 // TODO: Define proper types based on backend API
 export type SupervisedFarmer = {

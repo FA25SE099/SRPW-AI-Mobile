@@ -380,7 +380,7 @@ export const UavOrderDetailScreen = () => {
           <Spacer size="md" />
 
           {/* Materials */}
-          <Card variant="elevated" style={styles.card}>
+          {/* <Card variant="elevated" style={styles.card}>
             <H4>Vật liệu & Liều lượng</H4>
             <Spacer size="md" />
             {order.materials.length === 0 && (
@@ -411,7 +411,7 @@ export const UavOrderDetailScreen = () => {
                 </View>
               </View>
             ))}
-          </Card>
+          </Card> */}
 
           <Spacer size="md" />
 
@@ -443,12 +443,12 @@ export const UavOrderDetailScreen = () => {
                   </Badge>
                 </View>
                 <Spacer size="sm" />
-                <View style={styles.assignmentMeta}>
+                {/* <View style={styles.assignmentMeta}>
                   <BodySmall color={colors.textSecondary}>Chi phí thực tế:</BodySmall>
                   <BodySemibold>
                     {assignment.actualCost ? `${assignment.actualCost.toLocaleString()}₫` : '—'}
                   </BodySemibold>
-                </View>
+                </View> */}
                 {assignment.completionDate && (
                   <View style={styles.assignmentMeta}>
                     <BodySmall color={colors.textSecondary}>Hoàn thành:</BodySmall>

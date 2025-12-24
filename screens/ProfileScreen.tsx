@@ -11,6 +11,8 @@ import { useRouter } from 'expo-router';
 import { View, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { getFarmerProfile } from '../libs/farmer';
+import { getSupervisorProfile, SupervisorProfile } from '../libs/supervisor';
+import { getUavVendorProfile, UavVendorProfile } from '../libs/uav';
 import { ROLES } from '../libs/authorization';
 
 export const ProfileScreen = () => {
@@ -19,6 +21,8 @@ export const ProfileScreen = () => {
   const { data: user } = useUser();
 
   const isFarmer = user?.role === ROLES.Farmer || (user?.role as string) === 'Farmer';
+  const isSupervisor = user?.role === ROLES.Supervisor || (user?.role as string) === 'Supervisor';
+  const isUavVendor = user?.role === ROLES.UavVendor || (user?.role as string) === 'UavVendor';
 
   // Fetch farmer profile if user is a farmer
   const {
@@ -29,6 +33,28 @@ export const ProfileScreen = () => {
     queryKey: ['farmer-profile'],
     queryFn: getFarmerProfile,
     enabled: isFarmer, // Only fetch if user is a farmer
+  });
+
+  // Fetch supervisor profile if user is a supervisor
+  const {
+    data: supervisorProfile,
+    isLoading: supervisorProfileLoading,
+    error: supervisorProfileError,
+  } = useQuery<SupervisorProfile>({
+    queryKey: ['supervisor-profile'],
+    queryFn: getSupervisorProfile,
+    enabled: isSupervisor,
+  });
+
+  // Fetch UAV vendor profile if user is a UAV vendor
+  const {
+    data: uavVendorProfile,
+    isLoading: uavVendorProfileLoading,
+    error: uavVendorProfileError,
+  } = useQuery<UavVendorProfile>({
+    queryKey: ['uavvendor-profile'],
+    queryFn: getUavVendorProfile,
+    enabled: isUavVendor,
   });
 
   const handleLogout = async () => {
@@ -44,9 +70,13 @@ export const ProfileScreen = () => {
     : 'U';
 
   // Get display name - prefer farmer profile fullName if available
-  const displayName = isFarmer && farmerProfile?.fullName 
-    ? farmerProfile.fullName 
-    : userName;
+  const displayName = isFarmer && farmerProfile?.fullName
+    ? farmerProfile.fullName
+    : isSupervisor && supervisorProfile?.fullName
+      ? supervisorProfile.fullName
+      : isUavVendor && uavVendorProfile?.fullName
+        ? uavVendorProfile.fullName
+        : userName;
 
   return (
     <ScrollView>
@@ -74,7 +104,7 @@ export const ProfileScreen = () => {
 
         <Spacer size="xl" />
 
-        {/* Farmer Profile Details */}
+        {/* Farmer Profile Details (Vietnamese) */}
         {isFarmer && (
           <>
             {farmerProfileLoading ? (
@@ -157,22 +187,198 @@ export const ProfileScreen = () => {
           </>
         )}
 
-        {/* Profile Info for non-farmers */}
-        {!isFarmer && (
+        {/* Supervisor Profile Details */}
+        {isSupervisor && (
+          <>
+            {supervisorProfileLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Spacer size="md" />
+                <Body color={colors.textSecondary}>Loading profile...</Body>
+              </View>
+            ) : supervisorProfileError ? (
+              <View style={styles.errorContainer}>
+                <Body color={colors.error}>Unable to load profile</Body>
+              </View>
+            ) : supervisorProfile ? (
+              <View style={styles.section}>
+                <H1>Supervisor Profile</H1>
+                <Spacer size="md" />
+                <View style={styles.infoCard}>
+                  <View style={styles.infoRow}>
+                    <BodySmall color={colors.textSecondary}>Full name</BodySmall>
+                    <BodySemibold>{supervisorProfile.fullName}</BodySemibold>
+                  </View>
+                  <View style={styles.infoRow}>
+                    <BodySmall color={colors.textSecondary}>Email</BodySmall>
+                    <BodySemibold>{supervisorProfile.email}</BodySemibold>
+                  </View>
+                  {supervisorProfile.phoneNumber && (
+                    <View style={styles.infoRow}>
+                      <BodySmall color={colors.textSecondary}>Phone</BodySmall>
+                      <BodySemibold>{supervisorProfile.phoneNumber}</BodySemibold>
+                    </View>
+                  )}
+                  {supervisorProfile.address && (
+                    <View style={styles.infoRow}>
+                      <BodySmall color={colors.textSecondary}>Address</BodySmall>
+                      <BodySemibold>{supervisorProfile.address}</BodySemibold>
+                    </View>
+                  )}
+                  {supervisorProfile.clusterName && (
+                    <View style={styles.infoRow}>
+                      <BodySmall color={colors.textSecondary}>Cluster</BodySmall>
+                      <BodySemibold>{supervisorProfile.clusterName}</BodySemibold>
+                    </View>
+                  )}
+                  {/* <View style={styles.infoRow}>
+                    <BodySmall color={colors.textSecondary}>Total groups supervised</BodySmall>
+                    <BodySemibold>{supervisorProfile.totalGroupsSupervised}</BodySemibold>
+                  </View>
+                  <View style={styles.infoRow}>
+                    <BodySmall color={colors.textSecondary}>Active groups this season</BodySmall>
+                    <BodySemibold>{supervisorProfile.activeGroupsThisSeason}</BodySemibold>
+                  </View>
+                  <View style={styles.infoRow}>
+                    <BodySmall color={colors.textSecondary}>Completed polygon tasks</BodySmall>
+                    <BodySemibold>{supervisorProfile.completedPolygonTasks}</BodySemibold>
+                  </View>
+                  <View style={styles.infoRow}>
+                    <BodySmall color={colors.textSecondary}>Pending polygon tasks</BodySmall>
+                    <BodySemibold>{supervisorProfile.pendingPolygonTasks}</BodySemibold>
+                  </View>
+                  <View style={styles.infoRow}>
+                    <BodySmall color={colors.textSecondary}>Status</BodySmall>
+                    <View style={[
+                      styles.statusBadge,
+                      supervisorProfile.isActive 
+                        ? styles.statusBadgeActive 
+                        : styles.statusBadgeInactive
+                    ]}>
+                      <BodySmall style={styles.statusBadgeText}>
+                        {supervisorProfile.isActive ? 'Active' : 'Inactive'}
+                      </BodySmall>
+                    </View>
+                  </View> */}
+                </View>
+              </View>
+            ) : null}
+          </>
+        )}
+
+        {/* UAV Vendor Profile Details (Vietnamese) */}
+        {isUavVendor && (
+          <>
+            {uavVendorProfileLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Spacer size="md" />
+                <Body color={colors.textSecondary}>Đang tải thông tin...</Body>
+              </View>
+            ) : uavVendorProfileError ? (
+              <View style={styles.errorContainer}>
+                <Body color={colors.error}>Không thể tải thông tin</Body>
+              </View>
+            ) : uavVendorProfile ? (
+              <View style={styles.section}>
+                <H1>Hồ sơ UAV</H1>
+                <Spacer size="md" />
+                <View style={styles.infoCard}>
+                  <View style={styles.infoRow}>
+                    <BodySmall color={colors.textSecondary}>Họ và tên</BodySmall>
+                    <BodySemibold>{uavVendorProfile.fullName}</BodySemibold>
+                  </View>
+                  <View style={styles.infoRow}>
+                    <BodySmall color={colors.textSecondary}>Email</BodySmall>
+                    <BodySemibold>{uavVendorProfile.email}</BodySemibold>
+                  </View>
+                  {uavVendorProfile.phoneNumber && (
+                    <View style={styles.infoRow}>
+                      <BodySmall color={colors.textSecondary}>Số điện thoại</BodySmall>
+                      <BodySemibold>{uavVendorProfile.phoneNumber}</BodySemibold>
+                    </View>
+                  )}
+                  {uavVendorProfile.address && (
+                    <View style={styles.infoRow}>
+                      <BodySmall color={colors.textSecondary}>Địa chỉ</BodySmall>
+                      <BodySemibold>{uavVendorProfile.address}</BodySemibold>
+                    </View>
+                  )}
+                  {uavVendorProfile.vendorName && (
+                    <View style={styles.infoRow}>
+                      <BodySmall color={colors.textSecondary}>Tên doanh nghiệp</BodySmall>
+                      <BodySemibold>{uavVendorProfile.vendorName}</BodySemibold>
+                    </View>
+                  )}
+                  {uavVendorProfile.businessRegistrationNumber && (
+                    <View style={styles.infoRow}>
+                      <BodySmall color={colors.textSecondary}>Mã đăng ký kinh doanh</BodySmall>
+                      <BodySemibold>{uavVendorProfile.businessRegistrationNumber}</BodySemibold>
+                    </View>
+                  )}
+                  <View style={styles.infoRow}>
+                    <BodySmall color={colors.textSecondary}>Số lượng UAV</BodySmall>
+                    <BodySemibold>{uavVendorProfile.fleetSize}</BodySemibold>
+                  {/* </View>
+                  <View style={styles.infoRow}>
+                    <BodySmall color={colors.textSecondary}>Bán kính phục vụ (km)</BodySmall>
+                    <BodySemibold>{uavVendorProfile.serviceRadius}</BodySemibold>
+                  </View>
+                  {uavVendorProfile.equipmentSpecs && (
+                    <View style={styles.infoRow}>
+                      <BodySmall color={colors.textSecondary}>Thiết bị</BodySmall>
+                      <BodySemibold>{uavVendorProfile.equipmentSpecs}</BodySemibold>
+                    </View>
+                  )}
+                  {uavVendorProfile.operatingSchedule && (
+                    <View style={styles.infoRow}>
+                      <BodySmall color={colors.textSecondary}>Lịch hoạt động</BodySmall>
+                      <BodySemibold>{uavVendorProfile.operatingSchedule}</BodySemibold>
+                    </View>
+                  )}
+                  <View style={styles.infoRow}>
+                    <BodySmall color={colors.textSecondary}>Trạng thái</BodySmall>
+                    <View style={[
+                      styles.statusBadge,
+                      uavVendorProfile.isActive
+                        ? styles.statusBadgeActive
+                        : styles.statusBadgeInactive
+                    ]}>
+                      <BodySmall style={styles.statusBadgeText}>
+                        {uavVendorProfile.isActive ? 'Hoạt động' : 'Không hoạt động'}
+                      </BodySmall>
+                    </View> */}
+                  </View>
+                </View>
+              </View>
+            ) : null}
+          </>
+        )}
+
+        {/* Profile Info for others */}
+        {!isFarmer && !isSupervisor && !isUavVendor && (
           <View style={styles.section}>
-            <H1>Hồ sơ</H1>
+            <H1>Profile</H1>
             <Spacer size="md" />
-            <Body color={colors.textSecondary}>Thiết lập hồ sơ sắp tới...</Body>
+            <Body color={colors.textSecondary}>Profile setup coming soon...</Body>
           </View>
         )}
 
         <Spacer size="xl" />
         
         {/* Logout Button */}
+        {isSupervisor && (
+        <Button onPress={handleLogout} variant="outline" loading={logout.isPending} fullWidth>
+          Logout
+        </Button>
+        )} 
+        {isUavVendor && isFarmer && (
         <Button onPress={handleLogout} variant="outline" loading={logout.isPending} fullWidth>
           Đăng xuất
         </Button>
-        
+        )}
+
+
         <Spacer size="xl" />
       </Container>
     </ScrollView>

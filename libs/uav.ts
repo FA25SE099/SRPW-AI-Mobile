@@ -6,6 +6,24 @@ import {
   ReportServiceOrderCompletionRequest,
 } from '@/types/api';
 
+export type UavVendorProfile = {
+  uavVendorId: string;
+  userId: string;
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  address: string;
+  vendorName: string;
+  businessRegistrationNumber: string;
+  serviceRatePerHa: number;
+  fleetSize: number;
+  serviceRadius: number;
+  equipmentSpecs: string;
+  operatingSchedule: string;
+  isActive: boolean;
+  createdAt: string;
+};
+
 type GetUavServiceOrdersParams = {
   currentPage?: number;
   pageSize?: number;
@@ -31,6 +49,11 @@ export const getUavServiceOrders = async ({
 export const getUavOrderDetail = async (orderId: string): Promise<UavOrderDetail> => {
   const response = await api.get<UavOrderDetail>(`/uav/orders/${orderId}`);
   return response as unknown as UavOrderDetail;
+};
+
+export const getUavVendorProfile = async (): Promise<UavVendorProfile> => {
+  const response = await api.get<UavVendorProfile>('/uavvendor/profile');
+  return response as unknown as UavVendorProfile;
 };
 
 type ReportUavOrderCompletionParams = {
