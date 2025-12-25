@@ -84,7 +84,7 @@ export const ProfileScreen = () => {
         <Spacer size="xl" />
         
         {/* Profile Header */}
-        <View style={styles.profileHeader}>
+        {/* <View style={styles.profileHeader}>
           <Avatar
             initials={userInitials}
             size="xl"
@@ -102,7 +102,7 @@ export const ProfileScreen = () => {
           )}
         </View>
 
-        <Spacer size="xl" />
+        <Spacer size="xl" /> */}
 
         {/* Farmer Profile Details (Vietnamese) */}
         {isFarmer && (

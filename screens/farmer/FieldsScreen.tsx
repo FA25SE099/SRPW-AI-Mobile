@@ -136,10 +136,9 @@ type FieldCardProps = {
   onPressCard: () => void;
   onFocusOnMap: () => void;
   hasCultivationPlans: boolean;
-  onReportIssue: () => void;
 };
 
-const FieldCard = ({ field, onPressCard, onFocusOnMap, hasCultivationPlans, onReportIssue }: FieldCardProps) => {
+const FieldCard = ({ field, onPressCard, onFocusOnMap, hasCultivationPlans }: FieldCardProps) => {
   return (
     <Card variant="elevated" style={styles.fieldCard}>
       <View style={styles.fieldCardHeader}>
@@ -185,16 +184,6 @@ const FieldCard = ({ field, onPressCard, onFocusOnMap, hasCultivationPlans, onRe
         >
           Xem kế hoạch
         </Button>
-        {hasCultivationPlans && (
-          <Button
-            variant="outline"
-            size="sm"
-            onPress={onReportIssue}
-            style={styles.actionButton}
-          >
-            Báo cáo vấn đề
-          </Button>
-        )}
       </View>
       <Spacer size="md" />
     </Card>
@@ -790,12 +779,6 @@ export const FieldsScreen = () => {
               }
               onFocusOnMap={() => handleMarkerPress(field.plotId)}
               hasCultivationPlans={hasCultivationPlansMap[field.plotId] ?? false}
-              onReportIssue={() =>
-                router.push({
-                  pathname: '/farmer/reports/create',
-                  params: { plotId: field.plotId },
-                } as any)
-              }
             />
           ))}
         </ScrollView>

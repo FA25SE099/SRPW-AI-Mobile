@@ -1500,6 +1500,10 @@ export type Report = {
   resolutionNotes?: string;
   farmerName?: string;
   clusterName?: string;
+  affectedCultivationTaskId?: string | null;
+  affectedTaskName?: string | null;
+  affectedTaskType?: string | null;
+  affectedTaskVersionName?: string | null;
 };
 
 // Legacy type for backward compatibility

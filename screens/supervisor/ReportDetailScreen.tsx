@@ -290,6 +290,25 @@ export const ReportDetailScreen = () => {
                   </View>
                 </View>
               )}
+              {report.affectedTaskName && (
+                <View style={styles.infoItem}>
+                  <Ionicons
+                    name="list-outline"
+                    size={18}
+                    color={colors.textSecondary}
+                  />
+                  <View style={styles.infoItemContent}>
+                    <BodySmall style={styles.infoLabel}>Affected Task</BodySmall>
+                    <BodySemibold>{report.affectedTaskVersionName}</BodySemibold>
+                    <BodySemibold>{report.affectedTaskName}</BodySemibold>
+                    {report.affectedTaskType && (
+                      <BodySmall style={styles.taskTypeText}>
+                        {report.affectedTaskType}
+                      </BodySmall>
+                    )}
+                  </View>
+                </View>
+              )}
             </View>
           </Card>
 
@@ -573,6 +592,12 @@ const styles = StyleSheet.create({
   coordinatesText: {
     fontSize: 11,
     fontFamily: 'monospace',
+  },
+  taskTypeText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+    marginTop: 2,
   },
   resolutionCard: {
     backgroundColor: '#D1FAE5',

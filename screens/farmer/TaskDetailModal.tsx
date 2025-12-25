@@ -98,6 +98,10 @@ export const TaskDetailModal = ({ visible, taskId, onClose }: Props) => {
           <BodySmall color={colors.textSecondary}>Dự kiến:</BodySmall>
           <BodySmall>{dayjs(detail.plannedScheduledDate).format('MMM D, YYYY')}</BodySmall>
         </View>
+        <View style={styles.infoRow}>
+          <BodySmall color={colors.textSecondary}>Dự kiến kết thúc:</BodySmall>
+          <BodySmall>{dayjs(detail.plannedScheduledEndDate).format('MMM D, YYYY')}</BodySmall>
+        </View>
         {detail.actualStartDate && (
           <View style={styles.infoRow}>
             <BodySmall color={colors.textSecondary}>Bắt đầu thực tế:</BodySmall>
