@@ -77,16 +77,19 @@ export const UavOrdersScreen = () => {
     switch (status?.toLowerCase()) {
       case 'completed':
         return 'completed';
+      case 'approved':
+        return 'approved';
       default:
         return 'in-progress';
     }
   };
 
   const filterCounts = useMemo(() => {
-    const counts: Record<'all' | 'in-progress' | 'completed', number> = {
+    const counts: Record<'all' | 'in-progress' | 'completed' | 'approved', number> = {
       all: orders.length,
       'in-progress': 0,
       completed: 0,
+      approved: 0,
     };
     orders.forEach((order) => {
       const slug = normalizeStatus(order.status);
@@ -168,6 +171,7 @@ export const UavOrdersScreen = () => {
           {[
             { label: 'Tất cả', value: 'all' },
             { label: 'Đang tiến hành', value: 'in-progress' },
+            { label: 'Đã đặt', value: 'approved' },
             { label: 'Hoàn thành', value: 'completed' },
           ].map((chip) => (
             <TouchableOpacity
@@ -189,7 +193,9 @@ export const UavOrdersScreen = () => {
                   ? `(${filterCounts.all})`
                   : chip.value === 'in-progress'
                     ? `(${filterCounts['in-progress']})`
-                    : `(${filterCounts.completed})`}
+                    : chip.value === 'approved'
+                      ? `(${filterCounts.approved})`
+                      : `(${filterCounts.completed})`}
               </BodySmall>
             </TouchableOpacity>
           ))}
@@ -362,6 +368,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.full,
     backgroundColor: greenTheme.primaryLighter,
     padding: 4,
+    paddingHorizontal: 0,
     borderWidth: 1,
     borderColor: greenTheme.border,
   },

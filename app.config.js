@@ -14,7 +14,13 @@ module.exports = {
     },
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.myapp"
+      bundleIdentifier: "com.myapp",
+      infoPlist: {
+        NSLocationWhenInUseUsageDescription: "This app needs access to your location to show your position on the map.",
+        NSLocationAlwaysAndWhenInUseUsageDescription: "This app needs background location access to provide navigation and alerts even when the screen is locked.",
+        NSLocationAlwaysUsageDescription: "This app requires background location to track your route.",
+        NSLocalNetworkUsageDescription: "This app needs access to the local network to communicate with the Metro development server on your Mac."
+      }
     },
     android: {
       adaptiveIcon: {
@@ -31,6 +37,12 @@ module.exports = {
     },
     plugins: [
       "expo-router",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow MyApp to use your location even when the app is in the background."
+        }
+      ],
       [
         "expo-build-properties",
         {
