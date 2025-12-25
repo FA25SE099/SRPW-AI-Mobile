@@ -493,6 +493,7 @@ const styles = StyleSheet.create({
   filterWrapper: {
     marginHorizontal: -getSpacing(spacing.lg),
     paddingHorizontal: getSpacing(spacing.lg),
+    paddingBottom: getSpacing(spacing.sm),
   },
   filterContainer: {
     flexGrow: 0,
@@ -503,7 +504,7 @@ const styles = StyleSheet.create({
   },
   filterButton: {
     paddingHorizontal: getSpacing(spacing.md),
-    paddingVertical: getSpacing(spacing.sm),
+    paddingVertical: getSpacing(spacing.xs) + 3,
     borderRadius: 20,
     backgroundColor: colors.backgroundSecondary,
     borderWidth: 1,
@@ -519,6 +520,8 @@ const styles = StyleSheet.create({
   filterText: {
     fontSize: getFontSize(13),
     fontWeight: '600',
+    lineHeight: getFontSize(13) + 6,
+    paddingBottom: 2,
   },
   centerContainer: {
     flex: 1,
@@ -678,4 +681,3 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
 });
-

@@ -115,7 +115,7 @@ export const FarmerHomeScreen = () => {
 
             {/* Quick Actions */}
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Hành động nhanh</Text>
+              <Text style={styles.sectionTitle}>Danh sách tác vụ</Text>
             </View>
             <Spacer size="md" />
             <View style={styles.quickActionsGrid}>
