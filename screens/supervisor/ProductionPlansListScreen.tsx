@@ -107,7 +107,7 @@ export const ProductionPlansListScreen = () => {
           params: {
             groupId: group.groupId,
             groupName: group.groupName,
-            seasonName: `${group.seasonName} ${group.seasonYear}`,
+            seasonName: `${group.season.seasonName} ${group.season.year}`,
           },
         })}
         activeOpacity={0.7}
@@ -123,7 +123,7 @@ export const ProductionPlansListScreen = () => {
               <View style={styles.groupInfo}>
                 <BodySemibold>{group.groupName}</BodySemibold>
                 <BodySmall style={styles.groupSeason}>
-                  {group.seasonName} {group.seasonYear}
+                  {group.season.seasonName} {group.season.year} - {group.season.startDate} to {group.season.endDate}
                 </BodySmall>
               </View>
             </View>
@@ -143,7 +143,7 @@ export const ProductionPlansListScreen = () => {
             </View>
             <View style={styles.groupDetailItem}>
               <Ionicons name="map" size={14} color={colors.textSecondary} />
-              <BodySmall style={styles.groupDetailValue}>{group.totalPlots} plots</BodySmall>
+              <BodySmall style={styles.groupDetailValue}>{group.plots.length} plots</BodySmall>
             </View>
             {group.riceVarietyName && (
               <View style={styles.groupDetailItem}>

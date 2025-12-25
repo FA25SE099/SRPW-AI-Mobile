@@ -117,9 +117,9 @@ export const UavHomeScreen = () => {
                   />
                   {/* <Text style={styles.topUserName}>{userName}</Text> */}
                 </View>
-                <TouchableOpacity style={styles.bellButton}>
+                {/* <TouchableOpacity style={styles.bellButton}>
                   <Ionicons name="notifications-outline" size={26} color="#FFFFFF" />
-                </TouchableOpacity>
+                </TouchableOpacity> */}
               </View>
 
               {/* Welcome Message */}

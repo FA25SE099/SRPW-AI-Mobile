@@ -80,9 +80,9 @@ export const FarmerHomeScreen = () => {
                   />
                   <Text style={styles.topUserName}>{user?.firstName} {user?.lastName}</Text>
                 </View>
-                <TouchableOpacity style={styles.bellButton}>
+                {/* <TouchableOpacity style={styles.bellButton}>
                   <Ionicons name="notifications-outline" size={26} color="#FFFFFF" />
-                </TouchableOpacity>
+                </TouchableOpacity> */}
               </View>
 
               {/* Welcome Message */}

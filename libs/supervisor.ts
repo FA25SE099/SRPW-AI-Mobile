@@ -668,14 +668,31 @@ export type SupervisorGroup = {
   groupName: string;
   clusterId?: string;
   clusterName?: string;
-  seasonId: string;
-  seasonName: string;
-  seasonYear: number;
+  // seasonId: string;
+  // seasonName: string;
+  // seasonYear: number;
+  season: {
+    seasonId: string;
+    seasonName: string;
+    seasonType: string;
+    startDate: string;
+    endDate: string;
+    year: number;
+  };
   riceVarietyId?: string;
   riceVarietyName?: string;
   plantingDate?: string;
   totalArea: number;
-  totalPlots: number;
+  // totalPlots: number;
+  plots:{
+    plotId: string;
+    soThua?: number;
+    soTo?: number;
+    status: string;
+    farmerName: string;
+    area: number;
+    soilType: string;
+  }
   plotsWithPolygon: number;
   plotsMissingPolygon: number;
   productionPlansCount: number;
@@ -685,7 +702,6 @@ export type SupervisorGroup = {
   status: 'Active' | 'Inactive' | 'Completed';
   createdAt: string;
 };
-
 export type ProductionPlan = {
   productionPlanId: string;
   planName: string;
@@ -720,6 +736,10 @@ export type ProductionPlan = {
 export type ProductionPlanStage = {
   stageId: string;
   stageName: string;
+  stageOrder: number;
+  startDate: string;
+  endDate: string;
+  status: string;
   description?: string;
   sequenceOrder: number;
   startDay: number;
