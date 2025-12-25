@@ -14,7 +14,7 @@ module.exports = {
     },
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.myapp",
+      bundleIdentifier: "com.rice.myapp",
       infoPlist: {
         NSLocationWhenInUseUsageDescription: "This app needs access to your location to show your position on the map.",
         NSLocationAlwaysAndWhenInUseUsageDescription: "This app needs background location access to provide navigation and alerts even when the screen is locked.",
