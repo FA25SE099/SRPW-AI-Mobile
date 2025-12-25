@@ -62,19 +62,19 @@ export const getPlotPlanView = async (
 };
 
 type GetTodayTasksParams = {
-  plotId?: string;
+  plotCultivationId?: string;
   statusFilter?: string;
 };
 
 export const getTodayTasks = async ({
-  plotId,
+  plotCultivationId,
   statusFilter,
 }: GetTodayTasksParams = {}): Promise<TodayTaskResponse[]> => {
   const response = await api.get<TodayTaskResponse[]>(
     '/farmer/cultivation-tasks/outstanding-tasks',
     {
       params: {
-        PlotId: plotId,
+        PlotCultivationId: plotCultivationId,
         StatusFilter: statusFilter,
       },
     },
@@ -228,6 +228,9 @@ export const createEmergencyReport = async (
   }
   if (request.clusterId) {
     formData.append('ClusterId', request.clusterId);
+  }
+  if (request.affectedCultivationTaskId) {
+    formData.append('AffectedCultivationTaskId', request.affectedCultivationTaskId);
   }
 
   // Add required fields

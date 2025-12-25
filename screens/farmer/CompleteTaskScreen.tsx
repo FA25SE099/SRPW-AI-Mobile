@@ -34,8 +34,9 @@ import {
   Input,
 } from '../../components/ui';
 import { CreateFarmLogRequest, FarmLogMaterialRequest, TodayTaskResponse } from '../../types/api';
-import { createFarmLog } from '../../libs/farmer';
+import { createFarmLog, getCultivationTaskDetail } from '../../libs/farmer';
 import { useUser } from '../../libs/auth';
+import { useQuery } from '@tanstack/react-query';
 
 export const CompleteTaskScreen = () => {
   const router = useRouter();
@@ -46,8 +47,20 @@ export const CompleteTaskScreen = () => {
     taskName: string;
     plotSoThuaSoTo: string;
     materials?: string; // JSON string of materials array
+    plotArea?: string; // Plot area in hectares
   }>();
   const { data: user } = useUser();
+
+  // Get plot area from params or fetch from task detail
+  const plotAreaFromParams = params.plotArea ? parseFloat(params.plotArea) : null;
+  
+  const { data: taskDetail } = useQuery({
+    queryKey: ['cultivation-task-detail', params.taskId],
+    queryFn: () => getCultivationTaskDetail(params.taskId || ''),
+    enabled: !plotAreaFromParams && !!params.taskId,
+  });
+
+  const plotArea = plotAreaFromParams ?? taskDetail?.plotArea ?? null;
 
   const [formData, setFormData] = useState<CreateFarmLogRequest>({
     cultivationTaskId: params.taskId || '',
@@ -65,6 +78,7 @@ export const CompleteTaskScreen = () => {
   const [materialQuantities, setMaterialQuantities] = useState<{
     [key: string]: { quantity: string; notes: string };
   }>({});
+  const [areaError, setAreaError] = useState<string | null>(null);
 
   const createFarmLogMutation = useMutation({
     mutationFn: async () => {
@@ -235,6 +249,17 @@ export const CompleteTaskScreen = () => {
       return;
     }
 
+    // Validate area before submitting
+    if (
+      formData.actualAreaCovered !== null &&
+      formData.actualAreaCovered !== undefined &&
+      plotArea !== null &&
+      formData.actualAreaCovered > plotArea
+    ) {
+      Alert.alert('Lỗi', `Diện tích thực tế không được vượt quá diện tích thửa đất (${plotArea.toFixed(2)} ha)`);
+      return;
+    }
+
     createFarmLogMutation.mutate();
   };
 
@@ -286,19 +311,41 @@ export const CompleteTaskScreen = () => {
           />
 
           {/* Actual Area Covered */}
-          <Input
-            label="Diện tích thực tế (ha)"
-            placeholder="0.00"
-            value={formData.actualAreaCovered?.toString() || ''}
-            onChangeText={(text) => {
-              const num = parseFloat(text);
-              setFormData({
-                ...formData,
-                actualAreaCovered: isNaN(num) ? null : num,
-              });
-            }}
-            keyboardType="decimal-pad"
-          />
+          <View>
+            <Input
+              label="Diện tích thực tế (ha)"
+              placeholder="0.00"
+              value={formData.actualAreaCovered?.toString() || ''}
+              onChangeText={(text) => {
+                const num = parseFloat(text);
+                const actualArea = isNaN(num) ? null : num;
+                
+                // Validate against plot area
+                if (actualArea !== null && plotArea !== null && actualArea > plotArea) {
+                  setAreaError(`Diện tích thực tế không được vượt quá diện tích thửa đất (${plotArea.toFixed(2)} ha)`);
+                } else {
+                  setAreaError(null);
+                }
+                
+                setFormData({
+                  ...formData,
+                  actualAreaCovered: actualArea,
+                });
+              }}
+              keyboardType="decimal-pad"
+              style={areaError ? { borderColor: colors.error } : undefined}
+            />
+            {areaError && (
+              <BodySmall color={colors.error} style={styles.errorText}>
+                {areaError}
+              </BodySmall>
+            )}
+            {plotArea !== null && !areaError && (
+              <BodySmall color={colors.textSecondary} style={styles.hintText}>
+                Diện tích thửa đất: {plotArea.toFixed(2)} ha
+              </BodySmall>
+            )}
+          </View>
 
           {/* Service Cost */}
           {/* <Input
@@ -580,5 +627,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: greenTheme.cardBackground,
+  },
+  errorText: {
+    marginTop: getSpacing(spacing.xs),
+    fontSize: getFontSize(12),
+  },
+  hintText: {
+    marginTop: getSpacing(spacing.xs),
+    fontSize: getFontSize(12),
   },
 });

@@ -711,6 +711,7 @@ export type CultivationTaskDetailResponse = {
   priority: string;
   isContingency: boolean;
   plannedScheduledDate: string;
+  plannedScheduledEndDate: string;
   actualStartDate?: string | null;
   actualEndDate?: string | null;
   estimatedMaterialCost: number;
@@ -770,6 +771,7 @@ export type CreateEmergencyReportRequest = {
   plotCultivationId?: string | null;
   groupId?: string | null;
   clusterId?: string | null;
+  affectedCultivationTaskId?: string | null;
   alertType: AlertType;
   title: string;
   description: string;
@@ -945,6 +947,9 @@ export type FarmerReport = {
   resolutionNotes: string | null;
   farmerName: string;
   clusterName: string;
+  affectedCultivationTaskId: string | null;
+  affectedTaskName: string | null;
+  affectedTaskType: string | null;
 };
 
 export type GetFarmerReportsRequest = {

@@ -129,7 +129,7 @@ export const ReportsScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container}>
       <Container padding="lg">
         {/* Header */}
         <View style={styles.header}>
@@ -138,7 +138,7 @@ export const ReportsScreen = () => {
             onPress={() => router.back()}
             activeOpacity={0.7}
           >
-            <Ionicons name="arrow-back" size={24} color={colors.textDark} />
+            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
           <H3 style={styles.headerTitle}>Báo cáo của tôi</H3>
           <View style={styles.headerRight} />
@@ -167,7 +167,7 @@ export const ReportsScreen = () => {
             activeOpacity={0.7}
           >
             <BodySmall
-              color={selectedFilter === 'pest' ? colors.white : colors.textDark}
+              color={selectedFilter === 'pest' ? colors.white : colors.textPrimary}
               style={styles.filterText}
             >
               Sâu bệnh
@@ -186,7 +186,7 @@ export const ReportsScreen = () => {
             activeOpacity={0.7}
           >
             <BodySmall
-              color={selectedFilter === 'disease' ? colors.white : colors.textDark}
+              color={selectedFilter === 'disease' ? colors.white : colors.textPrimary}
               style={styles.filterText}
             >
               Bệnh
@@ -205,7 +205,7 @@ export const ReportsScreen = () => {
             activeOpacity={0.7}
           >
             <BodySmall
-              color={selectedFilter === 'weather' ? colors.white : colors.textDark}
+              color={selectedFilter === 'weather' ? colors.white : colors.textPrimary}
               style={styles.filterText}
             >
               Thời tiết
@@ -224,7 +224,7 @@ export const ReportsScreen = () => {
             activeOpacity={0.7}
           >
             <BodySmall
-              color={selectedFilter === 'other' ? colors.white : colors.textDark}
+              color={selectedFilter === 'other' ? colors.white : colors.textPrimary}
               style={styles.filterText}
             >
               Khác
@@ -320,10 +320,10 @@ export const ReportsScreen = () => {
                       <Badge
                         variant="primary"
                         size="sm"
-                        style={[
+                        style={StyleSheet.flatten([
                           styles.severityBadge,
                           { backgroundColor: getSeverityColor(report.severity) + '20' },
-                        ]}
+                        ])}
                       >
                         <BodySmall
                           style={{ color: getSeverityColor(report.severity), fontSize: 10 }}
@@ -346,6 +346,27 @@ export const ReportsScreen = () => {
                         </BodySmall>
                       </View>
                     </View>
+                    {/* Affected Task Info */}
+                    {report.affectedTaskName && (
+                      <View style={styles.affectedTaskRow}>
+                        <View style={styles.affectedTaskIcon}>
+                          <Ionicons name="list-outline" size={16} color={colors.primary} />
+                        </View>
+                        <View style={styles.affectedTaskInfo}>
+                          <BodySmall color={colors.textSecondary} style={styles.affectedTaskLabel}>
+                            Công việc liên quan:
+                          </BodySmall>
+                          <BodySemibold style={styles.affectedTaskName}>
+                            {report.affectedTaskName}
+                          </BodySemibold>
+                          {report.affectedTaskType && (
+                            <BodySmall color={colors.textSecondary} style={styles.affectedTaskType}>
+                              {report.affectedTaskType}
+                            </BodySmall>
+                          )}
+                        </View>
+                      </View>
+                    )}
                   </View>
                 </View>
 
@@ -392,10 +413,10 @@ export const ReportsScreen = () => {
                     <Badge
                       variant="primary"
                       size="sm"
-                      style={[
+                      style={StyleSheet.flatten([
                         styles.statusBadge,
                         { backgroundColor: getStatusColor(report.status) + '20' },
-                      ]}
+                      ])}
                     >
                       <BodySmall
                         style={{ color: getStatusColor(report.status), fontSize: 10 }}
@@ -569,7 +590,7 @@ const styles = StyleSheet.create({
   reportDescription: {
     lineHeight: moderateScale(20),
     fontSize: getFontSize(14),
-    color: colors.textDark,
+    color: colors.textPrimary,
   },
   imagesContainer: {
     flexDirection: 'row',
@@ -619,6 +640,42 @@ const styles = StyleSheet.create({
   resolvedText: {
     fontSize: getFontSize(12),
     fontWeight: '600',
+  },
+  affectedTaskRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: getSpacing(spacing.sm),
+    marginTop: getSpacing(spacing.xs),
+    padding: getSpacing(spacing.sm),
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: moderateScale(borderRadius.md),
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  affectedTaskIcon: {
+    width: scale(32),
+    height: scale(32),
+    borderRadius: moderateScale(borderRadius.sm),
+    backgroundColor: colors.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  affectedTaskInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  affectedTaskLabel: {
+    fontSize: getFontSize(11),
+    fontWeight: '500',
+  },
+  affectedTaskName: {
+    fontSize: getFontSize(13),
+    color: colors.textPrimary,
+  },
+  affectedTaskType: {
+    fontSize: getFontSize(11),
+    fontStyle: 'italic',
   },
 });
 
