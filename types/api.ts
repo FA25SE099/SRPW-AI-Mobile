@@ -622,23 +622,7 @@ export type TodayTaskResponse = {
   plotArea: number;
   estimatedMaterialCost: number;
   materials: TodayTaskMaterialResponse[];
-};
-
-export type UavServiceOrder = {
-  orderId: string;
-  orderName: string;
-  status: string;
-  priority: string;
-  scheduledDate: string;
-  scheduledTime?: string | null;
-  groupId: string;
-  groupName: string;
-  totalArea: number;
-  totalPlots: number;
-  estimatedCost: number;
-  actualCost: number;
-  completionPercentage: number;
-  creatorName?: string | null;
+  isUav: boolean;
 };
 
 export type PlannedMaterialDto = {
@@ -660,6 +644,27 @@ export type UavOrderPlotAssignment = {
   reportNotes?: string | null;
   plotBoundaryGeoJson?: string | null;
   proofUrls: string[];
+  cultivationTaskId?: string | null;
+  cultivationTaskName?: string | null;
+  taskType?: string | null;
+  materials: PlannedMaterialDto[];
+};
+
+export type UavServiceOrder = {
+  orderId: string;
+  orderName: string;
+  status: string;
+  priority: string;
+  scheduledDate: string;
+  scheduledTime?: string | null;
+  groupId: string;
+  groupName: string;
+  totalArea: number;
+  totalPlots: number;
+  estimatedCost?: number | null;
+  actualCost?: number | null;
+  completionPercentage: number;
+  creatorName?: string | null;
 };
 
 export type UavOrderDetail = UavServiceOrder & {
@@ -667,7 +672,6 @@ export type UavOrderDetail = UavServiceOrder & {
   completedAt?: string | null;
   startedAt?: string | null;
   optimizedRouteJson?: string | null;
-  materials: PlannedMaterialDto[];
   plotAssignments: UavOrderPlotAssignment[];
 };
 

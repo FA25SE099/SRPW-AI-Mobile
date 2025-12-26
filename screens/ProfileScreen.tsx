@@ -15,6 +15,18 @@ import { getSupervisorProfile, SupervisorProfile } from '../libs/supervisor';
 import { getUavVendorProfile, UavVendorProfile } from '../libs/uav';
 import { ROLES } from '../libs/authorization';
 
+// Green theme colors for nature-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
+
 export const ProfileScreen = () => {
   const logout = useLogout();
   const router = useRouter();
@@ -79,7 +91,7 @@ export const ProfileScreen = () => {
         : userName;
 
   return (
-    <ScrollView>
+    <ScrollView style={styles.scrollView}>
       <Container padding="lg">
         <Spacer size="xl" />
         
@@ -109,7 +121,7 @@ export const ProfileScreen = () => {
           <>
             {farmerProfileLoading ? (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.primary} />
+                <ActivityIndicator size="large" color={greenTheme.primary} />
                 <Spacer size="md" />
                 <Body color={colors.textSecondary}>Đang tải thông tin...</Body>
               </View>
@@ -192,7 +204,7 @@ export const ProfileScreen = () => {
           <>
             {supervisorProfileLoading ? (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.primary} />
+                <ActivityIndicator size="large" color={greenTheme.primary} />
                 <Spacer size="md" />
                 <Body color={colors.textSecondary}>Loading profile...</Body>
               </View>
@@ -271,7 +283,7 @@ export const ProfileScreen = () => {
           <>
             {uavVendorProfileLoading ? (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.primary} />
+                <ActivityIndicator size="large" color={greenTheme.primary} />
                 <Spacer size="md" />
                 <Body color={colors.textSecondary}>Đang tải thông tin...</Body>
               </View>
@@ -415,11 +427,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.md,
   },
+  scrollView: {
+    backgroundColor: greenTheme.background,
+  },
   infoCard: {
-    backgroundColor: colors.white,
+    backgroundColor: greenTheme.cardBackground,
     borderRadius: 12,
     padding: spacing.md,
     gap: spacing.md,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
   infoRow: {
     flexDirection: 'row',
@@ -427,7 +444,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.xs,
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
+    borderBottomColor: greenTheme.border,
   },
   statusBadge: {
     paddingHorizontal: spacing.sm,
@@ -435,13 +452,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   statusBadgeActive: {
-    backgroundColor: colors.success + '20',
+    backgroundColor: greenTheme.success + '20',
   },
   statusBadgeInactive: {
     backgroundColor: colors.textSecondary + '20',
   },
   statusBadgeVerified: {
-    backgroundColor: colors.success + '20',
+    backgroundColor: greenTheme.success + '20',
   },
   statusBadgeUnverified: {
     backgroundColor: colors.warning + '20',
