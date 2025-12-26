@@ -1,6 +1,5 @@
 import { Platform } from 'react-native';
-import * as FileSystem from 'expo-file-system';
-import { api } from './api-client';
+import { api, uploadFile } from './api-client';
 import { env } from '@/configs/env';
 import { tokenStorage } from './token-storage';
 import {
@@ -20,6 +19,8 @@ import {
   MaterialDistributionSummary,
   ConfirmMaterialReceiptRequest,
   ConfirmMaterialReceiptResponse,
+  GetFarmerReportsRequest,
+  GetFarmerReportsResponse,
 } from '@/types/api';
 
 type GetFarmerPlotsParams = {
@@ -63,19 +64,19 @@ export const getPlotPlanView = async (
 };
 
 type GetTodayTasksParams = {
-  plotId?: string;
+  plotCultivationId?: string;
   statusFilter?: string;
 };
 
 export const getTodayTasks = async ({
-  plotId,
+  plotCultivationId,
   statusFilter,
 }: GetTodayTasksParams = {}): Promise<TodayTaskResponse[]> => {
   const response = await api.get<TodayTaskResponse[]>(
     '/farmer/cultivation-tasks/outstanding-tasks',
     {
       params: {
-        PlotId: plotId,
+        PlotCultivationId: plotCultivationId,
         StatusFilter: statusFilter,
       },
     },
@@ -105,14 +106,13 @@ export const getFarmLogsByCultivation = async ({
   currentPage = 1,
   pageSize = 10,
 }: GetFarmLogsByCultivationParams): Promise<PagedResult<FarmLogDetailResponse[]>> => {
-  const response = await api.get<PagedResult<FarmLogDetailResponse[]>>(
+  // API expects POST with JSON body (not GET with query params)
+  const response = await api.post<PagedResult<FarmLogDetailResponse[]>>(
     '/Farmlog/farm-logs/by-cultivation',
     {
-      params: {
-        PlotCultivationId: plotCultivationId,
-        CurrentPage: currentPage,
-        PageSize: pageSize,
-      },
+      plotCultivationId: plotCultivationId,
+      currentPage: currentPage,
+      pageSize: pageSize,
     },
   );
 
@@ -152,16 +152,6 @@ export const createFarmLog = async (
     formData.append('FarmerId', request.farmerId);
   }
 
-  // Add images
-  images.forEach((image) => {
-    const uri = Platform.OS === 'android' ? image.uri.replace('file://', '') : image.uri;
-    formData.append('ProofImages', {
-      uri,
-      type: image.type,
-      name: image.name,
-    } as any);
-  });
-
   // Add materials
   if (request.materials && request.materials.length > 0) {
     request.materials.forEach((material, index) => {
@@ -176,10 +166,53 @@ export const createFarmLog = async (
     });
   }
 
-  // Axios will automatically set Content-Type with boundary for FormData
-  const response = await api.post<string>('/Farmlog/farm-logs', formData);
+  // Add images
+  for (const image of images) {
+    formData.append('ProofImages', {
+      uri: image.uri,
+      type: image.type,
+      name: image.name,
+    } as any);
+  }
 
-  return response as unknown as string;
+  // Use uploadFile helper for better Android FormData support (like createEmergencyReport)
+  console.log('📤 [createFarmLog] Sending POST request to /Farmlog/farm-logs');
+  console.log('📦 [createFarmLog] FormData fields:', {
+    hasCultivationTaskId: !!request.cultivationTaskId,
+    hasPlotCultivationId: !!request.plotCultivationId,
+    imagesCount: images.length,
+    materialsCount: request.materials?.length || 0,
+  });
+  
+  try {
+    const response = await uploadFile('/Farmlog/farm-logs', formData);
+    console.log('✅ [createFarmLog] Success');
+    return response as unknown as string;
+  } catch (error: any) {
+    // If 405 error, try alternative endpoint
+    if (error?.status === 405 || error?.response?.status === 405) {
+      console.log('⚠️ [createFarmLog] Got 405, trying alternative endpoint /Farmer/create-farm-log');
+      try {
+        const response = await uploadFile('/Farmer/create-farm-log', formData);
+        console.log('✅ [createFarmLog] Success with alternative endpoint');
+        return response as unknown as string;
+      } catch (fallbackError: any) {
+        console.error('❌ [createFarmLog] Alternative endpoint also failed:', {
+          status: fallbackError?.status || fallbackError?.response?.status,
+          statusText: fallbackError?.statusText || fallbackError?.response?.statusText,
+          data: fallbackError?.response?.data || fallbackError?.data,
+        });
+        throw fallbackError;
+      }
+    }
+    console.error('❌ [createFarmLog] Error:', {
+      status: error?.status || error?.response?.status,
+      statusText: error?.statusText || error?.response?.statusText,
+      data: error?.response?.data || error?.data,
+      message: error?.message,
+    });
+    throw error;
+  }
 };
 
 export const createEmergencyReport = async (
@@ -197,6 +230,9 @@ export const createEmergencyReport = async (
   }
   if (request.clusterId) {
     formData.append('ClusterId', request.clusterId);
+  }
+  if (request.affectedCultivationTaskId) {
+    formData.append('AffectedCultivationTaskId', request.affectedCultivationTaskId);
   }
 
   // Add required fields
@@ -253,27 +289,64 @@ export const detectPestInImage = async (
     name: imageFile.name,
   } as any);
 
-  // AI image analysis can take 2+ minutes, so we need a longer timeout
-  const response = await api.post<PestDetectionResponse[]>('/rice/check-pest', formData, {
-    timeout: 240000, // 4 minutes timeout for AI processing
+  // Use uploadFile helper for better Android FormData support (like createFarmLog)
+  console.log('📤 [detectPestInImage] Sending POST request to /rice/check-pest');
+  console.log('📦 [detectPestInImage] FormData fields:', {
+    hasFile: !!imageFile.uri,
+    fileName: imageFile.name,
+    fileType: imageFile.type,
   });
+  
+  try {
+    // AI image analysis can take 2+ minutes, but uploadFile uses XMLHttpRequest
+    // which doesn't support timeout directly - timeout is handled at network level
+    const response = await uploadFile('/rice/check-pest', formData);
+    console.log('✅ [detectPestInImage] Success');
 
-  // Backend returns an array of results, we take the first one
-  const results = response as unknown as PestDetectionResponse[];
-  
-  if (!results || results.length === 0) {
-    throw new Error('No pest detection results returned from the server');
+    // Backend returns an array of results, we take the first one
+    const results = response as unknown as PestDetectionResponse[];
+    
+    if (!results || results.length === 0) {
+      throw new Error('No pest detection results returned from the server');
+    }
+    
+    return results[0];
+  } catch (error: any) {
+    console.error('❌ [detectPestInImage] Error:', {
+      status: error?.status || error?.response?.status,
+      statusText: error?.statusText || error?.response?.statusText,
+      data: error?.response?.data || error?.data,
+      message: error?.message,
+    });
+    throw error;
   }
-  
-  return results[0];
 };
 
 export const startTask = async (request: StartTaskRequest): Promise<StartTaskResponse> => {
-  const response = await api.post<StartTaskResponse>('/farmer/cultivation-tasks/start', {
+  console.log('🚀 [startTask] Starting task with:', {
     cultivationTaskId: request.cultivationTaskId,
-    weatherConditions: request.weatherConditions || null,
-    notes: request.notes || null,
+    weatherConditions: request.weatherConditions,
+    notes: request.notes,
   });
+
+  // Build request body, only including fields that are not null/undefined
+  const requestBody: {
+    cultivationTaskId: string;
+    weatherConditions?: string;
+    notes?: string;
+  } = {
+    cultivationTaskId: request.cultivationTaskId,
+  };
+
+  if (request.weatherConditions) {
+    requestBody.weatherConditions = request.weatherConditions;
+  }
+
+  if (request.notes) {
+    requestBody.notes = request.notes;
+  }
+
+  const response = await api.post<StartTaskResponse>('/farmer/cultivation-tasks/start', requestBody);
 
   return response as unknown as StartTaskResponse;
 };
@@ -285,9 +358,9 @@ export const getFarmerProfile = async (): Promise<FarmerProfileResponse> => {
 };
 
 // Material Distribution APIs
-export const getPendingMaterialReceipts = async (): Promise<MaterialDistributionSummary> => {
+export const getPendingMaterialReceipts = async (farmerId: string): Promise<MaterialDistributionSummary> => {
   const response = await api.get<MaterialDistributionSummary>(
-    '/api/material-distribution/farmer/pending'
+    `/api/material-distribution/farmer/${farmerId}/pending`
   );
 
   return response as unknown as MaterialDistributionSummary;
@@ -306,5 +379,17 @@ export const confirmMaterialReceipt = async (
   );
 
   return response as unknown as ConfirmMaterialReceiptResponse;
+};
+
+export const getFarmerReports = async (
+  request: GetFarmerReportsRequest = {},
+): Promise<GetFarmerReportsResponse> => {
+  const response = await api.post<GetFarmerReportsResponse>('/Farmer/reports', {
+    currentPage: request.currentPage || 1,
+    pageSize: request.pageSize || 10,
+    reportType: request.reportType || 'pest',
+  });
+
+  return response as unknown as GetFarmerReportsResponse;
 };
 

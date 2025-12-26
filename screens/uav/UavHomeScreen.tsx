@@ -4,23 +4,13 @@
  */
 
 import React from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Text, StatusBar, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { colors, spacing, borderRadius, shadows } from '../../theme';
-import {
-  Container,
-  H3,
-  H4,
-  Body,
-  BodySmall,
-  BodySemibold,
-  Avatar,
-  Card,
-  Badge,
-  Spacer,
-} from '../../components/ui';
+import { colors, spacing, borderRadius } from '../../theme';
+import { Container, Avatar, Spacer } from '../../components/ui';
 import { useUser } from '../../libs/auth';
+import { Ionicons } from '@expo/vector-icons';
 
 // Green theme colors for farmer-friendly design
 const greenTheme = {
@@ -45,25 +35,12 @@ const mockStats = {
 const quickActions = [
   {
     id: '1',
-    title: 'View Orders',
-    icon: '📋',
-    color: greenTheme.primary,
+    title: 'Orders',
+    iconName: 'list',
+    iconType: 'Ionicons',
+    gradient: ['#2E7D32', '#1B5E20'] as const,
     route: '/(uav-tabs)/orders',
-  },
-  {
-    id: '2',
-    title: 'Pending',
-    icon: '⏳',
-    color: '#FF9500',
-    route: '/(uav-tabs)/orders?filter=pending',
-  },
-  {
-    id: '3',
-    title: 'In Progress',
-    icon: '🚁',
-    color: greenTheme.primaryLight,
-    route: '/(uav-tabs)/orders?filter=in-progress',
-  },
+  }
 ];
 
 const recentOrders = [
@@ -119,236 +96,175 @@ export const UavHomeScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Container padding="lg">
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Avatar size="md" initials={userInitials} />
-            <Spacer size="sm" horizontal />
-            <View>
-              <BodySmall color={greenTheme.primary} style={{ fontWeight: '600' }}>Welcome back</BodySmall>
-              <BodySemibold style={{ color: greenTheme.primary }}>{userName}</BodySemibold>
-            </View>
-          </View>
-        </View>
-
-        <Spacer size="xl" />
-
-        {/* Stats Cards */}
-        <View style={styles.statsContainer}>
-          <Card variant="elevated" style={styles.statCard}>
-            <BodySmall color={greenTheme.primary} style={{ fontWeight: '600' }}>Pending Orders</BodySmall>
-            <Spacer size="xs" />
-            <H3 style={{ color: greenTheme.primary }}>{mockStats.pendingOrders}</H3>
-          </Card>
-          <Card variant="elevated" style={styles.statCard}>
-            <BodySmall color={greenTheme.primary} style={{ fontWeight: '600' }}>In Progress</BodySmall>
-            <Spacer size="xs" />
-            <H3 style={{ color: greenTheme.primary }}>{mockStats.inProgressOrders}</H3>
-          </Card>
-        </View>
-
-        <Spacer size="lg" />
-
-        <View style={styles.statsContainer}>
-          <Card variant="elevated" style={styles.statCard}>
-            <BodySmall color={greenTheme.primary} style={{ fontWeight: '600' }}>Completed Today</BodySmall>
-            <Spacer size="xs" />
-            <H3 style={{ color: greenTheme.success }}>{mockStats.completedToday}</H3>
-          </Card>
-          <Card variant="elevated" style={styles.statCard}>
-            <BodySmall color={greenTheme.primary} style={{ fontWeight: '600' }}>Total Sprayed</BodySmall>
-            <Spacer size="xs" />
-            <H3 style={{ color: greenTheme.primary }}>{mockStats.totalSprayed} ha</H3>
-          </Card>
-        </View>
-
-        <Spacer size="xl" />
-
-        {/* Quick Actions */}
-        <H4 style={{ color: greenTheme.primary }}>Quick Actions</H4>
-        <Spacer size="md" />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {quickActions.map((action) => (
-            <TouchableOpacity
-              key={action.id}
-              onPress={() => router.push(action.route as any)}
-              style={[styles.actionCard, { borderLeftColor: action.color }]}
-            >
-              <View style={styles.actionIcon}>
-                <Body style={styles.actionIconText}>{action.icon}</Body>
+    <>
+      <StatusBar barStyle="light-content" backgroundColor={greenTheme.primary} />
+      <SafeAreaView style={{ flex: 1, backgroundColor: greenTheme.primary }} edges={['top', 'bottom', 'left', 'right']}>
+        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+          {/* Header with Background Image */}
+          <ImageBackground
+            source={require('../../assets/ricepaddy.jpg')}
+            style={styles.headerBackground}
+            imageStyle={styles.headerBackgroundImage}
+          >
+            <View style={styles.headerContent}>
+              {/* Top Row: Avatar, Name, and Bell Icon */}
+              <View style={styles.topRow}>
+                <View style={styles.avatarContainer}>
+                  <Avatar
+                    initials={userInitials}
+                    size="lg"
+                    backgroundColor="#FFFFFF"
+                  />
+                  {/* <Text style={styles.topUserName}>{userName}</Text> */}
+                </View>
+                {/* <TouchableOpacity style={styles.bellButton}>
+                  <Ionicons name="notifications-outline" size={26} color="#FFFFFF" />
+                </TouchableOpacity> */}
               </View>
-              <Spacer size="sm" />
-              <BodySemibold style={styles.actionTitle}>{action.title}</BodySemibold>
-            </TouchableOpacity>
-          ))}
+
+              {/* Welcome Message */}
+              <View style={styles.welcomeSection}>
+                <Text style={styles.welcomeText}>Welcome to</Text>
+                <Text style={styles.appTitle}>UAV Service Management</Text>
+              </View>
+            </View>
+          </ImageBackground>
+
+          {/* Main Content */}
+          <Container padding="lg">
+            <Spacer size="lg" />
+
+            {/* Quick Actions */}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Quick Actions</Text>
+            </View>
+            <Spacer size="md" />
+            <View style={styles.quickActionsGrid}>
+              {quickActions.map((action) => (
+                <TouchableOpacity
+                  key={action.id}
+                  onPress={() => router.push(action.route as any)}
+                  style={styles.quickActionCard}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.quickActionIconContainer}>
+                    <Ionicons name={action.iconName as any} size={28} color={greenTheme.primary} />
+                  </View>
+                  <Text style={styles.quickActionTitle}>{action.title}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Spacer size="3xl" />
+
+          </Container>
         </ScrollView>
-
-        <Spacer size="xl" />
-
-        {/* Recent Orders */}
-        <View style={styles.sectionHeader}>
-          <H4 style={{ color: greenTheme.primary }}>Recent Orders</H4>
-          <TouchableOpacity onPress={() => router.push('/(uav-tabs)/orders' as any)}>
-            <BodySmall color={greenTheme.primary} style={{ fontWeight: '600' }}>View All</BodySmall>
-          </TouchableOpacity>
-        </View>
-        <Spacer size="md" />
-
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {recentOrders.map((order) => (
-            <TouchableOpacity
-              key={order.id}
-              onPress={() =>
-                router.push({
-                  pathname: '/uav/orders/[orderId]',
-                  params: { orderId: order.id },
-                } as any)
-              }
-            >
-              <Card variant="elevated" style={styles.orderCard}>
-                <View style={styles.orderHeader}>
-                  <View style={styles.orderInfo}>
-                    <BodySemibold>{order.orderNumber}</BodySemibold>
-                    <BodySmall color={colors.textSecondary}>{order.fieldName}</BodySmall>
-                  </View>
-                  <Badge
-                    variant="neutral"
-                    style={{
-                      ...styles.statusBadge,
-                      borderColor: getStatusColor(order.status),
-                    }}
-                  >
-                    <BodySmall style={{ color: getStatusColor(order.status) }}>
-                      {order.status}
-                    </BodySmall>
-                  </Badge>
-                </View>
-                <Spacer size="sm" />
-                <View style={styles.orderDetails}>
-                  <View style={styles.orderDetailItem}>
-                    <BodySmall color={colors.textSecondary}>Date:</BodySmall>
-                    <BodySmall>{order.date}</BodySmall>
-                  </View>
-                  <View style={styles.orderDetailItem}>
-                    <BodySmall color={colors.textSecondary}>Area:</BodySmall>
-                    <BodySmall>{order.area} ha</BodySmall>
-                  </View>
-                </View>
-              </Card>
-              <Spacer size="md" />
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </Container>
-    </SafeAreaView>
+      </SafeAreaView>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: greenTheme.background,
+    backgroundColor: '#f8f9fa',
   },
-  header: {
+  headerBackground: {
+    overflow: 'hidden',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+  },
+  headerBackgroundImage: {
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+  },
+  headerContent: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+  },
+  topRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: greenTheme.cardBackground,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: greenTheme.border,
+    alignItems: 'center',
+    marginBottom: spacing.md,
   },
-  headerLeft: {
+  avatarContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.sm,
   },
-  statsContainer: {
-    flexDirection: 'row',
-    gap: spacing.md,
+  topUserName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
-  statCard: {
-    flex: 1,
-    padding: spacing.md,
-    backgroundColor: greenTheme.cardBackground,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: greenTheme.border,
-    shadowColor: greenTheme.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
+  bellButton: {
+    width: 40,
+    height: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  welcomeSection: {
+    marginBottom: spacing.md,
+  },
+  welcomeText: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 2,
+  },
+  appTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  actionCard: {
-    backgroundColor: greenTheme.cardBackground,
-    padding: spacing.md,
-    borderRadius: borderRadius.lg,
-    borderLeftWidth: 4,
-    borderWidth: 1,
-    borderColor: greenTheme.border,
-    minWidth: 120,
-    marginRight: spacing.md,
-    shadowColor: greenTheme.primary,
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1f2937',
+  },
+  quickActionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  quickActionCard: {
+    width: '48%',
+    marginBottom: spacing.md,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 120,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
   },
-  actionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.md,
-    backgroundColor: greenTheme.primaryLighter,
+  quickActionIconContainer: {
+    width: 56,
+    height: 56,
+    backgroundColor: '#E8F5E9',
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: spacing.md,
   },
-  actionIconText: {
-    fontSize: 24,
-  },
-  actionTitle: {
+  quickActionTitle: {
     fontSize: 14,
-    color: greenTheme.primary,
     fontWeight: '600',
-  },
-  orderCard: {
-    padding: spacing.md,
-    backgroundColor: greenTheme.cardBackground,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: greenTheme.border,
-    shadowColor: greenTheme.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  orderHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  orderInfo: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  statusBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  orderDetails: {
-    flexDirection: 'row',
-    gap: spacing.lg,
-  },
-  orderDetailItem: {
-    flexDirection: 'row',
-    gap: spacing.xs,
+    color: '#1f2937',
+    textAlign: 'center',
   },
 });
 

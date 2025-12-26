@@ -13,9 +13,11 @@ import {
   RefreshControl,
   Modal,
   useWindowDimensions,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import { useQuery, useQueries } from '@tanstack/react-query';
 import { colors, spacing, borderRadius, shadows } from '../../theme';
 import { Coordinate } from '../../types/coordinates';
@@ -134,45 +136,46 @@ type FieldCardProps = {
   onPressCard: () => void;
   onFocusOnMap: () => void;
   hasCultivationPlans: boolean;
-  onReportIssue: () => void;
 };
 
-const FieldCard = ({ field, onPressCard, onFocusOnMap, hasCultivationPlans, onReportIssue }: FieldCardProps) => {
+const FieldCard = ({ field, onPressCard, onFocusOnMap, hasCultivationPlans }: FieldCardProps) => {
   return (
     <Card variant="elevated" style={styles.fieldCard}>
-      <TouchableOpacity onPress={onPressCard} activeOpacity={0.85}>
-        <View style={styles.fieldCardHeader}>
-          <View style={styles.fieldIcon}>
-            <Ionicons name="leaf-outline" size={24} color={greenTheme.primary} />
-          </View>
-          <View style={styles.fieldInfo}>
-            <BodySemibold>{field.groupName}</BodySemibold>
-            <BodySmall color={colors.textSecondary}>
-              Thửa #{field.soThua} • Tờ #{field.soTo}
-            </BodySmall>
-          </View>
-          <TouchableOpacity onPress={onFocusOnMap}>
-            <Ionicons name="location-outline" size={20} color={greenTheme.primary} />
-          </TouchableOpacity>
+      <View style={styles.fieldCardHeader}>
+        <View style={styles.fieldIcon}>
+          <Ionicons name="leaf-outline" size={24} color={greenTheme.primary} />
         </View>
-        <Spacer size="md" />
-        <View style={styles.fieldDetails}>
-          <View style={styles.fieldDetailItem}>
-            <BodySmall color={colors.textSecondary}>Diện tích</BodySmall>
-            <BodySemibold>{field.area} ha</BodySemibold>
-          </View>
-          <View style={styles.fieldDetailItem}>
-            <BodySmall color={colors.textSecondary}>Trạng thái</BodySmall>
-            <BodySemibold>{field.status}</BodySemibold>
-          </View>
-          <View style={styles.fieldDetailItem}>
-            <BodySmall color={colors.textSecondary}>Cảnh báo</BodySmall>
-            <BodySemibold>{field.activeAlerts}</BodySemibold>
-          </View>
+        <View style={styles.fieldInfo}>
+          <BodySemibold>{field.groupName}</BodySemibold>
+          <BodySmall color={colors.textSecondary}>
+            Thửa #{field.soThua} • Tờ #{field.soTo}
+          </BodySmall>
         </View>
-      </TouchableOpacity>
+      </View>
+      <Spacer size="md" />
+      <View style={styles.fieldDetails}>
+        <View style={styles.fieldDetailItem}>
+          <BodySmall color={colors.textSecondary}>Diện tích</BodySmall>
+          <BodySemibold>{field.area} ha</BodySemibold>
+        </View>
+        <View style={styles.fieldDetailItem}>
+          <BodySmall color={colors.textSecondary}>Trạng thái</BodySmall>
+          <BodySemibold>{field.status}</BodySemibold>
+        </View>
+        <View style={styles.fieldDetailItem}>
+          <BodySmall color={colors.textSecondary}>Cảnh báo</BodySmall>
+          <BodySemibold>{field.activeAlerts}</BodySemibold>
+        </View>
+      </View>
       <Spacer size="md" />
       <View style={styles.buttonRow}>
+        <TouchableOpacity
+          onPress={onFocusOnMap}
+          style={styles.viewButton}
+        >
+          <Ionicons name="location" size={16} color={greenTheme.primary} />
+          <BodySmall style={styles.viewButtonText}>Xem trên bản đồ</BodySmall>
+        </TouchableOpacity>
         <Button
           variant="outline"
           size="sm"
@@ -181,16 +184,6 @@ const FieldCard = ({ field, onPressCard, onFocusOnMap, hasCultivationPlans, onRe
         >
           Xem kế hoạch
         </Button>
-        {hasCultivationPlans && (
-          <Button
-            variant="outline"
-            size="sm"
-            onPress={onReportIssue}
-            style={styles.actionButton}
-          >
-            Báo cáo vấn đề
-          </Button>
-        )}
       </View>
       <Spacer size="md" />
     </Card>
@@ -213,6 +206,10 @@ export const FieldsScreen = () => {
     longitudeDelta: number;
   } | null>(null);
   const [addresses, setAddresses] = useState<{ [plotId: string]: string }>({});
+  const [currentLocation, setCurrentLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
   const [selectedPlotInfo, setSelectedPlotInfo] = useState<{
     plot: FarmerPlot;
     coordinate: Coordinate;
@@ -231,6 +228,32 @@ export const FieldsScreen = () => {
         pageSize: 10,
       }),
   });
+
+  // Get current location
+  useEffect(() => {
+    const getCurrentLocation = async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          console.warn('Location permission not granted');
+          return;
+        }
+
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+
+        setCurrentLocation({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
+      } catch (error) {
+        console.warn('Error getting current location:', error);
+      }
+    };
+
+    getCurrentLocation();
+  }, []);
 
   // Fetch addresses for all plots using reverse geocoding
   useEffect(() => {
@@ -341,8 +364,18 @@ export const FieldsScreen = () => {
       };
     }
 
+    // If no plots, use current location if available
+    if (currentLocation) {
+      return {
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      };
+    }
+
     return DEFAULT_CENTER;
-  }, [pointMarkers, polygonOverlays]);
+  }, [pointMarkers, polygonOverlays, currentLocation]);
 
   // Convert to Mapbox format
   const mapboxPolygons = useMemo<PolygonData[]>(() => {
@@ -356,14 +389,27 @@ export const FieldsScreen = () => {
   }, [polygonOverlays]);
 
   const mapboxMarkers = useMemo<MarkerData[]>(() => {
-    return pointMarkers.map((marker) => ({
+    const plotMarkers = pointMarkers.map((marker) => ({
       id: marker.plotId,
       coordinate: marker.coordinate,
       title: marker.groupName,
       description: marker.address,
       color: greenTheme.primary,
     }));
-  }, [pointMarkers]);
+
+    // Add current location marker if available
+    if (currentLocation) {
+      plotMarkers.push({
+        id: 'current-location',
+        coordinate: currentLocation,
+        title: 'Vị trí hiện tại',
+        description: 'Vị trí của bạn',
+        color: '#007AFF', // Blue color for current location
+      });
+    }
+
+    return plotMarkers;
+  }, [pointMarkers, currentLocation]);
 
   const totalAreaHa = useMemo(() => {
     if (!plots || plots.length === 0) return 0;
@@ -408,6 +454,23 @@ export const FieldsScreen = () => {
     }
   };
 
+  // Plot marker press handler - similar to FarmerPlotsScreen
+  const handleMarkerPress = (plotId: string) => {
+    const plot = plots?.find((p) => p.plotId === plotId);
+    if (plot) {
+      const coordinate = parsePointWkt(plot.coordinate);
+      if (coordinate && cameraRef.current) {
+        cameraRef.current.setCamera({
+          centerCoordinate: [coordinate.longitude, coordinate.latitude],
+          zoomLevel: 16,
+          animationDuration: 1000,
+        });
+      }
+      // Also set selected plot info to show the info tag
+      setSelectedPlotInfo({ plot, coordinate: coordinate || { latitude: 0, longitude: 0 } });
+    }
+  };
+
   const focusOnPlot = (plot: FarmerPlot, expand?: boolean) => {
     const coordinate = parsePointWkt(plot.coordinate);
     if (!coordinate) return;
@@ -444,6 +507,21 @@ export const FieldsScreen = () => {
             animationDuration: 500,
           });
         }
+      });
+    }
+  };
+
+  const focusOnCurrentLocation = (isFullscreen: boolean = false) => {
+    if (!currentLocation) return;
+
+    const zoomLevel = 15; // Good zoom level for current location
+    const camera = isFullscreen ? fullscreenCameraRef.current : cameraRef.current;
+
+    if (camera) {
+      camera.setCamera({
+        centerCoordinate: [currentLocation.longitude, currentLocation.latitude],
+        zoomLevel,
+        animationDuration: 500,
       });
     }
   };
@@ -487,6 +565,14 @@ export const FieldsScreen = () => {
           >
             <Body color={colors.white}>Toàn màn hình</Body>
           </TouchableOpacity>
+          {currentLocation && (
+            <TouchableOpacity
+              style={styles.currentLocationButton}
+              onPress={() => focusOnCurrentLocation(false)}
+            >
+              <Ionicons name="locate" size={24} color={greenTheme.primary} />
+            </TouchableOpacity>
+          )}
           <View style={styles.mapWrapper}>
             <MapboxMap
               mapRef={mapRef}
@@ -570,28 +656,38 @@ export const FieldsScreen = () => {
               >
                 <Body color={colors.primary}>Close</Body>
               </TouchableOpacity>
-              <Button
-                variant="outline"
-                size="sm"
-                onPress={() => {
-                  const target = mapRegion;
-                  if (fullscreenCameraRef.current) {
-                    const center = {
-                      longitude: target.longitude,
-                      latitude: target.latitude,
-                    };
-                    const zoomLevel = Math.max(8, Math.min(20, Math.log2(360 / Math.max(target.latitudeDelta, 0.001))));
-                    fullscreenCameraRef.current.setCamera({
-                      centerCoordinate: [center.longitude, center.latitude],
-                      zoomLevel,
-                      animationDuration: 500,
-                    });
-                  }
-                }}
-              >
-                Reset View
-              </Button>
+              <View style={styles.fullscreenHeaderButtons}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onPress={() => {
+                    const target = mapRegion;
+                    if (fullscreenCameraRef.current) {
+                      const center = {
+                        longitude: target.longitude,
+                        latitude: target.latitude,
+                      };
+                      const zoomLevel = Math.max(8, Math.min(20, Math.log2(360 / Math.max(target.latitudeDelta, 0.001))));
+                      fullscreenCameraRef.current.setCamera({
+                        centerCoordinate: [center.longitude, center.latitude],
+                        zoomLevel,
+                        animationDuration: 500,
+                      });
+                    }
+                  }}
+                >
+                  Reset View
+                </Button>
+              </View>
             </View>
+            {currentLocation && (
+              <TouchableOpacity
+                style={styles.fullscreenFloatingLocationButton}
+                onPress={() => focusOnCurrentLocation(true)}
+              >
+                <Ionicons name="locate" size={24} color={greenTheme.primary} />
+              </TouchableOpacity>
+            )}
             <MapboxMap
               mapRef={fullscreenMapRef}
               cameraRef={fullscreenCameraRef}
@@ -681,14 +777,8 @@ export const FieldsScreen = () => {
                   params: { plotId: field.plotId, plotName: field.groupName },
                 } as any)
               }
-              onFocusOnMap={() => focusOnPlot(field, true)}
+              onFocusOnMap={() => handleMarkerPress(field.plotId)}
               hasCultivationPlans={hasCultivationPlansMap[field.plotId] ?? false}
-              onReportIssue={() =>
-                router.push({
-                  pathname: '/farmer/reports/create',
-                  params: { plotId: field.plotId },
-                } as any)
-              }
             />
           ))}
         </ScrollView>
@@ -777,6 +867,25 @@ const styles = StyleSheet.create({
     borderRadius: moderateScale(borderRadius.md),
     opacity: 0.9,
   },
+  currentLocationButton: {
+    position: 'absolute',
+    bottom: getSpacing(spacing.md),
+    right: getSpacing(spacing.sm),
+    zIndex: 1,
+    width: scale(48),
+    height: scale(48),
+    borderRadius: moderateScale(borderRadius.full),
+    backgroundColor: greenTheme.cardBackground,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: greenTheme.primary,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
   fullscreenMapContainer: {
     flex: 1,
     backgroundColor: greenTheme.background,
@@ -789,6 +898,40 @@ const styles = StyleSheet.create({
     backgroundColor: greenTheme.cardBackground,
     borderBottomWidth: 1,
     borderBottomColor: greenTheme.border,
+  },
+  fullscreenHeaderButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: getSpacing(spacing.sm),
+  },
+  fullscreenCurrentLocationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: getSpacing(spacing.md),
+    paddingVertical: getSpacing(spacing.sm),
+    backgroundColor: greenTheme.primaryLighter,
+    borderRadius: moderateScale(borderRadius.md),
+    borderWidth: 1,
+    borderColor: greenTheme.primary,
+  },
+  fullscreenFloatingLocationButton: {
+    position: 'absolute',
+    bottom: getSpacing(spacing.xl),
+    right: getSpacing(spacing.md),
+    zIndex: 1000,
+    width: scale(56),
+    height: scale(56),
+    borderRadius: moderateScale(borderRadius.full),
+    backgroundColor: greenTheme.cardBackground,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: greenTheme.primary,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   closeButton: {
     paddingHorizontal: getSpacing(spacing.md),
@@ -858,6 +1001,21 @@ const styles = StyleSheet.create({
   buttonRow: {
     flexDirection: 'row',
     gap: getSpacing(spacing.sm),
+    alignItems: 'center',
+  },
+  viewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: getSpacing(spacing.xs),
+    paddingHorizontal: getSpacing(spacing.md),
+    paddingVertical: getSpacing(spacing.sm),
+    borderRadius: moderateScale(borderRadius.md),
+    borderWidth: 1,
+    borderColor: greenTheme.primary,
+    backgroundColor: greenTheme.primaryLighter,
+  },
+  viewButtonText: {
+    color: greenTheme.primary,
   },
   errorCard: {
     padding: getSpacing(spacing.lg),

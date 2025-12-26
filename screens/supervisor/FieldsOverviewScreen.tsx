@@ -18,7 +18,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import MapView, { Marker, Polygon, Polyline, Region } from 'react-native-maps';
 import { useQuery } from '@tanstack/react-query';
 import { colors, spacing, borderRadius, shadows } from '../../theme';
 import {
@@ -31,11 +30,25 @@ import {
   Badge,
   Spacer,
   Button,
+  MapboxMap,
+  PolygonData,
+  MarkerData,
 } from '../../components/ui';
 import { useUser } from '../../libs/auth';
 import { FarmerPlot, StandardPlan, StandardPlanMaterialCostRequest } from '../../types/api';
-import { getCurrentFarmerPlots } from '../../libs/farmer';
-import { getStandardPlans, calculateStandardPlanMaterialCost } from '../../libs/supervisor';
+import { getFarmers, getFarmerPlots, getStandardPlans, calculateStandardPlanMaterialCost, Farmer, GetFarmerPlotsParams } from '../../libs/supervisor';
+
+// Green theme colors for nature-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
 
 // Mock function to parse WKT point
 const parsePointWkt = (wkt: string): { latitude: number; longitude: number } | null => {
@@ -73,7 +86,8 @@ const parsePolygonWkt = (
 export const FieldsOverviewScreen = () => {
   const router = useRouter();
   const { data: user } = useUser();
-  const mapRef = useRef<MapView | null>(null);
+  const mapRef = useRef<any>(null);
+  const cameraRef = useRef<any>(null);
   const [selectedPlot, setSelectedPlot] = useState<string | null>(null);
   const [showPriceModal, setShowPriceModal] = useState(false);
   const [priceReviewPlotId, setPriceReviewPlotId] = useState<string>('');
@@ -81,6 +95,17 @@ export const FieldsOverviewScreen = () => {
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [isCalculatingPrice, setIsCalculatingPrice] = useState(false);
   const [priceResult, setPriceResult] = useState<any>(null);
+  const [selectedFarmer, setSelectedFarmer] = useState<string>('');
+  const [selectedFarmerData, setSelectedFarmerData] = useState<Farmer | null>(null);
+  const [showFarmerModal, setShowFarmerModal] = useState(false);
+
+  // Fetch farmers list
+  const { data: farmers, isLoading: isFarmersLoading } = useQuery({
+    queryKey: ['farmers-list'],
+    queryFn: () => getFarmers(),
+    staleTime: 0,
+    refetchOnMount: true,
+  });
 
   // Fetch standard plans
   const { data: standardPlans } = useQuery({
@@ -88,14 +113,17 @@ export const FieldsOverviewScreen = () => {
     queryFn: () => getStandardPlans(),
   });
 
-  // TODO: Replace with supervisor-specific API call
-  // const { data: plots, isLoading, isError } = useQuery({
-  //   queryKey: ['supervisor-plots', user?.id],
-  //   queryFn: () => getSupervisedPlots({ supervisorId: user?.id }),
-  // Fetch plots from API
+  // Fetch plots for selected farmer (or all plots if no farmer selected)
   const { data: plotsData, isLoading: plotsLoading, error: plotsError } = useQuery({
-    queryKey: ['farmer-plots'],
-    queryFn: () => getCurrentFarmerPlots({ pageSize: 100 }),
+    queryKey: ['farmer-plots', selectedFarmer],
+    queryFn: () => selectedFarmer 
+      ? getFarmerPlots({ 
+          farmerId: selectedFarmer,
+          currentPage: 1,
+          pageSize: 100,
+        }) 
+      : Promise.resolve([]),
+    enabled: !!selectedFarmer,
   });
 
   const plots = plotsData || [];
@@ -132,7 +160,7 @@ export const FieldsOverviewScreen = () => {
           groupName: plot.groupName,
         };
       })
-      .filter((marker) => marker !== null);
+      .filter((marker): marker is NonNullable<typeof marker> => marker !== null);
   }, [plots]);
 
   const polygons = useMemo(() => {
@@ -148,50 +176,95 @@ export const FieldsOverviewScreen = () => {
           status: plot.status,
         };
       })
-      .filter((poly) => poly !== null);
+      .filter((poly): poly is NonNullable<typeof poly> => poly !== null);
   }, [plots]);
 
+  // Convert to Mapbox format
+  const mapboxPolygons = useMemo<PolygonData[]>(() => {
+    return polygons.map((polygon) => ({
+      id: polygon.plotId,
+      coordinates: polygon.coordinates,
+      strokeColor: getStatusColor(polygon.status),
+      fillColor: `${getStatusColor(polygon.status)}40`,
+      strokeWidth: selectedPlot === polygon.plotId ? 3 : 2,
+    }));
+  }, [polygons, selectedPlot]);
+
+  const mapboxMarkers = useMemo<MarkerData[]>(() => {
+    return pointMarkers.map((marker) => ({
+      id: marker.plotId,
+      coordinate: marker.coordinate,
+      title: marker.plotName,
+      description: marker.groupName,
+      color: getStatusColor(marker.status),
+    }));
+  }, [pointMarkers]);
+
+  const mapRegion = useMemo(() => {
+    if (pointMarkers.length > 0) {
+      const avgLat =
+        pointMarkers.reduce((sum, marker) => sum + marker.coordinate.latitude, 0) /
+        pointMarkers.length;
+      const avgLng =
+        pointMarkers.reduce((sum, marker) => sum + marker.coordinate.longitude, 0) /
+        pointMarkers.length;
+
+      return {
+        latitude: avgLat,
+        longitude: avgLng,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      };
+    }
+
+    if (polygons.length > 0) {
+      const first = polygons[0].coordinates[0];
+      return {
+        latitude: first.latitude,
+        longitude: first.longitude,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      };
+    }
+
+    return {
+      latitude: 10.8836,
+      longitude: 106.7114,
+      latitudeDelta: 0.1,
+      longitudeDelta: 0.1,
+    };
+  }, [pointMarkers, polygons]);
+
   const getStatusColor = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'active':
-        return colors.success;
+        return greenTheme.success;
       case 'needs-attention':
+      case 'emergency':
         return colors.error;
       case 'completed':
-        return colors.info;
+        return greenTheme.primary;
       default:
         return colors.textSecondary;
     }
   };
-
-  const initialRegion: Region = pointMarkers.length > 0
-    ? {
-        latitude: pointMarkers[0].coordinate.latitude,
-        longitude: pointMarkers[0].coordinate.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      }
-    : {
-        latitude: 10.8836,
-        longitude: 106.7114,
-        latitudeDelta: 0.1,
-        longitudeDelta: 0.1,
-      };
 
   const handlePlotSelect = (plotId: string) => {
     setSelectedPlot(plotId);
     const plot = plots.find((p) => p.plotId === plotId);
     if (plot) {
       const coordinate = parsePointWkt(plot.coordinate);
-      if (coordinate && mapRef.current) {
-        mapRef.current.animateToRegion(
-          {
-            ...coordinate,
-            latitudeDelta: 0.005,
-            longitudeDelta: 0.005,
-          },
-          500,
-        );
+      if (coordinate && cameraRef.current) {
+        const center = {
+          longitude: coordinate.longitude,
+          latitude: coordinate.latitude,
+        };
+        const zoomLevel = 15;
+        cameraRef.current.setCamera({
+          centerCoordinate: [center.longitude, center.latitude],
+          zoomLevel,
+          animationDuration: 500,
+        });
       }
     }
   };
@@ -253,41 +326,33 @@ export const FieldsOverviewScreen = () => {
 
         <Spacer size="lg" />
 
+        {/* Farmer Selection */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Filter by Farmer</Text>
+          <TouchableOpacity
+            style={styles.selectButton}
+            onPress={() => setShowFarmerModal(true)}
+          >
+            <Text style={styles.selectButtonText}>
+              {selectedFarmerData 
+                ? selectedFarmerData.fullName || selectedFarmerData.farmCode || 'Unknown Farmer'
+                : 'Select Farmer'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <Spacer size="md" />
+
         {/* Map View */}
         <Card variant="elevated" style={styles.mapCard}>
-          <MapView
-            ref={mapRef}
+          <MapboxMap
+            mapRef={mapRef}
+            cameraRef={cameraRef}
+            initialRegion={mapRegion}
+            polygons={mapboxPolygons}
+            markers={mapboxMarkers}
             style={styles.map}
-            initialRegion={initialRegion}
-            mapType="hybrid"
-            showsBuildings={true}
-            showsPointsOfInterest={true}
-            showsCompass={true}
-            showsScale={true}
-          >
-            {polygons.map((poly) => (
-              <Polygon
-                key={poly.plotId}
-                coordinates={poly.coordinates}
-                fillColor={
-                  selectedPlot === poly.plotId
-                    ? getStatusColor(poly.status) + '80'
-                    : getStatusColor(poly.status) + '40'
-                }
-                strokeColor={getStatusColor(poly.status)}
-                strokeWidth={selectedPlot === poly.plotId ? 3 : 2}
-              />
-            ))}
-            {pointMarkers.map((marker) => (
-              <Marker
-                key={marker.plotId}
-                coordinate={marker.coordinate}
-                title={marker.plotName}
-                description={marker.groupName}
-                pinColor={getStatusColor(marker.status)}
-              />
-            ))}
-          </MapView>
+          />
         </Card>
 
         <Spacer size="lg" />
@@ -487,6 +552,47 @@ export const FieldsOverviewScreen = () => {
             </View>
           </View>
         </Modal>
+
+        {/* Farmer Selection Modal */}
+        <Modal
+          visible={showFarmerModal}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setShowFarmerModal(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Select Farmer</Text>
+              <FlatList
+                data={farmers || []}
+                keyExtractor={(item) => item.farmerId}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.planModalItem}
+                    onPress={() => {
+                      setSelectedFarmer(item.farmerId);
+                      setSelectedFarmerData(item);
+                      setShowFarmerModal(false);
+                    }}
+                  >
+                    <Text style={styles.planModalItemText}>
+                      {item.fullName || item.farmCode || 'Unknown Farmer'}
+                    </Text>
+                    {item.address && (
+                      <Text style={styles.planModalItemSubtext}>{item.address}</Text>
+                    )}
+                  </TouchableOpacity>
+                )}
+              />
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setShowFarmerModal(false)}
+              >
+                <Text style={styles.modalCloseButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </Container>
     </SafeAreaView>
   );
@@ -495,17 +601,45 @@ export const FieldsOverviewScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: greenTheme.background,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  section: {
+    marginBottom: spacing.md,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: spacing.xs,
+    color: colors.textPrimary,
+  },
+  selectButton: {
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    borderRadius: borderRadius.md,
+    padding: spacing.sm,
+    minHeight: 50,
+    justifyContent: 'center',
+  },
+  selectButtonText: {
+    fontSize: 16,
+    color: colors.textPrimary,
+  },
   mapCard: {
     height: 300,
     overflow: 'hidden',
     borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   map: {
     width: '100%',
@@ -513,10 +647,20 @@ const styles = StyleSheet.create({
   },
   plotCard: {
     padding: spacing.md,
+    backgroundColor: greenTheme.cardBackground,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    borderRadius: borderRadius.md,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   plotCardSelected: {
     borderWidth: 2,
-    borderColor: colors.primary,
+    borderColor: greenTheme.primary,
+    backgroundColor: greenTheme.primaryLighter,
   },
   plotHeader: {
     flexDirection: 'row',
@@ -539,7 +683,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   priceReviewButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: greenTheme.primary,
     padding: spacing.sm,
     borderRadius: borderRadius.sm,
     alignItems: 'center',
@@ -557,42 +701,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: borderRadius.lg,
     padding: spacing.lg,
     width: '90%',
     maxHeight: '80%',
+    borderWidth: 1,
+    borderColor: greenTheme.border,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: spacing.md,
-    color: colors.textDark,
+    color: greenTheme.primary,
   },
   modalLabel: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: spacing.xs,
     marginTop: spacing.sm,
-    color: colors.textDark,
-  },
-  selectButton: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    padding: spacing.sm,
-    minHeight: 50,
-    justifyContent: 'center',
-    marginBottom: spacing.md,
-  },
-  selectButtonText: {
-    fontSize: 16,
-    color: colors.textDark,
+    color: greenTheme.primary,
   },
   calculateButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: greenTheme.primary,
     padding: spacing.md,
-    borderRadius: 8,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
     marginVertical: spacing.md,
   },
@@ -607,15 +740,15 @@ const styles = StyleSheet.create({
   priceResults: {
     marginTop: spacing.md,
     padding: spacing.md,
-    backgroundColor: colors.backgroundLight,
-    borderRadius: 8,
+    backgroundColor: greenTheme.primaryLighter,
+    borderRadius: borderRadius.md,
     maxHeight: 300,
   },
   resultsTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: spacing.sm,
-    color: colors.primary,
+    color: greenTheme.primary,
   },
   resultRow: {
     flexDirection: 'row',
@@ -628,7 +761,7 @@ const styles = StyleSheet.create({
   },
   resultValue: {
     fontSize: 14,
-    color: colors.textDark,
+    color: greenTheme.primary,
   },
   bold: {
     fontWeight: 'bold',
@@ -639,7 +772,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: spacing.md,
     marginBottom: spacing.sm,
-    color: colors.textDark,
+    color: greenTheme.primary,
   },
   materialsList: {
     maxHeight: 150,
@@ -647,12 +780,12 @@ const styles = StyleSheet.create({
   materialItem: {
     padding: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: greenTheme.border,
   },
   materialName: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.textDark,
+    color: greenTheme.primary,
   },
   materialDetail: {
     fontSize: 12,
@@ -662,17 +795,17 @@ const styles = StyleSheet.create({
   materialCost: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.primary,
+    color: greenTheme.primary,
     marginTop: 4,
   },
   planModalItem: {
     padding: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: greenTheme.border,
   },
   planModalItemText: {
     fontSize: 16,
-    color: colors.textDark,
+    color: greenTheme.primary,
   },
   planModalItemSubtext: {
     color: colors.textSecondary,
@@ -680,14 +813,13 @@ const styles = StyleSheet.create({
   modalCloseButton: {
     marginTop: spacing.md,
     padding: spacing.md,
-    backgroundColor: colors.backgroundLight,
-    borderRadius: 8,
+    backgroundColor: greenTheme.primaryLighter,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
   },
   modalCloseButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.textDark,
+    color: greenTheme.primary,
   },
 });
-

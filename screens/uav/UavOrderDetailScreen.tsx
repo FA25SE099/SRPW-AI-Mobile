@@ -1,9 +1,4 @@
-/**
- * UAV Order Detail Screen
- * View spraying zone maps, materials, dosage, and timing
- */
-
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -14,8 +9,11 @@ import {
   Linking,
   ViewStyle,
   Image,
+  Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import dayjs from 'dayjs';
 import { useQuery } from '@tanstack/react-query';
 import { colors, spacing, borderRadius, shadows } from '../../theme';
@@ -59,6 +57,34 @@ const greenTheme = {
   border: '#C8E6C9', // Light green border
 };
 
+// Helper functions
+const getStatusColor = (status: string) => {
+  switch (status?.toLowerCase()) {
+    case 'completed':
+      return colors.success;
+    case 'in progress':
+    case 'inprogress':
+      return '#FF9500';
+    case 'pending':
+      return colors.info;
+    default:
+      return colors.textSecondary;
+  }
+};
+
+const getPriorityColor = (priority: string) => {
+  switch (priority?.toLowerCase()) {
+    case 'high':
+      return colors.error;
+    case 'normal':
+      return '#FF9500';
+    case 'low':
+      return colors.success;
+    default:
+      return colors.textSecondary;
+  }
+};
+
 export const UavOrderDetailScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -70,6 +96,16 @@ export const UavOrderDetailScreen = () => {
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
   const [expandedProofs, setExpandedProofs] = useState<Record<string, boolean>>({});
   const [focusedPlotId, setFocusedPlotId] = useState<string | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  const [selectedPlotInfo, setSelectedPlotInfo] = useState<{
+    plotId: string;
+    plotName: string;
+    status: string;
+    servicedArea: number;
+  } | null>(null);
 
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['uav-order-detail', orderId],
@@ -82,6 +118,32 @@ export const UavOrderDetailScreen = () => {
       refetch();
     }, [refetch]),
   );
+
+  // Get current location
+  useEffect(() => {
+    const getCurrentLocation = async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          console.log('Location permission denied');
+          return;
+        }
+
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+
+        setCurrentLocation({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
+      } catch (error) {
+        console.error('Error getting location:', error);
+      }
+    };
+
+    getCurrentLocation();
+  }, []);
 
   const order: UavOrderDetail | undefined = data;
 
@@ -144,15 +206,33 @@ export const UavOrderDetailScreen = () => {
   }, [routeCoordinates]);
 
   const mapboxMarkers = useMemo<MarkerData[]>(() => {
-    if (assignmentPolygons.length === 0) return [];
-    return [
-      {
-        id: 'first-plot',
-        coordinate: assignmentPolygons[0].coordinates[0],
-        title: assignmentPolygons[0].plotName,
-      },
-    ];
-  }, [assignmentPolygons]);
+    const markers: MarkerData[] = [];
+    
+    // Add current location marker
+    if (currentLocation) {
+      markers.push({
+        id: 'current-location',
+        coordinate: currentLocation,
+        title: 'Vị trí hiện tại',
+        color: '#007AFF',
+      });
+    }
+    
+    // Add plot markers (first coordinate of each plot)
+    if (assignmentPolygons.length > 0) {
+      assignmentPolygons.forEach((polygon) => {
+        if (polygon.coordinates.length > 0) {
+          markers.push({
+            id: `plot-${polygon.plotId}`,
+            coordinate: polygon.coordinates[0],
+            title: polygon.plotName,
+          });
+        }
+      });
+    }
+    
+    return markers;
+  }, [assignmentPolygons, currentLocation]);
 
   if (isLoading || !order) {
     return (
@@ -184,38 +264,14 @@ export const UavOrderDetailScreen = () => {
     );
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'completed':
-        return colors.success;
-      case 'in progress':
-      case 'inprogress':
-        return '#FF9500';
-      case 'pending':
-        return colors.info;
-      default:
-        return colors.textSecondary;
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority?.toLowerCase()) {
-      case 'high':
-        return colors.error;
-      case 'normal':
-        return '#FF9500';
-      case 'low':
-        return colors.success;
-      default:
-        return colors.textSecondary;
-    }
-  };
 
   const canStartExecution =
     order.status === 'Pending' || order.status === 'InProgress' || order.status === 'In Progress';
 
   const focusPlotOnMap = (plotId: string) => {
     setFocusedPlotId(plotId);
+    setSelectedPlotInfo(null); // Clear selected plot info when focusing from card
+    
     const polygon = assignmentPolygons.find((p) => p.plotId === plotId);
     if (!polygon || polygon.coordinates.length === 0) {
       return;
@@ -237,6 +293,34 @@ export const UavOrderDetailScreen = () => {
     if (fullscreenCameraRef.current) {
       fullscreenCameraRef.current.setCamera({
         centerCoordinate: [center.longitude, center.latitude],
+        zoomLevel,
+        animationDuration: 500,
+      });
+    }
+  };
+
+  const handlePolygonPress = (polygonId: string, coordinate: Coordinate) => {
+    const assignment = order?.plotAssignments.find((a) => a.plotId === polygonId);
+    if (assignment) {
+      setFocusedPlotId(polygonId);
+      setSelectedPlotInfo({
+        plotId: assignment.plotId,
+        plotName: assignment.plotName,
+        status: assignment.status,
+        servicedArea: assignment.servicedArea,
+      });
+    }
+  };
+
+  const focusOnCurrentLocation = (isFullscreen: boolean = false) => {
+    if (!currentLocation) return;
+
+    const zoomLevel = 15; // Good zoom level for current location
+    const camera = isFullscreen ? fullscreenCameraRef.current : cameraRef.current;
+
+    if (camera) {
+      camera.setCamera({
+        centerCoordinate: [currentLocation.longitude, currentLocation.latitude],
         zoomLevel,
         animationDuration: 500,
       });
@@ -318,16 +402,53 @@ export const UavOrderDetailScreen = () => {
             >
               <Body color={colors.white}>Toàn màn hình</Body>
             </TouchableOpacity>
-            <MapboxMap
-              mapRef={mapRef}
-              cameraRef={cameraRef}
-              initialRegion={mapRegion}
-              polygons={mapboxPolygons}
-              markers={mapboxMarkers}
-              polylines={mapboxPolylines}
-              focusedId={focusedPlotId}
-              style={styles.map}
-            />
+            {currentLocation && (
+              <TouchableOpacity
+                style={styles.currentLocationButton}
+                onPress={() => focusOnCurrentLocation(false)}
+              >
+                <Ionicons name="locate" size={24} color={greenTheme.primary} />
+              </TouchableOpacity>
+            )}
+            <View style={styles.mapWrapper}>
+              <MapboxMap
+                mapRef={mapRef}
+                cameraRef={cameraRef}
+                initialRegion={mapRegion}
+                polygons={mapboxPolygons}
+                markers={mapboxMarkers}
+                polylines={mapboxPolylines}
+                focusedId={focusedPlotId}
+                onPolygonPress={handlePolygonPress}
+                style={styles.map}
+              />
+              {selectedPlotInfo && (
+                <View style={styles.infoTagContainer}>
+                  <Card variant="elevated" style={styles.infoTag}>
+                    <TouchableOpacity
+                      style={styles.infoTagClose}
+                      onPress={() => setSelectedPlotInfo(null)}
+                    >
+                      <Ionicons name="close" size={18} color={greenTheme.primary} />
+                    </TouchableOpacity>
+                    <BodySemibold style={styles.infoTagTitle}>
+                      {selectedPlotInfo.plotName}
+                    </BodySemibold>
+                    <Spacer size="xs" />
+                    <View style={styles.infoTagDetails}>
+                      <View style={styles.infoTagDetailItem}>
+                        <BodySmall color={colors.textSecondary}>Diện tích:</BodySmall>
+                        <BodySemibold>{selectedPlotInfo.servicedArea} ha</BodySemibold>
+                      </View>
+                      <View style={styles.infoTagDetailItem}>
+                        <BodySmall color={colors.textSecondary}>Trạng thái:</BodySmall>
+                        <BodySemibold>{selectedPlotInfo.status.replace(/([A-Z])/g, ' $1').trim()}</BodySemibold>
+                      </View>
+                    </View>
+                  </Card>
+                </View>
+              )}
+            </View>
           </Card>
 
           <Spacer size="md" />
@@ -378,7 +499,7 @@ export const UavOrderDetailScreen = () => {
           <Spacer size="md" />
 
           {/* Materials */}
-          <Card variant="elevated" style={styles.card}>
+          {/* <Card variant="elevated" style={styles.card}>
             <H4>Vật liệu & Liều lượng</H4>
             <Spacer size="md" />
             {order.materials.length === 0 && (
@@ -409,7 +530,7 @@ export const UavOrderDetailScreen = () => {
                 </View>
               </View>
             ))}
-          </Card>
+          </Card> */}
 
           <Spacer size="md" />
 
@@ -441,12 +562,12 @@ export const UavOrderDetailScreen = () => {
                   </Badge>
                 </View>
                 <Spacer size="sm" />
-                <View style={styles.assignmentMeta}>
+                {/* <View style={styles.assignmentMeta}>
                   <BodySmall color={colors.textSecondary}>Chi phí thực tế:</BodySmall>
                   <BodySemibold>
                     {assignment.actualCost ? `${assignment.actualCost.toLocaleString()}₫` : '—'}
                   </BodySemibold>
-                </View>
+                </View> */}
                 {assignment.completionDate && (
                   <View style={styles.assignmentMeta}>
                     <BodySmall color={colors.textSecondary}>Hoàn thành:</BodySmall>
@@ -466,12 +587,13 @@ export const UavOrderDetailScreen = () => {
                     <Spacer size="xs" />
                     <TouchableOpacity
                       style={styles.proofToggle}
-                      onPress={() =>
+                      onPress={(e) => {
+                        e.stopPropagation();
                         setExpandedProofs((prev) => ({
                           ...prev,
                           [assignment.plotId]: !prev[assignment.plotId],
-                        }))
-                      }
+                        }));
+                      }}
                     >
                       <BodySmall color={colors.textSecondary}>
                         Chứng minh ({assignment.proofUrls.length})
@@ -507,7 +629,8 @@ export const UavOrderDetailScreen = () => {
                     <Spacer size="sm" />
                     <TouchableOpacity
                       style={styles.reportButton}
-                      onPress={() =>
+                      onPress={(e) => {
+                        e.stopPropagation();
                         router.push({
                           pathname: '/uav/orders/[orderId]/report',
                           params: {
@@ -516,8 +639,8 @@ export const UavOrderDetailScreen = () => {
                             plotName: assignment.plotName,
                             servicedArea: assignment.servicedArea.toString(),
                           },
-                        } as any)
-                      }
+                        } as any);
+                      }}
                     >
                       <BodySemibold style={styles.reportButtonText}>Báo cáo hoàn thành</BodySemibold>
                     </TouchableOpacity>
@@ -569,8 +692,43 @@ export const UavOrderDetailScreen = () => {
               markers={mapboxMarkers}
               polylines={mapboxPolylines}
               focusedId={focusedPlotId}
+              onPolygonPress={handlePolygonPress}
               style={styles.fullscreenMap}
             />
+            {currentLocation && (
+              <TouchableOpacity
+                style={styles.fullscreenCurrentLocationButton}
+                onPress={() => focusOnCurrentLocation(true)}
+              >
+                <Ionicons name="locate" size={24} color={greenTheme.primary} />
+              </TouchableOpacity>
+            )}
+            {selectedPlotInfo && (
+              <View style={styles.fullscreenInfoTagContainer}>
+                <Card variant="elevated" style={styles.infoTag}>
+                  <TouchableOpacity
+                    style={styles.infoTagClose}
+                    onPress={() => setSelectedPlotInfo(null)}
+                  >
+                    <Ionicons name="close" size={18} color={greenTheme.primary} />
+                  </TouchableOpacity>
+                  <BodySemibold style={styles.infoTagTitle}>
+                    {selectedPlotInfo.plotName}
+                  </BodySemibold>
+                  <Spacer size="xs" />
+                  <View style={styles.infoTagDetails}>
+                    <View style={styles.infoTagDetailItem}>
+                      <BodySmall color={colors.textSecondary}>Diện tích:</BodySmall>
+                      <BodySemibold>{selectedPlotInfo.servicedArea} ha</BodySemibold>
+                    </View>
+                    <View style={styles.infoTagDetailItem}>
+                      <BodySmall color={colors.textSecondary}>Trạng thái:</BodySmall>
+                      <BodySemibold>{selectedPlotInfo.status.replace(/([A-Z])/g, ' $1').trim()}</BodySemibold>
+                    </View>
+                  </View>
+                </Card>
+              </View>
+            )}
           </SafeAreaView>
         </Modal>
       </Container>
@@ -693,8 +851,101 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
+  mapWrapper: {
+    flex: 1,
+    position: 'relative',
+  },
   map: {
     flex: 1,
+  },
+  currentLocationButton: {
+    position: 'absolute',
+    bottom: spacing.md,
+    right: spacing.sm,
+    zIndex: 1000,
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.full,
+    backgroundColor: greenTheme.cardBackground,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: greenTheme.primary,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  fullscreenCurrentLocationButton: {
+    position: 'absolute',
+    bottom: spacing.xl,
+    right: spacing.md,
+    zIndex: 1000,
+    width: 56,
+    height: 56,
+    borderRadius: borderRadius.full,
+    backgroundColor: greenTheme.cardBackground,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: greenTheme.primary,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  infoTagContainer: {
+    position: 'absolute',
+    bottom: spacing.lg,
+    left: spacing.lg,
+    right: spacing.lg,
+    zIndex: 1000,
+  },
+  fullscreenInfoTagContainer: {
+    position: 'absolute',
+    bottom: spacing.lg,
+    left: spacing.lg,
+    right: spacing.lg,
+    zIndex: 1000,
+  },
+  infoTag: {
+    padding: spacing.md,
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: borderRadius.lg,
+    borderWidth: 2,
+    borderColor: greenTheme.primary,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 8,
+    position: 'relative',
+  },
+  infoTagClose: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    width: 28,
+    height: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: borderRadius.full,
+    backgroundColor: greenTheme.primaryLighter,
+  },
+  infoTagTitle: {
+    fontSize: 16,
+    color: greenTheme.primary,
+    paddingRight: spacing.xl,
+  },
+  infoTagDetails: {
+    gap: spacing.xs,
+  },
+  infoTagDetailItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   expandButton: {
     position: 'absolute',

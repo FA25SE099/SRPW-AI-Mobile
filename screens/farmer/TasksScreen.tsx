@@ -29,23 +29,27 @@ import {
   Spacer,
   Button,
 } from '../../components/ui';
-import { FarmerPlot, TodayTaskResponse } from '../../types/api';
-import { getCurrentFarmerPlots, getTodayTasks, startTask } from '../../libs/farmer';
+import { FarmerPlot, TodayTaskResponse, PlotCultivationPlan } from '../../types/api';
+import { getCurrentFarmerPlots, getTodayTasks, startTask, getPlotCultivationPlans } from '../../libs/farmer';
 import { TaskDetailModal } from './TaskDetailModal';
 import { Alert } from 'react-native';
 
 export const FarmerTasksScreen = () => {
   const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
-  const [selectedFilter, setSelectedFilter] = useState<'in-progress' | 'approved' | 'completed'>(
+  const [selectedFilter, setSelectedFilter] = useState<'in-progress' | 'approved' | 'completed' | 'emergency' | 'emergency-approval'>(
     'in-progress',
   );
   const [selectedPlotId, setSelectedPlotId] = useState<string>('all');
   const [isPlotPickerOpen, setIsPlotPickerOpen] = useState(false);
-  const [filterCounts, setFilterCounts] = useState<Record<'in-progress' | 'approved' | 'completed', number>>({
+  const [selectedPlotCultivationId, setSelectedPlotCultivationId] = useState<string>('all');
+  const [isCultivationPlanPickerOpen, setIsCultivationPlanPickerOpen] = useState(false);
+  const [filterCounts, setFilterCounts] = useState<Record<'in-progress' | 'approved' | 'completed' | 'emergency' | 'emergency-approval', number>>({
     'in-progress': 0,
     approved: 0,
     completed: 0,
+    emergency: 0,
+    'emergency-approval': 0,
   });
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
   const [isDetailVisible, setIsDetailVisible] = useState(false);
@@ -54,14 +58,16 @@ export const FarmerTasksScreen = () => {
   // Responsive styles
   const responsiveStyles = getResponsiveStyles(screenWidth);
 
-  const statusFilterMap: Record<'in-progress' | 'approved' | 'completed', string> = {
+  const statusFilterMap: Record<'in-progress' | 'approved' | 'completed' | 'emergency' | 'emergency-approval', string> = {
     'in-progress': 'InProgress',
     approved: 'Approved',
     completed: 'Completed',
+    emergency: 'Emergency',
+    'emergency-approval': 'EmergencyApproval',
   };
 
   const apiStatusFilter = statusFilterMap[selectedFilter];
-  const apiPlotId = selectedPlotId === 'all' ? undefined : selectedPlotId;
+  const apiPlotCultivationId = selectedPlotCultivationId === 'all' ? undefined : selectedPlotCultivationId;
 
   // Fetch plots for dropdown
   const {
@@ -86,6 +92,40 @@ export const FarmerTasksScreen = () => {
     }
   }, [plots, plotsLoading, plotsError, selectedPlotId]);
 
+  // Fetch cultivation plans for selected plot
+  const {
+    data: cultivationPlansData,
+    isLoading: cultivationPlansLoading,
+    error: cultivationPlansError,
+  } = useQuery({
+    queryKey: ['plot-cultivation-plans', selectedPlotId],
+    queryFn: () => getPlotCultivationPlans(selectedPlotId, { currentPage: 1, pageSize: 100 }),
+    enabled: selectedPlotId !== 'all',
+  });
+
+  const cultivationPlans: PlotCultivationPlan[] = cultivationPlansData?.data || [];
+
+  // Auto-select first cultivation plan once data is available
+  useEffect(() => {
+    if (
+      selectedPlotCultivationId === 'all' &&
+      !cultivationPlansLoading &&
+      !cultivationPlansError &&
+      cultivationPlans.length > 0
+    ) {
+      setSelectedPlotCultivationId(cultivationPlans[0].plotCultivationId);
+    }
+  }, [cultivationPlans, cultivationPlansLoading, cultivationPlansError, selectedPlotCultivationId]);
+
+  // Reset cultivation plan selection when plot changes
+  useEffect(() => {
+    if (selectedPlotId === 'all') {
+      setSelectedPlotCultivationId('all');
+    } else if (cultivationPlans.length > 0) {
+      setSelectedPlotCultivationId(cultivationPlans[0].plotCultivationId);
+    }
+  }, [selectedPlotId, cultivationPlans]);
+
   // Fetch today's tasks
   const {
     data: tasks,
@@ -93,8 +133,9 @@ export const FarmerTasksScreen = () => {
     error,
     refetch,
   } = useQuery({
-    queryKey: ['today-tasks', { plotId: apiPlotId, status: apiStatusFilter }],
-    queryFn: () => getTodayTasks({ plotId: apiPlotId, statusFilter: apiStatusFilter }),
+    queryKey: ['today-tasks', { plotCultivationId: apiPlotCultivationId, status: apiStatusFilter }],
+    queryFn: () => getTodayTasks({ plotCultivationId: apiPlotCultivationId, statusFilter: apiStatusFilter }),
+    enabled: selectedPlotId === 'all' || (selectedPlotId !== 'all' && selectedPlotCultivationId !== 'all'),
   });
 
   // Start task mutation
@@ -112,8 +153,16 @@ export const FarmerTasksScreen = () => {
       Alert.alert('Success', 'Task started successfully');
     },
     onError: (error: any) => {
+      console.error('❌ [startTask] Error:', {
+        status: error?.response?.status,
+        statusText: error?.response?.statusText,
+        data: error?.response?.data,
+        message: error?.message,
+        url: error?.config?.url,
+        method: error?.config?.method,
+      });
       const errorMessage = error?.response?.data?.message || error?.message || 'Failed to start task';
-      Alert.alert('Error', errorMessage);
+      Alert.alert('Error', `Status: ${error?.response?.status || 'Unknown'}\n${errorMessage}`);
     },
   });
 
@@ -142,6 +191,11 @@ export const FarmerTasksScreen = () => {
       case 'pending':
       case 'todo':
         return colors.info;
+      case 'emergency':
+        return colors.error; // Red for emergency
+      case 'emergencyapproval':
+      case 'emergency-approval':
+        return '#EF4444'; // Dark red for emergency approval
       default:
         return colors.textSecondary;
     }
@@ -157,6 +211,10 @@ export const FarmerTasksScreen = () => {
         return 'pending';
       case 'approved':
         return 'approved';
+      case 'emergency':
+        return 'emergency';
+      case 'emergencyapproval':
+        return 'emergency-approval';
       default:
         return status?.toLowerCase() || 'pending';
     }
@@ -191,6 +249,24 @@ export const FarmerTasksScreen = () => {
   const handlePlotSelect = (plotId: string) => {
     setSelectedPlotId(plotId);
     setIsPlotPickerOpen(false);
+    // Reset cultivation plan selection when plot changes
+    setSelectedPlotCultivationId('all');
+  };
+
+  const handleCultivationPlanSelect = (plotCultivationId: string) => {
+    setSelectedPlotCultivationId(plotCultivationId);
+    setIsCultivationPlanPickerOpen(false);
+  };
+
+  const cultivationPlanDisplayLabel = () => {
+    if (selectedPlotCultivationId === 'all') {
+      return 'Tất cả kế hoạch';
+    }
+    const plan = cultivationPlans.find((p) => p.plotCultivationId === selectedPlotCultivationId);
+    if (!plan) {
+      return 'Chọn kế hoạch';
+    }
+    return `${plan.productionPlanName} - ${plan.seasonName}`;
   };
 
   const handleConfirmTask = (task: TodayTaskResponse) => {
@@ -202,6 +278,7 @@ export const FarmerTasksScreen = () => {
         taskName: task.taskName,
         plotSoThuaSoTo: task.plotSoThuaSoTo,
         materials: JSON.stringify(task.materials || []),
+        plotArea: task.plotArea?.toString() || '',
       },
     } as any);
   };
@@ -329,10 +406,69 @@ export const FarmerTasksScreen = () => {
           )}
         </View>
 
+        <Spacer size="md" />
+
+        {/* Cultivation Plan Filter */}
+        {selectedPlotId !== 'all' && (
+          <View style={styles.dropdownSection}>
+            <BodySmall color={colors.textSecondary}>Lọc theo kế hoạch canh tác</BodySmall>
+            <TouchableOpacity
+              style={styles.dropdownTrigger}
+              onPress={() => setIsCultivationPlanPickerOpen((prev) => !prev)}
+              disabled={cultivationPlansLoading || selectedPlotId === 'all'}
+            >
+              <BodySemibold>{cultivationPlanDisplayLabel()}</BodySemibold>
+              <BodySmall color={colors.textSecondary}>{isCultivationPlanPickerOpen ? '^' : 'v'}</BodySmall>
+            </TouchableOpacity>
+            {cultivationPlansError && (
+              <BodySmall color={colors.error} style={styles.dropdownError}>
+                Không thể tải kế hoạch canh tác
+              </BodySmall>
+            )}
+            {isCultivationPlanPickerOpen && (
+              <View style={styles.dropdownList}>
+                <ScrollView nestedScrollEnabled style={{ maxHeight: 220 }}>
+                  <TouchableOpacity
+                    style={[
+                      styles.dropdownOption,
+                      selectedPlotCultivationId === 'all' && styles.dropdownOptionSelected,
+                    ]}
+                    onPress={() => handleCultivationPlanSelect('all')}
+                  >
+                    <Body>Tất cả kế hoạch</Body>
+                  </TouchableOpacity>
+                  {cultivationPlans.map((plan: PlotCultivationPlan) => (
+                    <TouchableOpacity
+                      key={plan.plotCultivationId}
+                      style={[
+                        styles.dropdownOption,
+                        selectedPlotCultivationId === plan.plotCultivationId && styles.dropdownOptionSelected,
+                      ]}
+                      onPress={() => handleCultivationPlanSelect(plan.plotCultivationId)}
+                    >
+                      <Body>
+                        {plan.productionPlanName} - {plan.seasonName}
+                      </Body>
+                      <BodySmall color={colors.textSecondary}>
+                        {plan.area ? `${plan.area.toFixed(2)} ha` : 'N/A'}
+                      </BodySmall>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+          </View>
+        )}
+
         <Spacer size="lg" />
 
         {/* Filter Tabs */}
-        <View style={styles.filterContainer}>
+        <View style={styles.filterWrapper}>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterContainer}
+          >
           <TouchableOpacity
             onPress={() => setSelectedFilter('in-progress')}
             style={[
@@ -416,6 +552,74 @@ export const FarmerTasksScreen = () => {
               </View>
             )}
           </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setSelectedFilter('emergency')}
+            style={[
+              styles.filterTab,
+              selectedFilter === 'emergency' && [
+                styles.filterTabActive,
+                { backgroundColor: colors.error + '15' }
+              ],
+            ]}
+          >
+            <Body
+              color={selectedFilter === 'emergency' ? colors.error : colors.textSecondary}
+              style={styles.filterTabText}
+            >
+              Khẩn cấp
+            </Body>
+            {filterCounts['emergency'] > 0 && (
+              <View style={[
+                styles.filterBadge,
+                selectedFilter === 'emergency' && styles.filterBadgeActive,
+                { backgroundColor: selectedFilter === 'emergency' ? colors.error : greenTheme.border }
+              ]}>
+                <BodySmall style={[
+                  styles.filterBadgeText,
+                  selectedFilter === 'emergency' && styles.filterBadgeTextActive,
+                  { color: selectedFilter === 'emergency' ? colors.white : colors.error }
+                ]}>
+                  {filterCounts['emergency']}
+                </BodySmall>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setSelectedFilter('emergency-approval')}
+            style={[
+              styles.filterTab,
+              styles.filterTabLast,
+              selectedFilter === 'emergency-approval' && [
+                styles.filterTabActive,
+                { backgroundColor: '#EF4444' + '15' }
+              ],
+            ]}
+          >
+            <Body
+              color={selectedFilter === 'emergency-approval' ? '#EF4444' : colors.textSecondary}
+              style={styles.filterTabText}
+            >
+              Hoàn thành khẩn cấp
+            </Body>
+            {filterCounts['emergency-approval'] > 0 && (
+              <View style={[
+                styles.filterBadge,
+                selectedFilter === 'emergency-approval' && styles.filterBadgeActive,
+                { backgroundColor: selectedFilter === 'emergency-approval' ? '#EF4444' : greenTheme.border }
+              ]}>
+                <BodySmall style={[
+                  styles.filterBadgeText,
+                  selectedFilter === 'emergency-approval' && styles.filterBadgeTextActive,
+                  { color: selectedFilter === 'emergency-approval' ? colors.white : '#EF4444' }
+                ]}>
+                  {filterCounts['emergency-approval']}
+                </BodySmall>
+              </View>
+            )}
+          </TouchableOpacity>
+          </ScrollView>
         </View>
 
         <Spacer size="xl" />
@@ -618,10 +822,46 @@ export const FarmerTasksScreen = () => {
                         </View>
                       </TouchableOpacity>
                     )}
-                    {/* Show Confirm Completion for in-progress tasks (not approved, not completed) */}
+                    {/* Show Confirm Completion and Report Issue for in-progress tasks (not approved, not completed) */}
                     {normalizeStatus(task.status) === 'in-progress' && (
+                      <>
+                        <TouchableOpacity
+                          style={styles.primaryActionButton}
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            handleConfirmTask(task);
+                          }}
+                        >
+                          <View style={styles.primaryActionButtonContent}>
+                            <BodySemibold style={styles.primaryActionButtonText}>
+                              Xác nhận hoàn thành
+                            </BodySemibold>
+                          </View>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.secondaryActionButton, { borderColor: colors.error }]}
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            router.push({
+                              pathname: '/farmer/reports/create',
+                              params: {
+                                plotCultivationId: task.plotCultivationId,
+                                affectedCultivationTaskId: task.cultivationTaskId,
+                              },
+                            } as any);
+                          }}
+                        >
+                          <Ionicons name="warning-outline" size={16} color={colors.error} style={{ marginRight: 4 }} />
+                          <BodySemibold style={[styles.secondaryActionButtonText, { color: colors.error }]}>
+                            Báo cáo vấn đề
+                          </BodySemibold>
+                        </TouchableOpacity>
+                      </>
+                    )}
+                    {/* Show Confirm Completion for emergency tasks */}
+                    {normalizeStatus(task.status) === 'emergency' && (
                       <TouchableOpacity
-                        style={styles.primaryActionButton}
+                        style={[styles.primaryActionButton, { backgroundColor: colors.error }]}
                         onPress={(e) => {
                           e.stopPropagation();
                           handleConfirmTask(task);
@@ -745,6 +985,10 @@ const styles = StyleSheet.create({
   headerRight: {
     width: scale(40),
   },
+  filterWrapper: {
+    width: '100%',
+    minHeight: scale(50),
+  },
   filterContainer: {
     flexDirection: 'row',
     backgroundColor: greenTheme.cardBackground,
@@ -757,16 +1001,21 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 2,
+    alignItems: 'center',
+    paddingHorizontal: getSpacing(spacing.xs),
   },
   filterTab: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: getSpacing(spacing.sm),
-    paddingHorizontal: getSpacing(spacing.xs),
+    paddingHorizontal: getSpacing(spacing.md),
     borderRadius: moderateScale(borderRadius.md),
-    gap: getSpacing(spacing.xs),
+    marginRight: getSpacing(spacing.xs),
+    minWidth: scale(100),
+  },
+  filterTabLast: {
+    marginRight: 0,
   },
   filterTabActive: {
     backgroundColor: greenTheme.primaryLighter,
@@ -957,6 +1206,28 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: getFontSize(15),
     fontWeight: '700',
+  },
+  secondaryActionButton: {
+    flex: 1,
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: moderateScale(borderRadius.lg),
+    borderWidth: 2,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  secondaryActionButtonContent: {
+    paddingVertical: getSpacing(spacing.md),
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+  },
+  secondaryActionButtonText: {
+    fontSize: getFontSize(15),
+    fontWeight: '700',
+    color: greenTheme.primary,
   },
   completedBanner: {
     flex: 1,

@@ -20,9 +20,6 @@ platform :ios, podfile_properties['ios.deploymentTarget'] || '15.1'
 
 prepare_react_native_project!
 
-# @generated begin @rnmapbox/maps-rnmapboxmapsimpl - expo prebuild (DO NOT MODIFY) sync-c665008e4e4f1e0b97c86cc5004b08a73bf9ddd4
-$RNMapboxMapsDownloadToken = 'sk.eyJ1IjoiZHVjbmd1eWVuMTIwNDA0IiwiYSI6ImNtamF4d2RmOTA1ajczY3F4dHNqbXhkOGwifQ.1ytcAiJBgUe-d2MNShpoZw'
-# @generated end @rnmapbox/maps-rnmapboxmapsimpl
 target 'MyApp' do
   use_expo_modules!
 

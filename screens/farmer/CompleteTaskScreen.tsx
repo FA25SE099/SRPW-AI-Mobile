@@ -34,9 +34,9 @@ import {
   Input,
 } from '../../components/ui';
 import { CreateFarmLogRequest, FarmLogMaterialRequest, TodayTaskResponse } from '../../types/api';
-import { createFarmLog } from '../../libs/farmer';
+import { createFarmLog, getCultivationTaskDetail } from '../../libs/farmer';
 import { useUser } from '../../libs/auth';
-import { uploadFile } from '../../libs/api-client';
+import { useQuery } from '@tanstack/react-query';
 
 export const CompleteTaskScreen = () => {
   const router = useRouter();
@@ -47,8 +47,20 @@ export const CompleteTaskScreen = () => {
     taskName: string;
     plotSoThuaSoTo: string;
     materials?: string; // JSON string of materials array
+    plotArea?: string; // Plot area in hectares
   }>();
   const { data: user } = useUser();
+
+  // Get plot area from params or fetch from task detail
+  const plotAreaFromParams = params.plotArea ? parseFloat(params.plotArea) : null;
+  
+  const { data: taskDetail } = useQuery({
+    queryKey: ['cultivation-task-detail', params.taskId],
+    queryFn: () => getCultivationTaskDetail(params.taskId || ''),
+    enabled: !plotAreaFromParams && !!params.taskId,
+  });
+
+  const plotArea = plotAreaFromParams ?? taskDetail?.plotArea ?? null;
 
   const [formData, setFormData] = useState<CreateFarmLogRequest>({
     cultivationTaskId: params.taskId || '',
@@ -66,6 +78,7 @@ export const CompleteTaskScreen = () => {
   const [materialQuantities, setMaterialQuantities] = useState<{
     [key: string]: { quantity: string; notes: string };
   }>({});
+  const [areaError, setAreaError] = useState<string | null>(null);
 
   const createFarmLogMutation = useMutation({
     mutationFn: async () => {
@@ -84,30 +97,43 @@ export const CompleteTaskScreen = () => {
         });
       }
 
-      const data = new FormData();
-      data.append('CultivationTaskId', formData.cultivationTaskId);
-      data.append('PlotCultivationId', formData.plotCultivationId);
-      if (formData.workDescription) data.append('WorkDescription', formData.workDescription);
-      if (formData.actualAreaCovered) data.append('ActualAreaCovered', formData.actualAreaCovered.toString());
-      if (formData.serviceCost) data.append('ServiceCost', formData.serviceCost.toString());
-      if (formData.serviceNotes) data.append('ServiceNotes', formData.serviceNotes);
-      if (formData.weatherConditions) data.append('WeatherConditions', formData.weatherConditions);
-      if (formData.interruptionReason) data.append('InterruptionReason', formData.interruptionReason);
-      if (user?.id) data.append('FarmerId', user.id);
+      // Build request body
+      const request: CreateFarmLogRequest = {
+        cultivationTaskId: formData.cultivationTaskId,
+        plotCultivationId: formData.plotCultivationId,
+        workDescription: formData.workDescription || null,
+        actualAreaCovered: formData.actualAreaCovered,
+        serviceCost: formData.serviceCost,
+        serviceNotes: formData.serviceNotes || null,
+        weatherConditions: formData.weatherConditions || null,
+        interruptionReason: formData.interruptionReason || null,
+        materials: materials.length > 0 ? materials : undefined,
+        farmerId: user?.id || null,
+      };
 
-      if (materials.length > 0) {
-        data.append('Materials', JSON.stringify(materials));
-      }
+      // Normalize images similar to CreateReportScreen so each has a valid content-type
+      const normalizedImages = images.map((img, index) => {
+        const uri = img.uri;
+        const fileName = img.name || uri.split('/').pop() || `proof_${index}.jpg`;
+        const ext = fileName.split('.').pop()?.toLowerCase() || 'jpg';
 
-      images.forEach((img, index) => {
-        data.append('ProofImages', {
-          uri: img.uri,
-          type: img.type || 'image/jpeg',
-          name: img.name || `proof_${index}.jpg`,
-        } as any);
+        let type: string;
+        if (ext === 'png') {
+          type = 'image/png';
+        } else {
+          // Treat jpg / jpeg / others as jpeg
+          type = 'image/jpeg';
+        }
+
+        return {
+          uri,
+          type,
+          name: fileName,
+        };
       });
 
-      return uploadFile('/Farmer/create-farm-log', data);
+      console.log('📤 [createFarmLog] Using shared API on', Platform.OS);
+      return createFarmLog(request, normalizedImages);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['today-tasks'] });
@@ -119,7 +145,28 @@ export const CompleteTaskScreen = () => {
       ]);
     },
     onError: (error: any) => {
-      Alert.alert('Lỗi', error.message || 'Không thể gửi nhật ký nông trại');
+      console.error('❌ [createFarmLog] Error:', {
+        message: error?.message,
+        status: error?.response?.status || error?.status,
+        statusText: error?.response?.statusText || error?.statusText,
+        data: error?.response?.data,
+        url: error?.config?.url || error?.responseURL,
+        method: error?.config?.method || 'POST',
+        platform: Platform.OS,
+      });
+      
+      let errorMessage = 'Không thể gửi nhật ký nông trại';
+      const status = error?.response?.status || error?.status;
+      
+      if (status === 405) {
+        errorMessage = 'Lỗi 405: Phương thức HTTP không được phép. Vui lòng kiểm tra endpoint API.';
+      } else if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      Alert.alert('Lỗi', `Status: ${status || 'Unknown'}\n${errorMessage}`);
     },
   });
 
@@ -202,6 +249,17 @@ export const CompleteTaskScreen = () => {
       return;
     }
 
+    // Validate area before submitting
+    if (
+      formData.actualAreaCovered !== null &&
+      formData.actualAreaCovered !== undefined &&
+      plotArea !== null &&
+      formData.actualAreaCovered > plotArea
+    ) {
+      Alert.alert('Lỗi', `Diện tích thực tế không được vượt quá diện tích thửa đất (${plotArea.toFixed(2)} ha)`);
+      return;
+    }
+
     createFarmLogMutation.mutate();
   };
 
@@ -253,22 +311,44 @@ export const CompleteTaskScreen = () => {
           />
 
           {/* Actual Area Covered */}
-          <Input
-            label="Diện tích thực tế (ha)"
-            placeholder="0.00"
-            value={formData.actualAreaCovered?.toString() || ''}
-            onChangeText={(text) => {
-              const num = parseFloat(text);
-              setFormData({
-                ...formData,
-                actualAreaCovered: isNaN(num) ? null : num,
-              });
-            }}
-            keyboardType="decimal-pad"
-          />
+          <View>
+            <Input
+              label="Diện tích thực tế (ha)"
+              placeholder="0.00"
+              value={formData.actualAreaCovered?.toString() || ''}
+              onChangeText={(text) => {
+                const num = parseFloat(text);
+                const actualArea = isNaN(num) ? null : num;
+                
+                // Validate against plot area
+                if (actualArea !== null && plotArea !== null && actualArea > plotArea) {
+                  setAreaError(`Diện tích thực tế không được vượt quá diện tích thửa đất (${plotArea.toFixed(2)} ha)`);
+                } else {
+                  setAreaError(null);
+                }
+                
+                setFormData({
+                  ...formData,
+                  actualAreaCovered: actualArea,
+                });
+              }}
+              keyboardType="decimal-pad"
+              style={areaError ? { borderColor: colors.error } : undefined}
+            />
+            {areaError && (
+              <BodySmall color={colors.error} style={styles.errorText}>
+                {areaError}
+              </BodySmall>
+            )}
+            {plotArea !== null && !areaError && (
+              <BodySmall color={colors.textSecondary} style={styles.hintText}>
+                Diện tích thửa đất: {plotArea.toFixed(2)} ha
+              </BodySmall>
+            )}
+          </View>
 
           {/* Service Cost */}
-          <Input
+          {/* <Input
             label="Chi phí dịch vụ (₫)"
             placeholder="0"
             value={formData.serviceCost?.toString() || ''}
@@ -280,10 +360,10 @@ export const CompleteTaskScreen = () => {
               });
             }}
             keyboardType="numeric"
-          />
+          /> */}
 
           {/* Service Notes */}
-          <Input
+          {/* <Input
             label="Ghi chú dịch vụ"
             placeholder="Ghi chú thêm về dịch vụ..."
             value={formData.serviceNotes || ''}
@@ -291,7 +371,7 @@ export const CompleteTaskScreen = () => {
             multiline
             numberOfLines={3}
             style={styles.textArea}
-          />
+          /> */}
 
           {/* Weather Conditions */}
           <Input
@@ -547,5 +627,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: greenTheme.cardBackground,
+  },
+  errorText: {
+    marginTop: getSpacing(spacing.xs),
+    fontSize: getFontSize(12),
+  },
+  hintText: {
+    marginTop: getSpacing(spacing.xs),
+    fontSize: getFontSize(12),
   },
 });

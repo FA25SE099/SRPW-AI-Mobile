@@ -3,7 +3,7 @@
  * Record and view farm activities
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -11,10 +11,14 @@ import {
   TouchableOpacity,
   SafeAreaView,
   useWindowDimensions,
+  Image,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import dayjs from 'dayjs';
+import { useQuery } from '@tanstack/react-query';
 import { colors, spacing, borderRadius, shadows } from '../../theme';
 import { scale, moderateScale, getFontSize, getSpacing, verticalScale } from '../../utils/responsive';
 import {
@@ -29,80 +33,205 @@ import {
   Spacer,
   Button,
 } from '../../components/ui';
-import { FarmActivity } from '../../types/api';
-
-// Mock data
-const mockActivities: FarmActivity[] = [
-  {
-    id: '1',
-    createdAt: Date.now(),
-    fieldId: '1',
-    fieldName: 'Field A',
-    activityType: 'fertilizing',
-    date: '2024-01-15',
-    materialId: '1',
-    materialName: 'NPK 20-20-20',
-    quantity: 50,
-    unit: 'kg',
-    cost: 150000,
-    notes: 'Applied evenly across the field',
-  },
-  {
-    id: '2',
-    createdAt: Date.now(),
-    fieldId: '2',
-    fieldName: 'Field B',
-    activityType: 'spraying',
-    date: '2024-01-14',
-    materialId: '2',
-    materialName: 'Pesticide X',
-    quantity: 2,
-    unit: 'liters',
-    cost: 85000,
-  },
-  {
-    id: '3',
-    createdAt: Date.now(),
-    fieldId: '3',
-    fieldName: 'Field C',
-    activityType: 'irrigation',
-    date: '2024-01-13',
-    quantity: 100,
-    unit: 'm³',
-    cost: 25000,
-  },
-];
-
-const activityTypes = [
-  { value: 'planting', label: 'Gieo trồng', icon: { name: 'seed-outline', library: 'MaterialCommunityIcons' } },
-  { value: 'fertilizing', label: 'Bón phân', icon: { name: 'water-outline', library: 'Ionicons' } },
-  { value: 'spraying', label: 'Phun thuốc', icon: { name: 'spray', library: 'MaterialCommunityIcons' } },
-  { value: 'irrigation', label: 'Tưới tiêu', icon: { name: 'water', library: 'Ionicons' } },
-  { value: 'harvesting', label: 'Thu hoạch', icon: { name: 'leaf-outline', library: 'Ionicons' } },
-];
+import { FarmLogDetailResponse, FarmerPlot, PlotCultivationPlan } from '../../types/api';
+import { getFarmLogsByCultivation, getCurrentFarmerPlots, getPlotCultivationPlans } from '../../libs/farmer';
 
 export const FarmLogScreen = () => {
   const router = useRouter();
-  const [selectedFilter, setSelectedFilter] = useState<string>('all');
+  const params = useLocalSearchParams<{
+    plotCultivationId?: string;
+  }>();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [allFarmLogs, setAllFarmLogs] = useState<FarmLogDetailResponse[]>([]);
+  const [selectedPlotCultivationId, setSelectedPlotCultivationId] = useState<string | null>(
+    params.plotCultivationId || null,
+  );
+  const [selectedPlotId, setSelectedPlotId] = useState<string | null>(null);
+  const [showPlotPicker, setShowPlotPicker] = useState(false);
+  const [showPlanPicker, setShowPlanPicker] = useState(false);
+  const pageSize = 10;
 
-  const getActivityIcon = (type: string) => {
-    const activity = activityTypes.find((a) => a.value === type);
-    return activity?.icon || { name: 'document-text-outline', library: 'Ionicons' };
+  // Always fetch plots to show plot selector
+  const {
+    data: plots,
+    isLoading: plotsLoading,
+    error: plotsError,
+  } = useQuery({
+    queryKey: ['farmer-plots', { page: 1, size: 100 }],
+    queryFn: () => getCurrentFarmerPlots({ currentPage: 1, pageSize: 100 }),
+  });
+
+  // Fetch cultivation plans for the selected plot
+  const {
+    data: cultivationPlansData,
+    isLoading: plansLoading,
+  } = useQuery({
+    queryKey: ['plot-plans', selectedPlotId],
+    queryFn: () => {
+      if (!selectedPlotId) return null;
+      return getPlotCultivationPlans(selectedPlotId, { currentPage: 1, pageSize: 100 });
+    },
+    enabled: Boolean(selectedPlotId),
+  });
+
+  // Auto-select first plot if not provided and plots are loaded
+  useEffect(() => {
+    if (!selectedPlotId && plots && plots.length > 0) {
+      setSelectedPlotId(plots[0].plotId);
+    }
+  }, [plots, selectedPlotId]);
+
+  // Auto-select first cultivation plan if available
+  useEffect(() => {
+    if (!selectedPlotCultivationId && cultivationPlansData?.data && cultivationPlansData.data.length > 0) {
+      setSelectedPlotCultivationId(cultivationPlansData.data[0].plotCultivationId);
+    }
+  }, [cultivationPlansData, selectedPlotCultivationId]);
+
+  // Fetch farm logs by cultivation
+  const { data, isLoading, isError, refetch, isRefetching } = useQuery({
+    queryKey: ['farm-logs-by-cultivation', selectedPlotCultivationId, currentPage],
+    queryFn: () => {
+      if (!selectedPlotCultivationId) {
+        throw new Error('Plot cultivation ID is required');
+      }
+      return getFarmLogsByCultivation({
+        plotCultivationId: selectedPlotCultivationId,
+        currentPage,
+        pageSize,
+      });
+    },
+    enabled: Boolean(selectedPlotCultivationId),
+  });
+
+  // Sync data from query result to local state
+  useEffect(() => {
+    if (data) {
+      if (currentPage === 1) {
+        setAllFarmLogs(data.data || []);
+      } else {
+        setAllFarmLogs((prev) => [...prev, ...(data.data || [])]);
+      }
+    }
+  }, [data, currentPage]);
+
+  const farmLogs = allFarmLogs;
+  const hasMore = data?.hasNext || false;
+
+  // Get selected plot for display
+  const selectedPlot = plots?.find((p: FarmerPlot) => p.plotId === selectedPlotId);
+  const getPlotDisplayName = (plot: FarmerPlot | undefined) => {
+    if (!plot) return 'Chọn thửa đất';
+    if (plot.soThua && plot.soTo) {
+      return `So thua ${plot.soThua} / So to ${plot.soTo}`;
+    }
+    return plot.groupName || 'Thửa đất';
   };
 
-  const formatCurrency = (amount: number) => {
+  const getActivityIcon = (taskName: string) => {
+    const lowerName = taskName.toLowerCase();
+    if (lowerName.includes('bón') || lowerName.includes('phân')) {
+      return { name: 'water-outline', library: 'Ionicons' };
+    }
+    if (lowerName.includes('phun') || lowerName.includes('thuốc')) {
+      return { name: 'spray', library: 'MaterialCommunityIcons' };
+    }
+    if (lowerName.includes('tưới') || lowerName.includes('tiêu')) {
+      return { name: 'water', library: 'Ionicons' };
+    }
+    if (lowerName.includes('thu hoạch')) {
+      return { name: 'leaf-outline', library: 'Ionicons' };
+    }
+    if (lowerName.includes('gieo') || lowerName.includes('trồng')) {
+      return { name: 'seed-outline', library: 'MaterialCommunityIcons' };
+    }
+    return { name: 'document-text-outline', library: 'Ionicons' };
+  };
+
+  const formatCurrency = (amount: number | null | undefined) => {
+    if (!amount) return '0₫';
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
     }).format(amount);
   };
 
-  const filteredActivities =
-    selectedFilter === 'all'
-      ? mockActivities
-      : mockActivities.filter((a) => a.activityType === selectedFilter);
+  const handleLoadMore = () => {
+    if (hasMore && !isLoading) {
+      setCurrentPage((prev) => prev + 1);
+    }
+  };
 
-  const totalCost = filteredActivities.reduce((sum, a) => sum + a.cost, 0);
+  // Show loading/selection UI if plotCultivationId is missing
+  if (!selectedPlotCultivationId) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Container padding="lg">
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Body>←</Body>
+            </TouchableOpacity>
+            <H3 style={styles.headerTitle}>Nhật ký nông trại</H3>
+            <View style={styles.addButton} />
+          </View>
+          <Spacer size="xl" />
+          
+          {plotsLoading || plansLoading ? (
+            <View style={styles.centerContainer}>
+              <ActivityIndicator size="large" color={greenTheme.primary} />
+              <Spacer size="md" />
+              <BodySmall color={colors.textSecondary}>Đang tải thông tin...</BodySmall>
+            </View>
+          ) : plotsError ? (
+            <Card variant="elevated" style={styles.errorCard}>
+              <BodySemibold>Không thể tải thông tin</BodySemibold>
+              <Spacer size="xs" />
+              <BodySmall color={colors.textSecondary}>
+                Vui lòng kiểm tra kết nối của bạn và thử lại.
+              </BodySmall>
+            </Card>
+          ) : cultivationPlansData?.data && cultivationPlansData.data.length > 0 ? (
+            <Card variant="elevated" style={styles.selectionCard}>
+              <BodySemibold style={styles.selectionTitle}>Chọn kế hoạch canh tác</BodySemibold>
+              <Spacer size="md" />
+              {cultivationPlansData.data.map((plan: PlotCultivationPlan) => (
+                <TouchableOpacity
+                  key={plan.plotCultivationId}
+                  onPress={() => {
+                    setSelectedPlotCultivationId(plan.plotCultivationId);
+                    setCurrentPage(1);
+                    setAllFarmLogs([]);
+                  }}
+                  style={styles.planOption}
+                >
+                  <View style={styles.planOptionContent}>
+                    <BodySemibold>{plan.productionPlanName}</BodySemibold>
+                    <BodySmall color={colors.textSecondary}>
+                      {plan.seasonName} • {plan.riceVarietyName}
+                    </BodySmall>
+                    {plan.area && (
+                      <BodySmall color={colors.textSecondary}>
+                        Diện tích: {plan.area.toFixed(2)} ha
+                      </BodySmall>
+                    )}
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color={greenTheme.primary} />
+                </TouchableOpacity>
+              ))}
+            </Card>
+          ) : (
+            <Card variant="elevated" style={styles.errorCard}>
+              <BodySemibold>Không có kế hoạch canh tác</BodySemibold>
+              <Spacer size="xs" />
+              <BodySmall color={colors.textSecondary}>
+                Chưa có kế hoạch canh tác nào để xem nhật ký.
+              </BodySmall>
+            </Card>
+          )}
+        </Container>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -113,136 +242,357 @@ export const FarmLogScreen = () => {
             <Body>←</Body>
           </TouchableOpacity>
           <H3 style={styles.headerTitle}>Nhật ký nông trại</H3>
-          <TouchableOpacity
-            onPress={() => router.push('/farmer/farm-log/add' as any)}
-            style={styles.addButton}
-          >
-            <Body color={greenTheme.primary} style={{ fontSize: getFontSize(24), fontWeight: '700' }}>+</Body>
-          </TouchableOpacity>
+          <View style={styles.addButton} />
         </View>
 
         <Spacer size="lg" />
 
-        {/* Summary Card */}
-        <Card variant="elevated" style={styles.summaryCard}>
-          <View style={styles.summaryRow}>
-            <View>
-              <BodySmall color={colors.textSecondary}>Tổng hoạt động</BodySmall>
-              <BodySemibold style={styles.summaryNumber}>
-                {filteredActivities.length}
-              </BodySemibold>
-            </View>
-            <View>
-              <BodySmall color={colors.textSecondary}>Tổng chi phí</BodySmall>
-              <BodySemibold style={styles.summaryNumber} color={greenTheme.primary}>
-                {formatCurrency(totalCost)}
-              </BodySemibold>
-            </View>
+        {/* Plot Selector */}
+        {plots && plots.length > 0 && (
+          <>
+            <TouchableOpacity
+              onPress={() => setShowPlotPicker(!showPlotPicker)}
+              style={styles.selector}
+            >
+              <View style={styles.selectorContent}>
+                <Ionicons name="location-outline" size={20} color={greenTheme.primary} />
+                <View style={styles.selectorText}>
+                  <BodySmall color={colors.textSecondary}>Thửa đất</BodySmall>
+                  <BodySemibold>
+                    {getPlotDisplayName(selectedPlot)}
+                  </BodySemibold>
+                </View>
+              </View>
+              <Ionicons 
+                name={showPlotPicker ? 'chevron-up' : 'chevron-down'} 
+                size={20} 
+                color={greenTheme.primary} 
+              />
+            </TouchableOpacity>
+            {showPlotPicker && (
+              <Card variant="elevated" style={styles.pickerCard}>
+                <ScrollView nestedScrollEnabled style={{ maxHeight: verticalScale(200) }}>
+                  {plots.map((plot: FarmerPlot) => (
+                    <TouchableOpacity
+                      key={plot.plotId}
+                      onPress={() => {
+                        setSelectedPlotId(plot.plotId);
+                        setSelectedPlotCultivationId(null); // Reset plan selection
+                        setCurrentPage(1);
+                        setAllFarmLogs([]);
+                        setShowPlotPicker(false);
+                      }}
+                      style={[
+                        styles.pickerOption,
+                        selectedPlotId === plot.plotId && styles.pickerOptionSelected,
+                      ]}
+                    >
+                      <View style={styles.planOptionContent}>
+                        <BodySemibold>
+                          {getPlotDisplayName(plot)}
+                        </BodySemibold>
+                        <BodySmall color={colors.textSecondary}>
+                          {plot.area.toFixed(2)} ha
+                        </BodySmall>
+                      </View>
+                      {selectedPlotId === plot.plotId && (
+                        <Ionicons name="checkmark-circle" size={20} color={greenTheme.primary} />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </Card>
+            )}
+            <Spacer size="md" />
+          </>
+        )}
+
+        {/* Cultivation Plan Selector */}
+        {cultivationPlansData?.data && cultivationPlansData.data.length > 0 && (
+          <>
+            <TouchableOpacity
+              onPress={() => setShowPlanPicker(!showPlanPicker)}
+              style={styles.selector}
+            >
+              <View style={styles.selectorContent}>
+                <Ionicons name="calendar-outline" size={20} color={greenTheme.primary} />
+                <View style={styles.selectorText}>
+                  <BodySmall color={colors.textSecondary}>Kế hoạch canh tác</BodySmall>
+                  <BodySemibold>
+                    {cultivationPlansData.data.find(
+                      (p: PlotCultivationPlan) => p.plotCultivationId === selectedPlotCultivationId,
+                    )?.productionPlanName || 'Chọn kế hoạch'}
+                  </BodySemibold>
+                </View>
+              </View>
+              <Ionicons 
+                name={showPlanPicker ? 'chevron-up' : 'chevron-down'} 
+                size={20} 
+                color={greenTheme.primary} 
+              />
+            </TouchableOpacity>
+            {showPlanPicker && (
+              <Card variant="elevated" style={styles.pickerCard}>
+                <ScrollView nestedScrollEnabled style={{ maxHeight: verticalScale(200) }}>
+                  {cultivationPlansData.data.map((plan: PlotCultivationPlan) => (
+                    <TouchableOpacity
+                      key={plan.plotCultivationId}
+                      onPress={() => {
+                        setSelectedPlotCultivationId(plan.plotCultivationId);
+                        setCurrentPage(1);
+                        setAllFarmLogs([]);
+                        setShowPlanPicker(false);
+                      }}
+                      style={[
+                        styles.pickerOption,
+                        selectedPlotCultivationId === plan.plotCultivationId && styles.pickerOptionSelected,
+                      ]}
+                    >
+                      <View style={styles.planOptionContent}>
+                        <BodySemibold>{plan.productionPlanName}</BodySemibold>
+                        <BodySmall color={colors.textSecondary}>
+                          {plan.seasonName} • {plan.riceVarietyName}
+                        </BodySmall>
+                        {plan.area && (
+                          <BodySmall color={colors.textSecondary}>
+                            Diện tích: {plan.area.toFixed(2)} ha
+                          </BodySmall>
+                        )}
+                      </View>
+                      {selectedPlotCultivationId === plan.plotCultivationId && (
+                        <Ionicons name="checkmark-circle" size={20} color={greenTheme.primary} />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </Card>
+            )}
+            <Spacer size="lg" />
+          </>
+        )}
+
+        {/* Loading state when selecting */}
+        {(plotsLoading || plansLoading) && !selectedPlotCultivationId && (
+          <View style={styles.centerContainer}>
+            <ActivityIndicator size="large" color={greenTheme.primary} />
+            <Spacer size="md" />
+            <BodySmall color={colors.textSecondary}>Đang tải thông tin...</BodySmall>
           </View>
-        </Card>
+        )}
+
+        {/* Error state */}
+        {plotsError && (
+          <Card variant="elevated" style={styles.errorCard}>
+            <BodySemibold>Không thể tải thông tin</BodySemibold>
+            <Spacer size="xs" />
+            <BodySmall color={colors.textSecondary}>
+              Vui lòng kiểm tra kết nối của bạn và thử lại.
+            </BodySmall>
+          </Card>
+        )}
+
+        {/* Show message if no plan selected */}
+        {!selectedPlotCultivationId && !plotsLoading && !plansLoading && cultivationPlansData?.data && cultivationPlansData.data.length === 0 && (
+          <Card variant="elevated" style={styles.errorCard}>
+            <BodySemibold>Không có kế hoạch canh tác</BodySemibold>
+            <Spacer size="xs" />
+            <BodySmall color={colors.textSecondary}>
+              Thửa đất đã chọn chưa có kế hoạch canh tác nào.
+            </BodySmall>
+          </Card>
+        )}
 
         <Spacer size="lg" />
 
-        {/* Filter Buttons */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterContainer}
-        >
-          <TouchableOpacity
-            onPress={() => setSelectedFilter('all')}
-            style={[
-              styles.filterButton,
-              selectedFilter === 'all' && styles.filterButtonActive,
-            ]}
-          >
-            <BodySmall
-              color={selectedFilter === 'all' ? colors.white : colors.textPrimary}
-            >
-              Tất cả
-            </BodySmall>
-          </TouchableOpacity>
-          {activityTypes.map((type) => (
-            <TouchableOpacity
-              key={type.value}
-              onPress={() => setSelectedFilter(type.value)}
-              style={[
-                styles.filterButton,
-                selectedFilter === type.value && styles.filterButtonActive,
-              ]}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                {type.icon.library === 'Ionicons' ? (
-                  <Ionicons name={type.icon.name as any} size={16} color={selectedFilter === type.value ? colors.white : colors.textPrimary} />
-                ) : (
-                  <MaterialCommunityIcons name={type.icon.name as any} size={16} color={selectedFilter === type.value ? colors.white : colors.textPrimary} />
-                )}
-                <BodySmall
-                  color={selectedFilter === type.value ? colors.white : colors.textPrimary}
-                >
-                  {type.label}
-                </BodySmall>
+        {/* Summary Card */}
+        {!isLoading && farmLogs.length > 0 && (
+          <Card variant="elevated" style={styles.summaryCard}>
+            <View style={styles.summaryRow}>
+              <View>
+                <BodySmall color={colors.textSecondary}>Tổng nhật ký</BodySmall>
+                <BodySemibold style={styles.summaryNumber}>
+                  {data?.totalCount || farmLogs.length}
+                </BodySemibold>
               </View>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+              <View>
+                <BodySmall color={colors.textSecondary}>Hoàn thành</BodySmall>
+                <BodySemibold style={styles.summaryNumber} color={greenTheme.primary}>
+                  {farmLogs.filter(log => log.completionPercentage === 100).length}
+                </BodySemibold>
+              </View>
+            </View>
+          </Card>
+        )}
 
-        <Spacer size="xl" />
+        <Spacer size="lg" />
 
-        {/* Activities List */}
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {filteredActivities.map((activity) => (
-            <TouchableOpacity key={activity.id}>
-              <Card variant="elevated" style={styles.activityCard}>
-                <View style={styles.activityCardHeader}>
-                  <View style={styles.activityIcon}>
-                    {(() => {
-                      const icon = getActivityIcon(activity.activityType);
-                      return icon.library === 'Ionicons' ? (
+        {/* Loading State */}
+        {isLoading && farmLogs.length === 0 && (
+          <View style={styles.centerContainer}>
+            <ActivityIndicator size="large" color={greenTheme.primary} />
+            <Spacer size="md" />
+            <BodySmall color={colors.textSecondary}>Đang tải nhật ký...</BodySmall>
+          </View>
+        )}
+
+        {/* Error State */}
+        {isError && farmLogs.length === 0 && (
+          <Card variant="elevated" style={styles.errorCard}>
+            <BodySemibold>Không thể tải nhật ký</BodySemibold>
+            <Spacer size="xs" />
+            <BodySmall color={colors.textSecondary}>
+              Vui lòng kiểm tra kết nối của bạn và thử lại.
+            </BodySmall>
+            <Spacer size="md" />
+            <Button onPress={() => {
+              setCurrentPage(1);
+              setAllFarmLogs([]);
+              refetch();
+            }} size="sm">
+              Thử lại
+            </Button>
+          </Card>
+        )}
+
+        {/* Farm Logs List */}
+        <ScrollView 
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl 
+              refreshing={isRefetching} 
+              onRefresh={() => {
+                setCurrentPage(1);
+                setAllFarmLogs([]);
+                refetch();
+              }} 
+            />
+          }
+        >
+          {farmLogs.length === 0 && !isLoading && (
+            <Card variant="flat" style={styles.emptyState}>
+              <Ionicons name="document-text-outline" size={48} color={colors.textSecondary} />
+              <Spacer size="md" />
+              <BodySemibold>Chưa có nhật ký</BodySemibold>
+              <Spacer size="xs" />
+              <BodySmall color={colors.textSecondary} style={styles.emptyText}>
+                Các nhật ký nông trại sẽ hiển thị ở đây.
+              </BodySmall>
+            </Card>
+          )}
+
+          {farmLogs.map((log) => {
+            const icon = getActivityIcon(log.cultivationTaskName);
+            return (
+              <TouchableOpacity key={log.farmLogId}>
+                <Card variant="elevated" style={styles.activityCard}>
+                  <View style={styles.activityCardHeader}>
+                    <View style={styles.activityIcon}>
+                      {icon.library === 'Ionicons' ? (
                         <Ionicons name={icon.name as any} size={24} color={greenTheme.primary} />
                       ) : (
                         <MaterialCommunityIcons name={icon.name as any} size={24} color={greenTheme.primary} />
-                      );
-                    })()}
+                      )}
+                    </View>
+                    <View style={styles.activityHeaderInfo}>
+                      <BodySemibold>{log.cultivationTaskName}</BodySemibold>
+                      <BodySmall color={colors.textSecondary}>
+                        {log.plotName}
+                      </BodySmall>
+                      <BodySmall color={colors.textSecondary}>
+                        {dayjs(log.loggedDate).format('DD/MM/YYYY HH:mm')}
+                      </BodySmall>
+                    </View>
+                    <Badge
+                      variant="primary"
+                      size="sm"
+                      style={
+                        log.completionPercentage === 100 
+                          ? styles.completionBadgeFull 
+                          : styles.completionBadge
+                      }
+                    >
+                      {log.completionPercentage}%
+                    </Badge>
                   </View>
-                  <View style={styles.activityHeaderInfo}>
-                    <BodySemibold>{activity.fieldName}</BodySemibold>
-                    <BodySmall color={colors.textSecondary}>
-                      {dayjs(activity.date).format('MMM D, YYYY')}
-                    </BodySmall>
+                  <Spacer size="md" />
+                  <View style={styles.activityDetails}>
+                    {log.workDescription && (
+                      <View style={styles.activityDetailRow}>
+                        <BodySmall color={colors.textSecondary}>Mô tả:</BodySmall>
+                        <BodySemibold style={{ flex: 1, textAlign: 'right' }}>
+                          {log.workDescription}
+                        </BodySemibold>
+                      </View>
+                    )}
+                    {log.actualAreaCovered && (
+                      <View style={styles.activityDetailRow}>
+                        <BodySmall color={colors.textSecondary}>Diện tích:</BodySmall>
+                        <BodySemibold>{log.actualAreaCovered} ha</BodySemibold>
+                      </View>
+                    )}
+                    {log.weatherConditions && (
+                      <View style={styles.activityDetailRow}>
+                        <BodySmall color={colors.textSecondary}>Thời tiết:</BodySmall>
+                        <BodySemibold>{log.weatherConditions}</BodySemibold>
+                      </View>
+                    )}
+                    {log.materialsUsed && log.materialsUsed.length > 0 && (
+                      <View style={styles.materialsSection}>
+                        <BodySmall color={greenTheme.primary} style={styles.materialsTitle}>
+                          Vật liệu đã sử dụng:
+                        </BodySmall>
+                        {log.materialsUsed.map((material, index) => (
+                          <View key={index} style={styles.materialItem}>
+                            <BodySemibold>{material.materialName}</BodySemibold>
+                            <BodySmall color={colors.textSecondary}>
+                              SL: {material.actualQuantityUsed.toLocaleString()} • 
+                              Chi phí: {formatCurrency(material.actualCost)}
+                            </BodySmall>
+                            {material.notes && (
+                              <BodySmall color={colors.textSecondary} style={styles.materialNotes}>
+                                Ghi chú: {material.notes}
+                              </BodySmall>
+                            )}
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                    {log.photoUrls && log.photoUrls.length > 0 && (
+                      <View style={styles.photosSection}>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                          {log.photoUrls.map((photoUrl, index) => (
+                            <Image
+                              key={index}
+                              source={{ uri: photoUrl }}
+                              style={styles.photoThumbnail}
+                              resizeMode="cover"
+                            />
+                          ))}
+                        </ScrollView>
+                      </View>
+                    )}
                   </View>
-                  <Badge
-                    variant="primary"
-                    size="sm"
-                    style={styles.costBadge}
-                  >
-                    {formatCurrency(activity.cost)}
-                  </Badge>
-                </View>
+                </Card>
                 <Spacer size="md" />
-                <View style={styles.activityDetails}>
-                  <View style={styles.activityDetailRow}>
-                    <BodySmall color={colors.textSecondary}>Hoạt động:</BodySmall>
-                    <BodySemibold>{activity.activityType}</BodySemibold>
-                  </View>
-                  {activity.materialName && (
-                    <View style={styles.activityDetailRow}>
-                      <BodySmall color={colors.textSecondary}>Vật liệu:</BodySmall>
-                      <BodySemibold>
-                        {activity.materialName} ({activity.quantity} {activity.unit})
-                      </BodySemibold>
-                    </View>
-                  )}
-                  {activity.notes && (
-                    <View style={styles.activityNotes}>
-                      <BodySmall color={colors.textSecondary}>{activity.notes}</BodySmall>
-                    </View>
-                  )}
-                </View>
-              </Card>
+              </TouchableOpacity>
+            );
+          })}
+
+          {/* Load More Button */}
+          {hasMore && farmLogs.length > 0 && (
+            <>
               <Spacer size="md" />
-            </TouchableOpacity>
-          ))}
+              <Button
+                onPress={handleLoadMore}
+                disabled={isLoading}
+                variant="outline"
+                size="sm"
+              >
+                {isLoading ? 'Đang tải...' : 'Tải thêm'}
+              </Button>
+              <Spacer size="lg" />
+            </>
+          )}
         </ScrollView>
       </Container>
     </SafeAreaView>
@@ -320,22 +670,6 @@ const styles = StyleSheet.create({
     marginTop: getSpacing(spacing.xs),
     color: greenTheme.primary,
   },
-  filterContainer: {
-    gap: getSpacing(spacing.sm),
-    paddingRight: getSpacing(spacing.lg),
-  },
-  filterButton: {
-    paddingHorizontal: getSpacing(spacing.md),
-    paddingVertical: getSpacing(spacing.sm),
-    borderRadius: moderateScale(borderRadius.lg),
-    backgroundColor: greenTheme.primaryLighter,
-    borderWidth: 1,
-    borderColor: greenTheme.border,
-  },
-  filterButtonActive: {
-    backgroundColor: greenTheme.primary,
-    borderColor: greenTheme.primary,
-  },
   activityCard: {
     padding: getSpacing(spacing.md),
     borderRadius: moderateScale(borderRadius.lg),
@@ -383,6 +717,126 @@ const styles = StyleSheet.create({
     borderRadius: moderateScale(borderRadius.sm),
     borderWidth: 1,
     borderColor: greenTheme.border,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: getSpacing(spacing.xl * 2),
+  },
+  errorCard: {
+    padding: getSpacing(spacing.lg),
+  },
+  emptyState: {
+    padding: getSpacing(spacing.xl * 2),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    textAlign: 'center',
+  },
+  completionBadge: {
+    backgroundColor: greenTheme.primaryLight,
+  },
+  completionBadgeFull: {
+    backgroundColor: greenTheme.success,
+  },
+  materialsSection: {
+    marginTop: getSpacing(spacing.sm),
+    padding: getSpacing(spacing.sm),
+    backgroundColor: greenTheme.primaryLighter,
+    borderRadius: moderateScale(borderRadius.md),
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+  },
+  materialsTitle: {
+    fontWeight: '700',
+    marginBottom: getSpacing(spacing.xs),
+  },
+  materialItem: {
+    marginTop: getSpacing(spacing.xs),
+    paddingTop: getSpacing(spacing.xs),
+    borderTopWidth: 1,
+    borderTopColor: greenTheme.border,
+  },
+  materialNotes: {
+    marginTop: getSpacing(4),
+    fontStyle: 'italic',
+  },
+  photosSection: {
+    marginTop: getSpacing(spacing.sm),
+  },
+  photoThumbnail: {
+    width: scale(80),
+    height: scale(80),
+    borderRadius: moderateScale(borderRadius.md),
+    marginRight: getSpacing(spacing.sm),
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+  },
+  selectionCard: {
+    padding: getSpacing(spacing.lg),
+  },
+  selectionTitle: {
+    fontSize: getFontSize(18),
+    color: greenTheme.primary,
+    marginBottom: getSpacing(spacing.sm),
+  },
+  planOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: getSpacing(spacing.md),
+    marginBottom: getSpacing(spacing.sm),
+    backgroundColor: greenTheme.primaryLighter,
+    borderRadius: moderateScale(borderRadius.md),
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+  },
+  planOptionContent: {
+    flex: 1,
+    gap: getSpacing(spacing.xs),
+  },
+  selector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: getSpacing(spacing.md),
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: moderateScale(borderRadius.md),
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    marginBottom: getSpacing(spacing.sm),
+  },
+  selectorContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: getSpacing(spacing.sm),
+    flex: 1,
+  },
+  selectorText: {
+    flex: 1,
+    gap: 2,
+  },
+  pickerCard: {
+    marginTop: getSpacing(spacing.sm),
+    marginBottom: getSpacing(spacing.md),
+    padding: getSpacing(spacing.sm),
+  },
+  pickerOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: getSpacing(spacing.md),
+    marginBottom: getSpacing(spacing.xs),
+    backgroundColor: greenTheme.primaryLighter,
+    borderRadius: moderateScale(borderRadius.md),
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+  },
+  pickerOptionSelected: {
+    backgroundColor: greenTheme.primary + '20',
+    borderColor: greenTheme.primary,
   },
 });
 

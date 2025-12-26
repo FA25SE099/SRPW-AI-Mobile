@@ -32,12 +32,12 @@ import { MaterialReceiptCard } from '../../components/farmer/MaterialReceiptCard
 import { ConfirmReceiptModal } from '../../components/farmer/ConfirmReceiptModal';
 import { getPendingMaterialReceipts, confirmMaterialReceipt } from '../../libs/farmer';
 import { PendingMaterialReceiptResponse } from '../../types/api';
-import { useAuth } from '../../libs/auth';
+import { useUser } from '../../libs/auth';
 
 export const MaterialReceiptsScreen = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { data: user } = useUser();
   const [selectedReceipt, setSelectedReceipt] = useState<PendingMaterialReceiptResponse | null>(
     null
   );
@@ -51,8 +51,9 @@ export const MaterialReceiptsScreen = () => {
     error,
     refetch,
   } = useQuery({
-    queryKey: ['pending-material-receipts'],
-    queryFn: getPendingMaterialReceipts,
+    queryKey: ['pending-material-receipts', user?.id],
+    queryFn: () => getPendingMaterialReceipts(user?.id || ''),
+    enabled: !!user?.id, // Only run query when we have a user ID
     refetchInterval: 60000, // Refetch every minute
   });
 

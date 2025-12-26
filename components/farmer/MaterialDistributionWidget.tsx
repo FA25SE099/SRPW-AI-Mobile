@@ -12,13 +12,16 @@ import { colors, spacing, borderRadius } from '../../theme';
 import { scale, moderateScale, getFontSize, getSpacing } from '../../utils/responsive';
 import { Body, BodySmall, BodySemibold, Spacer } from '../ui';
 import { getPendingMaterialReceipts } from '../../libs/farmer';
+import { useUser } from '../../libs/auth';
 
 export const MaterialDistributionWidget = () => {
   const router = useRouter();
+  const { data: user } = useUser();
 
   const { data: summary, isLoading } = useQuery({
-    queryKey: ['pending-material-receipts'],
-    queryFn: getPendingMaterialReceipts,
+    queryKey: ['pending-material-receipts', user?.id],
+    queryFn: () => getPendingMaterialReceipts(user?.id || ''),
+    enabled: !!user?.id, // Only run query when we have a user ID
     refetchInterval: 60000, // Refetch every minute
   });
 

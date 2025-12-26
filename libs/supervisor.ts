@@ -4,14 +4,42 @@
  */
 
 import { api } from './api-client';
-import { 
-  PagedResult, 
+import {
+  PagedResult,
   StandardPlan,
   StandardPlanMaterialCostRequest,
   StandardPlanMaterialCostResponse,
   StandardPlanProfitAnalysisRequest,
-  StandardPlanProfitAnalysisResponse 
+  StandardPlanProfitAnalysisResponse,
+  LateFarmerRecord,
+  LatePlotRecord,
+  LateRecordDetail,
+  LateFarmerDetailResponse,
+  LatePlotDetailResponse,
 } from '@/types/api';
+
+// Supervisor profile type
+export type SupervisorProfile = {
+  supervisorId: string;
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  address: string;
+  dateOfBirth: string | null;
+  clusterId: string;
+  clusterName: string;
+  totalGroupsSupervised: number;
+  activeGroupsThisSeason: number;
+  completedPolygonTasks: number;
+  pendingPolygonTasks: number;
+  createdAt: string;
+  isActive: boolean;
+};
+
+export const getSupervisorProfile = async (): Promise<SupervisorProfile> => {
+  const response = await api.get<SupervisorProfile>('/supervisor/profile');
+  return response as unknown as SupervisorProfile;
+};
 
 // TODO: Define proper types based on backend API
 export type SupervisedFarmer = {
@@ -24,6 +52,36 @@ export type SupervisedFarmer = {
   completionRate: number;
   status: 'active' | 'needs-attention';
   lastActivity: string;
+};
+
+// Farmer type matching backend FarmerDTO
+export type Farmer = {
+  farmerId: string;
+  fullName?: string;
+  address?: string;
+  phoneNumber?: string;
+  isActive: boolean;
+  isVerified: boolean;
+  lastActivityAt?: string;
+  farmCode?: string;
+  plotCount: number;
+};
+
+export type GetSupervisorFarmersParams = {
+  onlyAssigned?: boolean;
+  currentPage?: number;
+  pageSize?: number;
+  searchTerm?: string;
+};
+
+export type SupervisorFarmersResponse = {
+  succeeded: boolean;
+  data: Farmer[];
+  currentPage: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  message: string;
 };
 
 export type SupervisedTask = {
@@ -108,7 +166,7 @@ type GetSupervisedAlertsParams = {
 export const getSupervisedFarmers = async (
   params: GetSupervisedFarmersParams,
 ): Promise<PagedResult<SupervisedFarmer[]>> => {
-  // TODO: Replace with actual API endpoint
+  // TODO: Replace with actual API endpoint when available
   // const response = await api.get<PagedResult<SupervisedFarmer[]>>(
   //   `/supervisor/${params.supervisorId}/farmers`,
   //   {
@@ -121,6 +179,119 @@ export const getSupervisedFarmers = async (
   // );
   // return response;
   throw new Error('API endpoint not implemented yet');
+};
+
+/**
+ * Get all farmers under supervisor (simplified - using default params)
+ */
+export const getFarmers = async (params?: GetSupervisorFarmersParams): Promise<Farmer[]> => {
+  const response = await api.post<SupervisorFarmersResponse>('/supervisor/farmers', {
+    onlyAssigned: params?.onlyAssigned ?? true,
+    currentPage: params?.currentPage ?? 1,
+    pageSize: params?.pageSize ?? 100,
+    searchTerm: params?.searchTerm,
+  }, { timeout: 15000 });
+  
+  if (response && 'data' in response && Array.isArray(response.data)) {
+    return response.data;
+  }
+  return [];
+};
+
+/**
+ * Get all farmers with pagination support
+ */
+export const getSupervisorFarmersWithPagination = async (
+  params: GetSupervisorFarmersParams = {}
+): Promise<SupervisorFarmersResponse> => {
+  return api.post<SupervisorFarmersResponse>('/supervisor/farmers', {
+    onlyAssigned: params.onlyAssigned ?? false,
+    currentPage: params.currentPage ?? 1,
+    pageSize: params.pageSize ?? 20,
+    searchTerm: params.searchTerm,
+  }, { timeout: 15000 });
+};
+
+export type PlotStatus = 'Active' | 'PendingPolygon' | string;
+
+export type PlotListResponse = {
+  plotId: string;
+  area: number;
+  soThua?: number;
+  soTo?: number;
+  status: PlotStatus;
+  groupId?: string;
+  boundary?: string;
+  coordinate?: string;
+  groupName?: string;
+  activeCultivations: number;
+  activeAlerts: number;
+  soilType?: string;
+};
+
+export type GetFarmerPlotsParams = {
+  farmerId: string;
+  currentPage?: number;
+  pageSize?: number;
+  status?: PlotStatus;
+  isUnassigned?: boolean | null;
+};
+
+export type GetFarmerPlotsResponse = {
+  succeeded: boolean;
+  data: PlotListResponse[];
+  currentPage: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  message: string;
+};
+
+/**
+ * Get plots for a specific farmer
+ */
+export const getFarmerPlots = async (params: GetFarmerPlotsParams): Promise<PlotListResponse[]> => {
+  const requestBody: any = {
+    farmerId: params.farmerId,
+    currentPage: params.currentPage || 1,
+    pageSize: params.pageSize || 100,
+  };
+
+  if (params.status) {
+    requestBody.status = params.status;
+  }
+  if (params.isUnassigned !== undefined && params.isUnassigned !== null) {
+    requestBody.isUnassigned = params.isUnassigned;
+  }
+
+  const response = await api.post<GetFarmerPlotsResponse>('/Farmer/plots', requestBody, { timeout: 15000 });
+  
+  if (response && 'data' in response && Array.isArray(response.data)) {
+    return response.data;
+  }
+  return [];
+};
+
+/**
+ * Get plots for a specific farmer with pagination
+ */
+export const getFarmerPlotsWithPagination = async (
+  params: GetFarmerPlotsParams
+): Promise<GetFarmerPlotsResponse> => {
+  const requestBody: any = {
+    farmerId: params.farmerId,
+    currentPage: params.currentPage || 1,
+    pageSize: params.pageSize || 20,
+  };
+
+  if (params.status) {
+    requestBody.status = params.status;
+  }
+  if (params.isUnassigned !== undefined && params.isUnassigned !== null) {
+    requestBody.isUnassigned = params.isUnassigned;
+  }
+
+  return api.post<GetFarmerPlotsResponse>('/Farmer/plots', requestBody, { timeout: 15000 });
 };
 
 /**
@@ -245,7 +416,6 @@ export const getSupervisedPlots = async (
 
 // Polygon Drawing Types
 export type PolygonTaskStatus = 'Pending' | 'InProgress' | 'Completed' | 'Cancelled';
-export type PlotStatus = 'Active' | 'Inactive' | 'Emergency' | 'Locked';
 
 export type PolygonTask = {
   id: string;
@@ -283,7 +453,12 @@ export type PlotDTO = {
  * Get polygon drawing tasks
  */
 export const getPolygonTasks = async (): Promise<PolygonTask[]> => {
-  const response = await api.get<PolygonTask[]>('/Supervisor/polygon-tasks?status=Pending');
+  const response = await api.get<PolygonTask[]>('/Supervisor/polygon-tasks', {
+    params: {
+      status: 'Pending',
+    },
+    timeout: 15000,
+  });
   return Array.isArray(response) ? response : [];
 };
 
@@ -296,7 +471,13 @@ export const getPlots = async (): Promise<PlotDTO[]> => {
     data: PlotDTO[];
     currentPage: number;
     totalCount: number;
-  }>('/Plot?pageNumber=1&pageSize=500');
+  }>('/Plot', {
+    params: {
+      pageNumber: 1,
+      pageSize: 500,
+    },
+    timeout: 15000,
+  });
   
   if (response && 'data' in response && Array.isArray(response.data)) {
     return response.data;
@@ -450,15 +631,18 @@ export const getStandardPlans = async (): Promise<StandardPlan[]> => {
 
 /**
  * Calculate material cost for a standard plan
+ * Note: API client unwraps Result<T> wrapper automatically
  */
 export const calculateStandardPlanMaterialCost = async (
   request: StandardPlanMaterialCostRequest
-): Promise<StandardPlanMaterialCostResponse> => {
-  const response = await api.post<StandardPlanMaterialCostResponse>(
+): Promise<any> => {
+  const response = await api.post<any>(
     '/Material/calculate-standard-plan-material-cost',
     request
   );
-  return response as unknown as StandardPlanMaterialCostResponse;
+  
+  // API client already unwrapped the Result<T>, so response IS the data
+  return response;
 };
 
 /**
@@ -474,4 +658,934 @@ export const calculateStandardPlanProfitAnalysis = async (
   return response as unknown as StandardPlanProfitAnalysisResponse;
 };
 
+// ===================================
+// Production Plans Types & API
+// ===================================
 
+// Group types for accessing production plans
+export type SupervisorGroup = {
+  groupId: string;
+  groupName: string;
+  clusterId?: string;
+  clusterName?: string;
+  // seasonId: string;
+  // seasonName: string;
+  // seasonYear: number;
+  season: {
+    seasonId: string;
+    seasonName: string;
+    seasonType: string;
+    startDate: string;
+    endDate: string;
+    year: number;
+  };
+  riceVarietyId?: string;
+  riceVarietyName?: string;
+  plantingDate?: string;
+  totalArea: number;
+  // totalPlots: number;
+  plots:{
+    plotId: string;
+    soThua?: number;
+    soTo?: number;
+    status: string;
+    farmerName: string;
+    area: number;
+    soilType: string;
+  }
+  plotsWithPolygon: number;
+  plotsMissingPolygon: number;
+  productionPlansCount: number;
+  activePlansCount: number;
+  draftPlansCount: number;
+  approvedPlansCount: number;
+  status: 'Active' | 'Inactive' | 'Completed';
+  createdAt: string;
+};
+export type ProductionPlan = {
+  productionPlanId: string;
+  planName: string;
+  groupId: string;
+  groupName: string;
+  seasonId: string;
+  seasonName: string;
+  seasonYear: number;
+  riceVarietyId: string;
+  riceVarietyName: string;
+  standardPlanId: string;
+  standardPlanName: string;
+  status: 'Draft' | 'PendingApproval' | 'Approved' | 'InProgress' | 'Completed' | 'Cancelled';
+  startDate: string;
+  actualStartDate?: string;
+  estimatedEndDate?: string;
+  actualEndDate?: string;
+  totalArea: number;
+  totalPlots: number;
+  totalEstimatedCost: number;
+  totalActualCost?: number;
+  estimatedYield?: number;
+  actualYield?: number;
+  overallProgressPercentage: number;
+  totalTasks: number;
+  completedTasks: number;
+  createdAt: string;
+  createdBy: string;
+  lastModified?: string;
+};
+
+export type ProductionPlanStage = {
+  stageId: string;
+  stageName: string;
+  stageOrder: number;
+  startDate: string;
+  endDate: string;
+  status: string;
+  description?: string;
+  sequenceOrder: number;
+  startDay: number;
+  endDay: number;
+  progressPercentage: number;
+  tasks: ProductionPlanTask[];
+};
+
+export type ProductionPlanMaterial = {
+  materialId: string;
+  materialName: string;
+  materialType?: string;
+  quantityPerHa: number;
+  unit: string;
+  estimatedAmount?: number;
+  unitPrice?: number;
+  totalCost?: number;
+};
+
+export type ProductionPlanTask = {
+  taskId: string;
+  taskName: string;
+  taskType: string;
+  description?: string;
+  priority: string;
+  sequenceOrder: number;
+  scheduledDate: string;
+  actualStartDate?: string;
+  actualEndDate?: string;
+  estimatedCost: number;
+  totalActualCost?: number;
+  status: string;
+  progressPercentage?: number;
+  assignedTo?: string;
+  materials: ProductionPlanMaterial[];
+};
+
+export type PlotProgress = {
+  plotId: string;
+  plotName: string;
+  area: number;
+  cultivationPlanId?: string;
+  startDate?: string;
+  progressPercentage: number;
+  currentStage?: string;
+  completedTasks: number;
+  totalTasks: number;
+  status: 'NotStarted' | 'InProgress' | 'Completed';
+};
+
+export type EconomicsDetail = {
+  totalEstimatedRevenue: number;
+  totalEstimatedCost: number;
+  estimatedProfit: number;
+  estimatedProfitMargin: number;
+  totalActualRevenue?: number;
+  totalActualCost?: number;
+  actualProfit?: number;
+  actualProfitMargin?: number;
+  costBreakdown: {
+    materialCost: number;
+    laborCost: number;
+    equipmentCost: number;
+    otherCost: number;
+  };
+};
+
+export type ProductionPlanDetail = {
+  productionPlanId: string;
+  planName: string;
+  groupId: string;
+  groupName: string;
+  seasonId: string;
+  seasonName: string;
+  seasonYear: number;
+  riceVarietyId: string;
+  riceVarietyName: string;
+  standardPlanId: string;
+  standardPlanName: string;
+  status: string;
+  startDate: string;
+  actualStartDate?: string;
+  estimatedEndDate?: string;
+  actualEndDate?: string;
+  totalArea: number;
+  totalPlots: number;
+  totalEstimatedCost: number;
+  totalActualCost?: number;
+  estimatedYield?: number;
+  actualYield?: number;
+  overallProgressPercentage: number;
+  totalTasks: number;
+  completedTasks: number;
+  daysElapsed: number;
+  stages: ProductionPlanStage[];
+  plotsProgress: PlotProgress[];
+  economicsDetail?: EconomicsDetail;
+  createdAt: string;
+  createdBy: string;
+  lastModified?: string;
+};
+
+export type FarmLogByTask = {
+  farmLogId: string;
+  cultivationTaskName: string;
+  soThua?: number;
+  soTo?: number;
+  loggedDate: string;
+  workDescription?: string;
+  completionPercentage: number;
+  actualAreaCovered: number;
+  serviceCost?: number;
+  serviceNotes?: string;
+  photoUrls: string[];
+  weatherConditions?: string;
+  interruptionReason?: string;
+  materialsUsed: {
+    materialName: string;
+    actualQuantityUsed: number;
+    actualCost: number;
+    notes?: string;
+  }[];
+  farmerName?: string;
+};
+
+// Group Detail Types (matching web app)
+export type GroupPlotDetail = {
+  id: string;
+  area: string;
+  soThua: string;
+  soTo: string;
+  soilType: string;
+  status: string;
+  farmerName: string;
+};
+
+export type GroupProductionPlan = {
+  id: string;
+  planName: string;
+  basePlantingDate: string;
+  status: string;
+  totalArea: number;
+};
+
+export type GroupDetail = {
+  id: string;
+  clusterName: string;
+  seasonId: string;
+  plantingDate: string;
+  status: string;
+  totalArea: number;
+  riceVarietyName: string;
+  supervisorName: string;
+  plots: GroupPlotDetail[];
+  productionPlans: GroupProductionPlan[];
+};
+
+/**
+ * Get full group details including production plans
+ * This matches the web app's approach: GET /Group/{groupId}
+ */
+export const getGroupDetail = async (groupId: string): Promise<GroupDetail> => {
+  const response = await api.get<GroupDetail>(`/Group/${groupId}`, { timeout: 15000 });
+  return response;
+};
+
+/**
+ * Get all groups assigned to supervisor
+ */
+export const getSupervisorGroups = async (): Promise<SupervisorGroup[]> => {
+  const response = await api.get<SupervisorGroup[]>('/supervisor/group-by-season', { timeout: 15000 });
+  
+  if (Array.isArray(response)) {
+    return response;
+  }
+  return [];
+};
+
+/**
+ * Get production plans for a specific group
+ * Uses the group detail endpoint which includes production plans
+ */
+export const getGroupProductionPlans = async (groupId: string): Promise<ProductionPlan[]> => {
+  console.log('🔍 [getGroupProductionPlans] Fetching plans for groupId:', groupId);
+  
+  try {
+    const groupDetail = await getGroupDetail(groupId);
+    const plans = groupDetail.productionPlans || [];
+    console.log('✅ [getGroupProductionPlans] Found', plans.length, 'plans');
+    
+    // Map the simple GroupProductionPlan to full ProductionPlan format
+    // Note: This is a simplified version. Full details come from getProductionPlanDetail
+    return plans.map(plan => ({
+      productionPlanId: plan.id,
+      planName: plan.planName,
+      status: plan.status as any,
+      totalArea: plan.totalArea,
+      startDate: plan.basePlantingDate,
+      // Add placeholder values for required fields
+      groupId: groupId,
+      groupName: groupDetail.clusterName || '',
+      seasonId: groupDetail.seasonId || '',
+      seasonName: '',
+      seasonYear: new Date().getFullYear(),
+      riceVarietyId: '',
+      riceVarietyName: groupDetail.riceVarietyName || '',
+      standardPlanId: '',
+      standardPlanName: '',
+      totalPlots: groupDetail.plots?.length || 0,
+      totalEstimatedCost: 0,
+      overallProgressPercentage: 0,
+      totalTasks: 0,
+      completedTasks: 0,
+      createdAt: '',
+      createdBy: '',
+    }));
+  } catch (error) {
+    console.error('❌ [getGroupProductionPlans] Error:', error);
+    return [];
+  }
+};
+
+/**
+ * Get all production plans for supervisor (fetches from all assigned groups)
+ */
+export const getProductionPlans = async (params?: {
+  groupId?: string;
+  status?: string;
+  currentPage?: number;
+  pageSize?: number;
+}): Promise<ProductionPlan[]> => {
+  // If groupId is specified, fetch plans for that group
+  if (params?.groupId) {
+    return getGroupProductionPlans(params.groupId);
+  }
+
+  // Otherwise, fetch all groups and their plans
+  const groups = await getSupervisorGroups();
+  const allPlans: ProductionPlan[] = [];
+
+  for (const group of groups) {
+    try {
+      const plans = await getGroupProductionPlans(group.groupId);
+      allPlans.push(...plans);
+    } catch (error) {
+      console.error(`Failed to fetch plans for group ${group.groupId}:`, error);
+    }
+  }
+
+  // Apply status filter if provided
+  let filteredPlans = allPlans;
+  if (params?.status) {
+    filteredPlans = allPlans.filter(plan => plan.status === params.status);
+  }
+
+  return filteredPlans;
+};
+
+/**
+ * Get detailed production plan information
+ */
+export const getProductionPlanDetail = async (
+  planId: string
+): Promise<ProductionPlanDetail> => {
+  const response = await api.get<ProductionPlanDetail>(
+    `/supervisor/plan/${planId}/details`,
+    { timeout: 15000 }
+  );
+  return response;
+};
+
+/**
+ * Get farm logs by production plan task
+ */
+export const getFarmLogsByProductionPlanTask = async (params: {
+  productionPlanTaskId: string;
+  currentPage?: number;
+  pageSize?: number;
+}): Promise<{
+  data: FarmLogByTask[];
+  totalCount: number;
+  currentPage: number;
+  pageSize: number;
+}> => {
+  const response = await api.post<PagedResult<FarmLogByTask[]>>('/Farmlog/farm-logs/by-production-plan-task', {
+    productionPlanTaskId: params.productionPlanTaskId,
+    currentPage: params.currentPage ?? 1,
+    pageSize: params.pageSize ?? 10,
+  }, { timeout: 15000 });
+
+  if (response && Array.isArray(response.data)) {
+    return {
+      data: response.data,
+      totalCount: response.totalCount || 0,
+      currentPage: response.currentPage || 1,
+      pageSize: response.pageSize || 10,
+    };
+  }
+
+  return {
+    data: [],
+    totalCount: 0,
+    currentPage: 1,
+    pageSize: 10,
+  };
+};
+
+/**
+ * Get cultivation versions
+ */
+export const getCultivationVersions = async (plotCultivationId: string): Promise<any[]> => {
+  const response = await api.get<any>(
+    `/cultivation-version/by-plot-cultivation/${plotCultivationId}`,
+    { timeout: 15000 }
+  );
+  
+  if (Array.isArray(response)) {
+    return response;
+  }
+
+  if (response && response.succeeded && Array.isArray(response.data)) {
+    return response.data;
+  }
+  return [];
+};
+
+/**
+ * Get farm logs by cultivation task
+ */
+export const getFarmLogsByCultivationTask = async (params: {
+  cultivationTaskId: string;
+  currentPage?: number;
+  pageSize?: number;
+}): Promise<{
+  data: FarmLogByTask[];
+  totalCount: number;
+  currentPage: number;
+  pageSize: number;
+}> => {
+  const response = await api.post<PagedResult<FarmLogByTask[]>>('/Farmlog/farm-logs/by-cultivation-task', {
+    cultivationTaskId: params.cultivationTaskId,
+    currentPage: params.currentPage ?? 1,
+    pageSize: params.pageSize ?? 10,
+  }, { timeout: 15000 });
+
+  if (response && Array.isArray(response.data)) {
+    return {
+      data: response.data,
+      totalCount: response.totalCount || 0,
+      currentPage: response.currentPage || 1,
+      pageSize: response.pageSize || 10,
+    };
+  }
+
+  return {
+    data: [],
+    totalCount: 0,
+    currentPage: 1,
+    pageSize: 10,
+  };
+};
+
+/**
+ * Create a late farmer record for a cultivation task
+ */
+export const createLateFarmerRecord = async (params: {
+  cultivationTaskId: string;
+  notes?: string;
+}): Promise<{
+  succeeded: boolean;
+  data: string;
+  message: string;
+  errors: any[];
+}> => {
+  const response = await api.post<{
+    succeeded: boolean;
+    data: string;
+    message: string;
+    errors: any[];
+  }>('/LateFarmerRecord', {
+    cultivationTaskId: params.cultivationTaskId,
+    notes: params.notes || '',
+  }, { timeout: 15000 });
+
+  return response;
+};
+
+/**
+ * Get late farmers by supervisor
+ */
+export const getLateFarmers = async (params: {
+  supervisorId?: string;
+  currentPage?: number;
+  pageSize?: number;
+}): Promise<PagedResult<LateFarmerRecord[]>> => {
+  try {
+    const queryParams = new URLSearchParams();
+    if (params.supervisorId) queryParams.append('supervisorId', params.supervisorId);
+    queryParams.append('pageNumber', String(params.currentPage ?? 1));
+    queryParams.append('pageSize', String(params.pageSize ?? 10));
+
+    const response = await api.get<PagedResult<LateFarmerRecord[]>>(
+      `/LateFarmerRecord/farmers?${queryParams.toString()}`,
+      { timeout: 15000 }
+    );
+
+    return response;
+  } catch (error) {
+    // Return empty result if endpoint doesn't exist
+    return {
+      data: [],
+      currentPage: 1,
+      pageSize: 10,
+      totalCount: 0,
+      totalPages: 0,
+      succeeded: false,
+      message: 'Endpoint not available',
+    } as any;
+  }
+};
+
+/**
+ * Get late plots by supervisor
+ */
+export const getLatePlots = async (params: {
+  supervisorId?: string;
+  currentPage?: number;
+  pageSize?: number;
+}): Promise<PagedResult<LatePlotRecord[]>> => {
+  try {
+    const queryParams = new URLSearchParams();
+    if (params.supervisorId) queryParams.append('supervisorId', params.supervisorId);
+    queryParams.append('pageNumber', String(params.currentPage ?? 1));
+    queryParams.append('pageSize', String(params.pageSize ?? 10));
+
+    const response = await api.get<PagedResult<LatePlotRecord[]>>(
+      `/LateFarmerRecord/plots?${queryParams.toString()}`,
+      { timeout: 15000 }
+    );
+
+    return response;
+  } catch (error) {
+    // Return empty result if endpoint doesn't exist
+    return {
+      data: [],
+      currentPage: 1,
+      pageSize: 10,
+      totalCount: 0,
+      totalPages: 0,
+      succeeded: false,
+      message: 'Endpoint not available',
+    } as any;
+  }
+};
+
+/**
+ * Get late record details for a farmer
+ */
+export const getLateFarmerDetails = async (
+  farmerId: string
+): Promise<PagedResult<LateRecordDetail[]>> => {
+  try {
+    const response = await api.get<any>(
+      `/LateFarmerRecord/farmer/${farmerId}/detail`,
+      { timeout: 15000 }
+    );
+
+    // Handle potentially multiple levels of wrapping
+    let detailData = response;
+
+    // First unwrap (Axios response or Result wrapper)
+    if (detailData && detailData.data) {
+      detailData = detailData.data;
+    }
+
+    // Second unwrap (Result wrapper inside Axios response)
+    if (detailData && !detailData.lateRecords && detailData.data) {
+      detailData = detailData.data;
+    }
+
+    if (detailData && detailData.lateRecords) {
+      return {
+        data: detailData.lateRecords,
+        currentPage: 1,
+        pageSize: detailData.lateRecords.length,
+        totalCount: detailData.totalLateCount || detailData.lateRecords.length,
+        totalPages: 1,
+        succeeded: true,
+        message: 'Success',
+      } as any;
+    }
+
+    return {
+      data: [],
+      currentPage: 1,
+      pageSize: 10,
+      totalCount: 0,
+      totalPages: 0,
+      succeeded: true,
+      message: 'No data',
+    } as any;
+  } catch (error) {
+    console.error('getLateFarmerDetails error:', error);
+    return {
+      data: [],
+      currentPage: 1,
+      pageSize: 10,
+      totalCount: 0,
+      totalPages: 0,
+      succeeded: false,
+      message: 'Endpoint not available',
+    } as any;
+  }
+};
+
+/**
+ * Get late record details for a plot
+ */
+export const getLatePlotDetails = async (
+  plotId: string
+): Promise<PagedResult<LateRecordDetail[]>> => {
+  try {
+    const response = await api.get<any>(
+      `/LateFarmerRecord/plot/${plotId}/detail`,
+      { timeout: 15000 }
+    );
+
+    // Handle potentially multiple levels of wrapping
+    let detailData = response;
+
+    // First unwrap (Axios response or Result wrapper)
+    if (detailData && detailData.data) {
+      detailData = detailData.data;
+    }
+
+    // Second unwrap (Result wrapper inside Axios response)
+    if (detailData && !detailData.lateRecords && detailData.data) {
+      detailData = detailData.data;
+    }
+
+    if (detailData && detailData.lateRecords) {
+      return {
+        data: detailData.lateRecords,
+        currentPage: 1,
+        pageSize: detailData.lateRecords.length,
+        totalCount: detailData.totalLateCount || detailData.lateRecords.length,
+        totalPages: 1,
+        succeeded: true,
+        message: 'Success',
+      } as any;
+    }
+
+    return {
+      data: [],
+      currentPage: 1,
+      pageSize: 10,
+      totalCount: 0,
+      totalPages: 0,
+      succeeded: true,
+      message: 'No data',
+    } as any;
+  } catch (error) {
+    console.error('getLatePlotDetails error:', error);
+    return {
+      data: [],
+      currentPage: 1,
+      pageSize: 10,
+      totalCount: 0,
+      totalPages: 0,
+      succeeded: false,
+      message: 'Endpoint not available',
+    } as any;
+  }
+};
+
+/**
+ * Get plot cultivation plan details
+ */
+export const getPlotCultivationPlan = async (params: {
+  plotId: string;
+  productionPlanId: string;
+}): Promise<any> => {
+  const response = await api.get(
+    `/CultivationPlan/plot/${params.plotId}/production-plan/${params.productionPlanId}`,
+    { timeout: 15000 }
+  );
+  return response;
+};
+
+// Cultivation Plan Types
+export type CultivationPlanMaterial = {
+  materialId: string;
+  materialName: string;
+  plannedQuantity: number;
+  actualQuantity: number;
+  unit: string;
+};
+
+export type CultivationPlanTask = {
+  taskId: string;
+  taskName: string;
+  taskType: string;
+  taskDescription?: string;
+  plannedStartDate?: string;
+  plannedEndDate?: string;
+  actualStartDate?: string;
+  actualEndDate?: string;
+  status: string;
+  priority: string;
+  orderIndex: number;
+  materials: CultivationPlanMaterial[];
+};
+
+export type CultivationPlanStage = {
+  stageId: string;
+  stageName: string;
+  sequenceOrder: number;
+  description?: string;
+  typicalDurationDays: number;
+  tasks: CultivationPlanTask[];
+};
+
+export type CultivationPlanProgress = {
+  totalTasks: number;
+  completedTasks: number;
+  inProgressTasks: number;
+  pendingTasks: number;
+  completionPercentage: number;
+  daysElapsed: number;
+  estimatedDaysRemaining: number;
+};
+
+export type CultivationPlanDetail = {
+  plotCultivationId: string;
+  plotId: string;
+  plotName: string;
+  plotArea: number;
+  seasonId: string;
+  seasonName: string;
+  seasonStartDate?: string;
+  seasonEndDate?: string;
+  riceVarietyId: string;
+  riceVarietyName: string;
+  riceVarietyDescription?: string;
+  plantingDate?: string;
+  expectedYield?: number;
+  actualYield?: number;
+  cultivationArea: number;
+  status: string;
+  productionPlanId: string;
+  productionPlanName: string;
+  productionPlanDescription?: string;
+  activeVersionId?: string;
+  activeVersionName?: string;
+  stages: CultivationPlanStage[];
+  progress: CultivationPlanProgress;
+};
+
+export type FarmLogMaterialUsed = {
+  materialName: string;
+  actualQuantityUsed: number;
+  actualCost: number;
+  notes?: string;
+};
+
+export type FarmLogByCultivation = {
+  farmLogId: string;
+  cultivationTaskName: string;
+  plotName: string;
+  loggedDate: string;
+  workDescription?: string;
+  completionPercentage: number;
+  actualAreaCovered: number;
+  serviceCost?: number;
+  serviceNotes?: string;
+  photoUrls: string[];
+  weatherConditions?: string;
+  interruptionReason?: string;
+  materialsUsed: FarmLogMaterialUsed[];
+  farmerName?: string;
+};
+
+/**
+ * Get cultivation plan by group and plot
+ */
+export const getCultivationPlanByGroupPlot = async (params: {
+  plotId: string;
+  groupId: string;
+}): Promise<CultivationPlanDetail> => {
+  console.log('🔍 [getCultivationPlanByGroupPlot] Fetching cultivation plan for:', params);
+  
+  // API client interceptor already unwraps the Result<T> wrapper
+  // So response is the CultivationPlanDetail object directly
+  const response = await api.post<CultivationPlanDetail>('/cultivation-plan/by-group-plot', params, { timeout: 15000 });
+  
+  if (!response) {
+    console.log('❌ [getCultivationPlanByGroupPlot] Failed: No data returned');
+    throw new Error('Failed to load cultivation plan');
+  }
+  
+  console.log('✅ [getCultivationPlanByGroupPlot] Success:', {
+    plotId: response.plotId,
+    stages: response.stages?.length || 0,
+    totalTasks: response.progress?.totalTasks,
+  });
+  
+  return response;
+};
+
+/**
+ * Get farm logs by cultivation (plot cultivation)
+ */
+export const getFarmLogsByCultivation = async (params: {
+  plotCultivationId: string;
+  currentPage?: number;
+  pageSize?: number;
+}): Promise<{
+  data: FarmLogByCultivation[];
+  totalCount: number;
+  currentPage: number;
+  pageSize: number;
+}> => {
+  console.log('🔍 [getFarmLogsByCultivation] Fetching farm logs for:', params);
+
+  const response = await api.post<PagedResult<FarmLogByCultivation[]>>('/Farmlog/farm-logs/by-cultivation', {
+    plotCultivationId: params.plotCultivationId,
+    currentPage: params.currentPage ?? 1,
+    pageSize: params.pageSize ?? 10,
+  }, { timeout: 15000 });
+
+  if (response && Array.isArray(response.data)) {
+    console.log('✅ [getFarmLogsByCultivation] Success:', {
+      logsCount: response.data.length,
+      totalCount: response.totalCount,
+    });
+    
+    return {
+      data: response.data,
+      totalCount: response.totalCount || 0,
+      currentPage: response.currentPage || 1,
+      pageSize: response.pageSize || 10,
+    };
+  }
+
+  return {
+    data: [],
+    totalCount: 0,
+    currentPage: 1,
+    pageSize: 10,
+  };
+};
+
+// ===================================
+// Supervisor Reports Types & API
+// ===================================
+
+export type ReportType = 'Pest' | 'Weather' | 'Disease' | 'Other';
+export type ReportSeverity = 'Low' | 'Medium' | 'High' | 'Critical';
+export type ReportStatus = 'Pending' | 'UnderReview' | 'Resolved' | 'Rejected';
+export type ReporterRole = 'Farmer' | 'Supervisor';
+
+export type Report = {
+  id: string;
+  plotId: string;
+  plotName: string;
+  plotArea: number;
+  cultivationPlanId: string;
+  cultivationPlanName: string;
+  reportType: ReportType;
+  severity: ReportSeverity;
+  title: string;
+  description: string;
+  reportedBy: string;
+  reportedByRole: ReporterRole;
+  reportedAt: string;
+  status: ReportStatus;
+  images?: string[];
+  coordinates?: string;
+  resolvedBy?: string;
+  resolvedAt?: string;
+  resolutionNotes?: string;
+  farmerName?: string;
+  clusterName?: string;
+  affectedCultivationTaskId?: string | null;
+  affectedTaskName?: string | null;
+  affectedTaskType?: string | null;
+  affectedTaskVersionName?: string | null;
+};
+
+// Legacy type for backward compatibility
+export type ReportItemResponse = Report;
+
+export type GetSupervisorReportsParams = {
+  currentPage?: number;
+  pageSize?: number;
+  searchTerm?: string;
+  status?: string;
+  severity?: string;
+  reportType?: string;
+};
+
+export type SupervisorReportsResponse = {
+  succeeded: boolean;
+  data: ReportItemResponse[];
+  currentPage: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  message: string;
+};
+
+/**
+ * Get supervisor reports with pagination and filters
+ */
+export const getSupervisorReports = async (
+  params: GetSupervisorReportsParams = {}
+): Promise<SupervisorReportsResponse> => {
+  return api.post<SupervisorReportsResponse>('/supervisor/reports', {
+    currentPage: params.currentPage || 1,
+    pageSize: params.pageSize || 20,
+    searchTerm: params.searchTerm,
+    status: params.status,
+    severity: params.severity,
+    reportType: params.reportType,
+  }, { timeout: 15000 });
+};
+
+/**
+ * Get a single report by ID
+ * Uses the same endpoint pattern as web version: /reports/{reportId}
+ */
+export const getReport = async (reportId: string): Promise<Report> => {
+  // The interceptor unwraps single results and returns data directly
+  return api.get<Report>(`/reports/${reportId}`, {
+    timeout: 15000,
+  });
+};
+
+/**
+ * Resolve a report
+ */
+export const resolveReport = async (
+  reportId: string,
+  resolutionNotes?: string
+): Promise<void> => {
+  await api.post(`/reports/${reportId}/resolve`, {
+    resolutionNotes,
+  }, { timeout: 15000 });
+};

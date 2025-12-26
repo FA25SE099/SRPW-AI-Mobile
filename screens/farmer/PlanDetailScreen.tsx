@@ -127,7 +127,7 @@ export const PlanDetailScreen = () => {
             <Body>←</Body>
           </TouchableOpacity>
           <H3 style={styles.headerTitle}>{plan.planName || planName}</H3>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             onPress={() =>
               router.push({
                 pathname: '/farmer/reports/create',
@@ -137,7 +137,7 @@ export const PlanDetailScreen = () => {
             style={styles.reportButton}
           >
             <BodySmall color={colors.error}>Báo cáo</BodySmall>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         <BodySmall color={colors.textSecondary}>
@@ -220,7 +220,7 @@ export const PlanDetailScreen = () => {
                       {task.materials && task.materials.length > 0 && (
                         <View style={styles.materialSection}>
                           <Spacer size="xs" />
-                          <BodySemibold>Materials</BodySemibold>
+                          <BodySemibold>Vật tư sử dụng</BodySemibold>
                           <Spacer size="xs" />
                           {task.materials.map(
                             (material: FarmerMaterialComparison) => (
@@ -230,23 +230,19 @@ export const PlanDetailScreen = () => {
                               >
                                 <BodySemibold>{material.materialName}</BodySemibold>
                                 <BodySmall color={colors.textSecondary}>
-                                  Unit: {material.materialUnit}
+                                  Đơn vị: {material.materialUnit}
                                 </BodySmall>
                                 <BodySmall color={colors.textSecondary}>
-                                  Planned: {material.plannedQuantityPerHa}{' '}
+                                  Dự kiến: {material.plannedQuantityPerHa}{' '}
                                   {material.materialUnit} / ha
                                 </BodySmall>
                                 <BodySmall color={colors.textSecondary}>
-                                  Planned Amount:{' '}
+                                  Dự kiến chi phí:{' '}
                                   {material.plannedEstimatedAmount.toLocaleString()}₫
                                 </BodySmall>
                                 <BodySmall color={colors.textSecondary}>
-                                  Actual Qty: {material.actualQuantity}{' '}
+                                  Số lượng dự kiến {material.actualQuantity}{' '}
                                   {material.materialUnit}
-                                </BodySmall>
-                                <BodySmall color={colors.textSecondary}>
-                                  Actual Cost:{' '}
-                                  {material.actualCost.toLocaleString()}₫
                                 </BodySmall>
                               </View>
                             ),
@@ -263,7 +259,7 @@ export const PlanDetailScreen = () => {
                           }}
                         >
                           <BodySemibold style={styles.secondaryButtonText}>
-                            View Details
+                            Xem chi tiết
                           </BodySemibold>
                         </TouchableOpacity>
                       </View>
@@ -277,7 +273,7 @@ export const PlanDetailScreen = () => {
           <Spacer size="xl" />
 
           {/* Farm Logs for this cultivation plan */}
-          <H3>Farm Logs</H3>
+          <H3>Nhật ký nông trại</H3>
           <Spacer size="sm" />
 
           {farmLogsLoading && (
@@ -288,14 +284,14 @@ export const PlanDetailScreen = () => {
 
           {farmLogsError && (
             <Card variant="elevated" style={styles.errorCard}>
-              <BodySemibold>Unable to load farm logs</BodySemibold>
+              <BodySemibold>Không thể tải nhật ký nông trại</BodySemibold>
               <Spacer size="xs" />
               <BodySmall color={colors.textSecondary}>
-                Please check your connection and try again.
+                Vui lòng kiểm tra kết nối và thử lại.
               </BodySmall>
               <Spacer size="md" />
               <Button onPress={() => refetchFarmLogs()} size="sm">
-                Retry
+                Thử lại
               </Button>
             </Card>
           )}
@@ -304,10 +300,10 @@ export const PlanDetailScreen = () => {
             <>
               {(!farmLogsPage || farmLogsPage.data.length === 0) ? (
                 <Card variant="flat" style={styles.emptyState}>
-                  <BodySemibold>No farm logs yet</BodySemibold>
+                  <BodySemibold>Không có nhật ký nông trại nào</BodySemibold>
                   <Spacer size="xs" />
                   <BodySmall color={colors.textSecondary}>
-                    When you record activities for this plan, they will appear here.
+                    Khi bạn ghi nhật ký hoạt động cho kế hoạch này, chúng sẽ hiện ở đây.
                   </BodySmall>
                 </Card>
               ) : (
@@ -324,22 +320,22 @@ export const PlanDetailScreen = () => {
                     </View>
                     <Spacer size="xs" />
                     <BodySmall color={colors.textSecondary}>
-                      Completion: {log.completionPercentage}%
+                      Hoàn thành: {log.completionPercentage}%
                     </BodySmall>
                     {typeof log.actualAreaCovered === 'number' && (
                       <BodySmall color={colors.textSecondary}>
-                        Area: {log.actualAreaCovered.toLocaleString()} ha
+                        Diện tích: {log.actualAreaCovered.toLocaleString()} ha
                       </BodySmall>
                     )}
-                    {typeof log.serviceCost === 'number' && (
+                    {/* {typeof log.serviceCost === 'number' && (
                       <BodySmall color={colors.textSecondary}>
-                        Service cost:{' '}
+                        Chi phí dịch vụ:{' '}
                         {new Intl.NumberFormat('vi-VN', {
                           style: 'currency',
                           currency: 'VND',
                         }).format(log.serviceCost)}
                       </BodySmall>
-                    )}
+                    )} */}
                     {log.workDescription && (
                       <>
                         <Spacer size="xs" />
@@ -350,13 +346,13 @@ export const PlanDetailScreen = () => {
                     )}
                     {log.weatherConditions && (
                       <BodySmall color={colors.textSecondary}>
-                        Weather: {log.weatherConditions}
+                        Thời tiết: {log.weatherConditions}
                       </BodySmall>
                     )}
                     {log.materialsUsed && log.materialsUsed.length > 0 && (
                       <>
                         <Spacer size="sm" />
-                        <BodySemibold>Materials used</BodySemibold>
+                        <BodySemibold>Vật tư sử dụng</BodySemibold>
                         <Spacer size="xs" />
                         {log.materialsUsed.map((mat, index) => (
                           <View key={index} style={styles.logMaterialRow}>

@@ -1,4 +1,4 @@
-package com.myapp
+package com.ducthanhcoop
 
 import android.app.Application
 import android.content.res.Configuration

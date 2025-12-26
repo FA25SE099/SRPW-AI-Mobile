@@ -59,12 +59,14 @@ export const CreateReportScreen = () => {
   const params = useLocalSearchParams<{
     plotId?: string;
     plotCultivationId?: string;
+    affectedCultivationTaskId?: string;
   }>();
 
   const [formData, setFormData] = useState<CreateEmergencyReportRequest>({
     plotCultivationId: params.plotCultivationId || null,
     groupId: null,
     clusterId: null,
+    affectedCultivationTaskId: params.affectedCultivationTaskId || null,
     alertType: 'Pest',
     title: '',
     description: '',
@@ -137,6 +139,7 @@ export const CreateReportScreen = () => {
       if (formData.plotCultivationId) data.append('PlotCultivationId', formData.plotCultivationId);
       if (formData.groupId) data.append('GroupId', formData.groupId);
       if (formData.clusterId) data.append('ClusterId', formData.clusterId);
+      if (formData.affectedCultivationTaskId) data.append('AffectedCultivationTaskId', formData.affectedCultivationTaskId);
       data.append('AlertType', formData.alertType);
       data.append('Title', formData.title.trim());
       data.append('Description', formData.description.trim());
@@ -380,7 +383,7 @@ export const CreateReportScreen = () => {
               {cultivations.length > 0 && (
                 <>
                   <BodySmall color={colors.textSecondary}>
-                    Canh tác bị ảnh hưởng (Bắt buộc)
+                    Kế hoạch bị ảnh hưởng (Bắt buộc)
                   </BodySmall>
                   <Spacer size="xs" />
                   <TouchableOpacity
@@ -509,7 +512,7 @@ export const CreateReportScreen = () => {
               <Spacer size="md" />
 
               {/* Title */}
-              <BodySmall color={colors.textSecondary}>Title</BodySmall>
+              <BodySmall color={colors.textSecondary}>Tiêu đề</BodySmall>
               <Spacer size="xs" />
               <Input
                 value={formData.title}
@@ -519,7 +522,7 @@ export const CreateReportScreen = () => {
               <Spacer size="md" />
 
               {/* Description */}
-              <BodySmall color={colors.textSecondary}>Description</BodySmall>
+              <BodySmall color={colors.textSecondary}>Mô tả</BodySmall>
               <Spacer size="xs" />
               <Input
                 value={formData.description}
@@ -578,7 +581,7 @@ export const CreateReportScreen = () => {
               {pestDetectionResults && !pestDetectionResults.hasPest && (
                 <Card variant="flat" style={styles.noPestCard}>
                   <Body color={colors.textPrimary}>
-                    ℹ️ No pests detected in the image. You can still submit your report.
+                    ℹ️ Không phát hiện sâu bệnh trong ảnh. Bạn vẫn có thể gửi báo cáo nếu cần.
                   </Body>
             </Card>
               )}

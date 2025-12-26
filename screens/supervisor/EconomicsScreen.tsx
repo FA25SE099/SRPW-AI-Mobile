@@ -13,11 +13,29 @@ import {
   FlatList,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import { getStandardPlans, calculateStandardPlanProfitAnalysis } from '@/libs/supervisor';
-import { getCurrentFarmerPlots } from '@/libs/farmer';
+import { 
+  getStandardPlans, 
+  calculateStandardPlanProfitAnalysis, 
+  getFarmers, 
+  getFarmerPlots,
+  Farmer,
+  GetFarmerPlotsParams
+} from '@/libs/supervisor';
 import { StandardPlan, StandardPlanProfitAnalysisRequest } from '@/types/api';
-import { colors, spacing } from '@/theme';
+import { colors, spacing, borderRadius } from '@/theme';
 import { Container } from '@/components/ui';
+
+// Green theme colors for nature-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
 
 export const EconomicsScreen = () => {
   const [selectedPlan, setSelectedPlan] = useState<string>('');
@@ -27,12 +45,21 @@ export const EconomicsScreen = () => {
   const [selectedPlot, setSelectedPlot] = useState<string>('');
   const [selectedPlotName, setSelectedPlotName] = useState<string>('');
   const [showPlotModal, setShowPlotModal] = useState(false);
+  const [selectedFarmer, setSelectedFarmer] = useState<string>('');
+  const [selectedFarmerData, setSelectedFarmerData] = useState<Farmer | null>(null);
+  const [showFarmerModal, setShowFarmerModal] = useState(false);
   const [area, setArea] = useState('');
   const [pricePerKg, setPricePerKg] = useState('7500');
   const [expectedYield, setExpectedYield] = useState('6000');
   const [otherCosts, setOtherCosts] = useState('0');
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [isCalculating, setIsCalculating] = useState(false);
+
+  // Fetch farmers list
+  const { data: farmers, isLoading: isFarmersLoading } = useQuery({
+    queryKey: ['farmers-list'],
+    queryFn: () => getFarmers(),
+  });
 
   // Fetch standard plans
   const { data: standardPlans, isLoading: isLoadingPlans, error: plansError } = useQuery({
@@ -41,11 +68,17 @@ export const EconomicsScreen = () => {
     retry: 1,
   });
 
-  // Fetch plots only if usePlot is true
+  // Fetch plots for selected farmer (only if usePlot is true and a farmer is selected)
   const { data: plotsData, isLoading: isLoadingPlots } = useQuery({
-    queryKey: ['farmer-plots'],
-    queryFn: () => getCurrentFarmerPlots({ pageSize: 100 }),
-    enabled: usePlot,
+    queryKey: ['farmer-plots', selectedFarmer],
+    queryFn: () => selectedFarmer 
+      ? getFarmerPlots({ 
+          farmerId: selectedFarmer,
+          currentPage: 1,
+          pageSize: 100,
+        }) 
+      : Promise.resolve([]),
+    enabled: usePlot && !!selectedFarmer,
   });
 
   const plots = plotsData || [];
@@ -177,15 +210,15 @@ export const EconomicsScreen = () => {
                     onPress={() => {
                       setSelectedPlan(item.id);
                       setSelectedPlanName(
-                        `${item.name}${item.riceVarietyName ? ` (${item.riceVarietyName})` : ''}`
-                      );
+                        `${item.name}${item.categoryName ? ` (${item.categoryName})` : ''}`
+                      ); 
                       setShowPlanModal(false);
                     }}
                   >
                     <Text style={styles.modalItemText}>
                       {item.name}
-                      {item.riceVarietyName && (
-                        <Text style={styles.modalItemSubtext}> ({item.riceVarietyName})</Text>
+                      {item.categoryName && (
+                        <Text style={styles.modalItemSubtext}> ({item.categoryName})</Text>
                       )}
                     </Text>
                   </TouchableOpacity>
@@ -209,11 +242,34 @@ export const EconomicsScreen = () => {
           </View>
         </View>
 
+        {/* Farmer Selection (only show when usePlot is true) */}
+        {usePlot && (
+          <View style={styles.section}>
+            <Text style={styles.label}>Select Farmer *</Text>
+            {isFarmersLoading ? (
+              <ActivityIndicator />
+            ) : (
+              <TouchableOpacity
+                style={styles.selectButton}
+                onPress={() => setShowFarmerModal(true)}
+              >
+                <Text style={styles.selectButtonText}>
+                  {selectedFarmerData
+                    ? selectedFarmerData.fullName || selectedFarmerData.farmCode || 'Unknown Farmer'
+                    : '-- Select Farmer --'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
         {/* Plot or Area Selection */}
         {usePlot ? (
           <View style={styles.section}>
             <Text style={styles.label}>Select Plot *</Text>
-            {isLoadingPlots ? (
+            {!selectedFarmer ? (
+              <Text style={styles.helperText}>Please select a farmer first</Text>
+            ) : isLoadingPlots ? (
               <ActivityIndicator />
             ) : (
               <TouchableOpacity
@@ -251,18 +307,18 @@ export const EconomicsScreen = () => {
               <Text style={styles.modalTitle}>Select Plot</Text>
               <FlatList
                 data={plots}
-                keyExtractor={(item: any) => item.id}
+                keyExtractor={(item: any) => item.plotId}
                 renderItem={({ item }: any) => (
                   <TouchableOpacity
                     style={styles.modalItem}
                     onPress={() => {
-                      setSelectedPlot(item.id);
-                      setSelectedPlotName(`${item.name || 'Plot'} (${item.area} ha)`);
+                      setSelectedPlot(item.plotId);
+                      setSelectedPlotName(`Thửa ${item.soThua}, Tờ ${item.soTo} (${item.area} ha)`);
                       setShowPlotModal(false);
                     }}
                   >
                     <Text style={styles.modalItemText}>
-                      {item.name || 'Plot'} ({item.area} ha)
+                      Thửa {item.soThua}, Tờ {item.soTo} ({item.area} ha)
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -270,6 +326,52 @@ export const EconomicsScreen = () => {
               <TouchableOpacity
                 style={styles.modalCloseButton}
                 onPress={() => setShowPlotModal(false)}
+              >
+                <Text style={styles.modalCloseButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Farmer Selection Modal */}
+        <Modal
+          visible={showFarmerModal}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setShowFarmerModal(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Select Farmer</Text>
+              <FlatList
+                data={farmers || []}
+                keyExtractor={(item) => item.farmerId}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.modalItem}
+                    onPress={() => {
+                      setSelectedFarmer(item.farmerId);
+                      setSelectedFarmerData(item);
+                      setSelectedPlot('');
+                      setSelectedPlotName('');
+                      setShowFarmerModal(false);
+                    }}
+                  >
+                    <Text style={styles.modalItemText}>
+                      {item.fullName || item.farmCode || 'Unknown Farmer'}
+                    </Text>
+                    {item.address && (
+                      <Text style={styles.modalItemSubtext}>{item.address}</Text>
+                    )}
+                    {item.phoneNumber && (
+                      <Text style={styles.modalItemSubtext}>📞 {item.phoneNumber}</Text>
+                    )}
+                  </TouchableOpacity>
+                )}
+              />
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setShowFarmerModal(false)}
               >
                 <Text style={styles.modalCloseButtonText}>Cancel</Text>
               </TouchableOpacity>
@@ -423,12 +525,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: spacing.md,
+    backgroundColor: greenTheme.background,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: spacing.lg,
-    color: colors.textPrimary,
+    color: greenTheme.primary,
   },
   section: {
     marginBottom: spacing.md,
@@ -437,19 +540,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: spacing.xs,
-    color: colors.textPrimary,
+    color: greenTheme.primary,
   },
   selectButton: {
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
+    borderColor: greenTheme.border,
+    borderRadius: borderRadius.md,
     padding: spacing.sm,
     minHeight: 50,
     justifyContent: 'center',
+    backgroundColor: greenTheme.cardBackground,
   },
   selectButtonText: {
     fontSize: 16,
-    color: colors.textPrimary,
+    color: greenTheme.primary,
   },
   modalContainer: {
     flex: 1,
@@ -458,8 +562,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: borderRadius.lg,
     padding: spacing.lg,
     width: '90%',
     maxHeight: '80%',
@@ -468,16 +572,16 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: spacing.md,
-    color: colors.textPrimary,
+    color: greenTheme.primary,
   },
   modalItem: {
     padding: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: greenTheme.border,
   },
   modalItemText: {
     fontSize: 16,
-    color: colors.textPrimary,
+    color: greenTheme.primary,
   },
   modalItemSubtext: {
     color: colors.textSecondary,
@@ -485,33 +589,45 @@ const styles = StyleSheet.create({
   modalCloseButton: {
     marginTop: spacing.md,
     padding: spacing.md,
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: 8,
+    backgroundColor: greenTheme.primaryLighter,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
   },
   modalCloseButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.textPrimary,
+    color: greenTheme.primary,
   },
   switchRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  helperText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+    marginTop: spacing.xs,
+  },
   input: {
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
+    borderColor: greenTheme.border,
+    borderRadius: borderRadius.md,
     padding: spacing.sm,
     fontSize: 16,
+    backgroundColor: greenTheme.cardBackground,
   },
   button: {
-    backgroundColor: colors.primary,
+    backgroundColor: greenTheme.primary,
     padding: spacing.md,
-    borderRadius: 8,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
     marginVertical: spacing.lg,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   buttonDisabled: {
     backgroundColor: colors.lightGray,
@@ -524,26 +640,33 @@ const styles = StyleSheet.create({
   results: {
     marginTop: spacing.lg,
     padding: spacing.md,
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: 8,
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   resultsTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: spacing.md,
-    color: colors.textPrimary,
+    color: greenTheme.primary,
   },
   resultSection: {
     marginBottom: spacing.lg,
     padding: spacing.md,
-    backgroundColor: '#fff',
-    borderRadius: 8,
+    backgroundColor: greenTheme.primaryLighter,
+    borderRadius: borderRadius.md,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: spacing.sm,
-    color: colors.primary,
+    color: greenTheme.primary,
   },
   resultRow: {
     flexDirection: 'row',
@@ -556,24 +679,24 @@ const styles = StyleSheet.create({
   },
   resultValue: {
     fontSize: 16,
-    color: colors.textPrimary,
+    color: greenTheme.primary,
   },
   bold: {
     fontWeight: 'bold',
   },
   profit: {
-    color: colors.success,
+    color: greenTheme.success,
   },
   errorContainer: {
     padding: spacing.md,
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: 8,
+    backgroundColor: greenTheme.primaryLighter,
+    borderRadius: borderRadius.md,
     borderLeftWidth: 4,
     borderLeftColor: colors.error,
   },
   errorText: {
     fontSize: 14,
-    color: colors.textPrimary,
+    color: greenTheme.primary,
     marginBottom: spacing.xs,
   },
   errorSubtext: {

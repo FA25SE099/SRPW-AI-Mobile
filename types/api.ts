@@ -522,6 +522,7 @@ export type FarmLogMaterialRecord = {
   materialName: string;
   actualQuantityUsed: number;
   actualCost: number;
+  notes?: string | null;
 };
 
 export type FarmLogDetailResponse = {
@@ -536,6 +537,7 @@ export type FarmLogDetailResponse = {
   serviceNotes?: string | null;
   photoUrls?: string[] | null;
   weatherConditions?: string | null;
+  interruptionReason?: string | null;
   materialsUsed: FarmLogMaterialRecord[];
 };
 
@@ -709,6 +711,7 @@ export type CultivationTaskDetailResponse = {
   priority: string;
   isContingency: boolean;
   plannedScheduledDate: string;
+  plannedScheduledEndDate: string;
   actualStartDate?: string | null;
   actualEndDate?: string | null;
   estimatedMaterialCost: number;
@@ -768,6 +771,7 @@ export type CreateEmergencyReportRequest = {
   plotCultivationId?: string | null;
   groupId?: string | null;
   clusterId?: string | null;
+  affectedCultivationTaskId?: string | null;
   alertType: AlertType;
   title: string;
   description: string;
@@ -996,4 +1000,107 @@ export type ConfirmMaterialReceiptResponse = {
   data?: string | null;
   message?: string | null;
   errors?: string[] | null;
+};
+
+// Farmer Report Types
+export type FarmerReport = {
+  id: string;
+  plotId: string;
+  plotName: string;
+  plotArea: number;
+  cultivationPlanId: string;
+  cultivationPlanName: string;
+  reportType: string;
+  severity: string;
+  title: string;
+  description: string;
+  reportedBy: string;
+  reportedByRole: string;
+  reportedAt: string; // ISO date string
+  status: string;
+  images: string[];
+  coordinates: string;
+  resolvedBy: string | null;
+  resolvedAt: string | null;
+  resolutionNotes: string | null;
+  farmerName: string;
+  clusterName: string;
+  affectedCultivationTaskId: string | null;
+  affectedTaskName: string | null;
+  affectedTaskType: string | null;
+};
+
+export type GetFarmerReportsRequest = {
+  currentPage?: number;
+  pageSize?: number;
+  reportType?: 'pest' | 'disease' | 'weather' | 'other' | string;
+};
+
+export type GetFarmerReportsResponse = PagedResult<FarmerReport[]>;
+
+// Late Farmer Record Types
+export type LateFarmerRecord = {
+  farmerId: string;
+  fullName: string;
+  address: string | null;
+  phoneNumber: string;
+  isActive: boolean;
+  isVerified: boolean;
+  lastActivityAt: string | null;
+  farmCode: string | null;
+  plotCount: number;
+  lateCount: number;
+};
+
+export type LatePlotRecord = {
+  plotId: string;
+  plotName: string | null;
+  soThua: number | null;
+  soTo: number | null;
+  farmerId: string;
+  farmerName: string | null;
+  area: number | null;
+  lateCount: number;
+  isActive: boolean;
+};
+
+export type LateRecordDetail = {
+  id: string;
+  farmerId: string;
+  farmerName: string;
+  taskId: string;
+  taskName: string;
+  plotId: string;
+  soThua: number | null;
+  soTo: number | null;
+  plotCultivationId: string;
+  seasonId: string;
+  seasonName: string;
+  groupId: string;
+  groupName: string | null;
+  clusterId: string;
+  clusterName: string;
+  recordedAt: string;
+  notes: string | null;
+};
+
+// API response wrapper for late detail
+export type LateFarmerDetailResponse = {
+  farmerId: string;
+  fullName: string;
+  phoneNumber: string;
+  address: string | null;
+  farmCode: string | null;
+  totalLateCount: number;
+  lateRecords: LateRecordDetail[];
+};
+
+export type LatePlotDetailResponse = {
+  plotId: string;
+  plotName: string | null;
+  soThua: number | null;
+  soTo: number | null;
+  area: number | null;
+  totalLateCount: number;
+  lateRecords: LateRecordDetail[];
 };

@@ -98,6 +98,10 @@ export const TaskDetailModal = ({ visible, taskId, onClose }: Props) => {
           <BodySmall color={colors.textSecondary}>Dự kiến:</BodySmall>
           <BodySmall>{dayjs(detail.plannedScheduledDate).format('MMM D, YYYY')}</BodySmall>
         </View>
+        <View style={styles.infoRow}>
+          <BodySmall color={colors.textSecondary}>Dự kiến kết thúc:</BodySmall>
+          <BodySmall>{dayjs(detail.plannedScheduledEndDate).format('MMM D, YYYY')}</BodySmall>
+        </View>
         {detail.actualStartDate && (
           <View style={styles.infoRow}>
             <BodySmall color={colors.textSecondary}>Bắt đầu thực tế:</BodySmall>
@@ -143,15 +147,15 @@ export const TaskDetailModal = ({ visible, taskId, onClose }: Props) => {
               <View key={material.materialId} style={styles.materialCard}>
                 <BodySemibold>{material.materialName}</BodySemibold>
                 <BodySmall color={colors.textSecondary}>
-                  Planned: {material.plannedQuantityPerHa} {material.materialUnit}/ha • Est:{' '}
+                  Dự kiến: {material.plannedQuantityPerHa} {material.materialUnit}/ha • Dự kiến chi phí:{' '}
                   {material.plannedTotalEstimatedCost.toLocaleString()}₫
                 </BodySmall>
                 <BodySmall color={colors.textSecondary}>
-                  Actual used: {material.actualQuantityUsed} {material.materialUnit} • Cost:{' '}
+                  Số lượng dự kiến: {material.actualQuantityUsed} {material.materialUnit} • Chi phí thực tế:{' '}
                   {material.actualCost.toLocaleString()}₫
                 </BodySmall>
                 {material.logNotes && (
-                  <BodySmall color={colors.textSecondary}>Notes: {material.logNotes}</BodySmall>
+                  <BodySmall color={colors.textSecondary}>Ghi chú: {material.logNotes}</BodySmall>
                 )}
               </View>
             ))}
@@ -161,7 +165,7 @@ export const TaskDetailModal = ({ visible, taskId, onClose }: Props) => {
         {detail.farmLogs && detail.farmLogs.length > 0 && (
           <>
             <Spacer size="lg" />
-            <BodySemibold>Farm Logs</BodySemibold>
+            <BodySemibold>Nhật ký nông trại</BodySemibold>
             <Spacer size="xs" />
             {detail.farmLogs.map((log) => (
               <View key={log.farmLogId} style={styles.logCard}>
@@ -169,7 +173,7 @@ export const TaskDetailModal = ({ visible, taskId, onClose }: Props) => {
                   {dayjs(log.loggedDate).format('MMM D, YYYY • HH:mm')}
                 </BodySemibold>
                 <BodySmall color={colors.textSecondary}>
-                  Completion: {log.completionPercentage}%
+                  Hoàn thành: {log.completionPercentage}%
                 </BodySmall>
                 {log.workDescription && (
                   <BodySmall color={colors.textSecondary}>{log.workDescription}</BodySmall>
@@ -203,7 +207,7 @@ export const TaskDetailModal = ({ visible, taskId, onClose }: Props) => {
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
           <View style={styles.sheetHeader}>
-            <H4>Task Detail</H4>
+            <H4>Chi tiết công việc</H4>
             <TouchableOpacity onPress={onClose}>
               <Body style={{ fontSize: 18 }}>✕</Body>
             </TouchableOpacity>
