@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { MaterialDistributionWidget } from '../components/farmer/MaterialDistributionWidget';
 import { useQueryClient } from '@tanstack/react-query';
+import { CultivationSelectionWidget } from '../components/farmer/CultivationSelectionWidget';
 
 // Mock data
 const mockStats = {
@@ -153,6 +154,10 @@ export const FarmerHomeScreen = () => {
               ))}
             </View>
 
+            <Spacer size="xl" />
+
+            {/* Cultivation Selection Widget */}
+            <CultivationSelectionWidget />
             <Spacer size="xl" />
 
             {/* Material Distribution Widget */}
