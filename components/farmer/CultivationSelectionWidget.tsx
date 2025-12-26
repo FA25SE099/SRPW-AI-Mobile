@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius } from '@/theme';
 import { getFarmerCultivationSelections, getActiveYearSeasons } from '@/libs/farmerCultivation';
+import { getCurrentFarmerPlots } from '@/libs/farmer';
 import { useUser } from '@/libs/auth';
 import { FarmerCultivationSelections, YearSeason } from '@/types/farmerCultivation';
 
@@ -24,14 +25,21 @@ export const CultivationSelectionWidget: React.FC = () => {
     try {
       setLoading(true);
 
-      const yearSeasons = await getActiveYearSeasons();
-      const farmerSelectionSeason = yearSeasons.find((ys) => ys.allowFarmerSelection);
+      // Get farmer's plots to extract clusterId
+      const plots = await getCurrentFarmerPlots({ pageSize: 1 });
+      const clusterId = plots.length > 0 ? plots[0].groupId : undefined;
 
-      if (farmerSelectionSeason) {
-        setActiveYearSeason(farmerSelectionSeason);
+      // Get active year seasons filtered by farmer's cluster
+      const yearSeasons = await getActiveYearSeasons(clusterId);
+      
+      // Find season with PlanningOpen status
+      const planningOpenSeason = yearSeasons.find((ys) => ys.status === 'PlanningOpen');
+
+      if (planningOpenSeason) {
+        setActiveYearSeason(planningOpenSeason);
         const selectionsData = await getFarmerCultivationSelections(
           user.id,
-          farmerSelectionSeason.id
+          planningOpenSeason.id
         );
         setSelections(selectionsData);
       }
@@ -66,8 +74,17 @@ export const CultivationSelectionWidget: React.FC = () => {
   const progressPercentage =
     selections.totalPlots > 0 ? (selections.confirmedPlots / selections.totalPlots) * 100 : 0;
 
-  const isUrgent = selections.daysUntilDeadline <= 3 && selections.daysUntilDeadline > 0;
-  const isOverdue = selections.daysUntilDeadline <= 0;
+  // Calculate days until planning window ends
+  const planningWindowEnd = activeYearSeason.planningWindowEnd 
+    ? new Date(activeYearSeason.planningWindowEnd) 
+    : null;
+  const today = new Date();
+  const daysUntilDeadline = planningWindowEnd 
+    ? Math.ceil((planningWindowEnd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+    : 0;
+
+  const isUrgent = daysUntilDeadline <= 3 && daysUntilDeadline > 0;
+  const isOverdue = daysUntilDeadline <= 0;
 
   return (
     <View style={styles.container}>
@@ -84,9 +101,9 @@ export const CultivationSelectionWidget: React.FC = () => {
       <View style={styles.content}>
         <View style={styles.seasonInfo}>
           <Text style={styles.seasonName}>
-            {selections.seasonName} {selections.year}
+            {activeYearSeason.displayName}
           </Text>
-          {selections.selectionDeadline && (
+          {activeYearSeason.isInPlanningWindow && (
             <View
               style={[
                 styles.deadlineBadge,
@@ -109,8 +126,8 @@ export const CultivationSelectionWidget: React.FC = () => {
                 {isOverdue
                   ? 'Đã quá hạn'
                   : isUrgent
-                  ? `Còn ${selections.daysUntilDeadline} ngày`
-                  : `Còn ${selections.daysUntilDeadline} ngày`}
+                  ? `Còn ${daysUntilDeadline} ngày`
+                  : `Còn ${daysUntilDeadline} ngày`}
               </Text>
             </View>
           )}

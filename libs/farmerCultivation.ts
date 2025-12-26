@@ -7,6 +7,7 @@ import {
   ValidateCultivationPreferencesRequest,
   CultivationPreferenceResponse,
   YearSeason,
+  ActiveYearSeasonsResponse,
 } from '@/types/farmerCultivation';
 import { Result } from '@/types/api';
 
@@ -60,14 +61,24 @@ export const getFarmerCultivationSelections = async (
   return response as unknown as FarmerCultivationSelections;
 };
 
-export const getActiveYearSeasons = async (): Promise<YearSeason[]> => {
-  const response = await api.get<YearSeason[]>('/yearseason/active');
+export const getActiveYearSeasons = async (
+  clusterId?: string,
+  year?: number
+): Promise<YearSeason[]> => {
+  const params: any = {};
+  if (clusterId) params.clusterId = clusterId;
+  if (year) params.year = year;
 
-  return response as unknown as YearSeason[];
+  const response = await api.get<ActiveYearSeasonsResponse>('/YearSeason/active', {
+    params,
+  });
+
+  const data = response as unknown as ActiveYearSeasonsResponse;
+  return data.activeSeasons || [];
 };
 
 export const getYearSeasonById = async (yearSeasonId: string): Promise<YearSeason> => {
-  const response = await api.get<YearSeason>(`/yearseason/${yearSeasonId}`);
+  const response = await api.get<YearSeason>(`/YearSeason/${yearSeasonId}`);
 
   return response as unknown as YearSeason;
 };
