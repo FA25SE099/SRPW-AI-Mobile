@@ -19,6 +19,8 @@ import {
   MaterialDistributionSummary,
   ConfirmMaterialReceiptRequest,
   ConfirmMaterialReceiptResponse,
+  BulkConfirmMaterialReceiptRequest,
+  BulkConfirmMaterialReceiptResponse,
   GetFarmerReportsRequest,
   GetFarmerReportsResponse,
 } from '@/types/api';
@@ -362,7 +364,7 @@ export const getPendingMaterialReceipts = async (farmerId: string): Promise<Mate
   console.log('📤 [getPendingMaterialReceipts] Fetching for farmer:', farmerId);
   
   const response = await api.get<MaterialDistributionSummary>(
-    `/material-distributions/farmer/${farmerId}/pending`
+    `/material-distribution/farmer/${farmerId}/pending`
   );
 
   const data = response as unknown as MaterialDistributionSummary;
@@ -385,18 +387,73 @@ export const confirmMaterialReceipt = async (
     hasNotes: !!request.notes,
   });
 
-  const response = await api.post<ConfirmMaterialReceiptResponse>(
-    '/material-distribution/confirm-receipt',
-    {
-      materialDistributionId: request.materialDistributionId,
-      farmerId: request.farmerId,
-      notes: request.notes || null,
-    }
-  );
+  try {
+    const response = await api.post<ConfirmMaterialReceiptResponse>(
+      '/material-distribution/confirm-receipt',
+      {
+        materialDistributionId: request.materialDistributionId,
+        farmerId: request.farmerId,
+        notes: request.notes || null,
+      }
+    );
 
-  console.log('✅ [confirmMaterialReceipt] Response received:', response);
+    console.log('✅ [confirmMaterialReceipt] Response received:', response);
 
-  return response as unknown as ConfirmMaterialReceiptResponse;
+    // If we get here without error, it's a success (200 status)
+    return {
+      succeeded: true,
+      data: response as any,
+      message: 'Xác nhận thành công',
+      errors: null,
+    } as ConfirmMaterialReceiptResponse;
+  } catch (error: any) {
+    console.error('❌ [confirmMaterialReceipt] Error:', error);
+    return {
+      succeeded: false,
+      data: null,
+      message: error?.response?.data?.message || error?.message || 'Không thể xác nhận',
+      errors: error?.response?.data?.errors || [error?.message || 'Unknown error'],
+    };
+  }
+};
+
+export const bulkConfirmMaterialReceipts = async (
+  request: BulkConfirmMaterialReceiptRequest
+): Promise<BulkConfirmMaterialReceiptResponse> => {
+  console.log('📤 [bulkConfirmMaterialReceipts] Sending bulk request:', {
+    farmerId: request.farmerId,
+    count: request.distributionIds.length,
+    hasNotes: !!request.notes,
+  });
+
+  try {
+    const response = await api.post<BulkConfirmMaterialReceiptResponse>(
+      '/material-distribution/confirm-receipt-bulk',
+      {
+        farmerId: request.farmerId,
+        distributionIds: request.distributionIds,
+        notes: request.notes || null,
+      }
+    );
+
+    console.log('✅ [bulkConfirmMaterialReceipts] Response received:', response);
+
+    // If we get here without error, it's a success (200 status)
+    return {
+      succeeded: true,
+      data: response as any,
+      message: 'Xác nhận hàng loạt thành công',
+      errors: null,
+    } as BulkConfirmMaterialReceiptResponse;
+  } catch (error: any) {
+    console.error('❌ [bulkConfirmMaterialReceipts] Error:', error);
+    return {
+      succeeded: false,
+      data: null,
+      message: error?.response?.data?.message || error?.message || 'Không thể xác nhận hàng loạt',
+      errors: error?.response?.data?.errors || [error?.message || 'Unknown error'],
+    };
+  }
 };
 
 export const getFarmerReports = async (

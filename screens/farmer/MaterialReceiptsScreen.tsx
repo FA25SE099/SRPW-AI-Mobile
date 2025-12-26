@@ -30,7 +30,7 @@ import {
 } from '../../components/ui';
 import { MaterialReceiptCard } from '../../components/farmer/MaterialReceiptCard';
 import { ConfirmReceiptModal } from '../../components/farmer/ConfirmReceiptModal';
-import { getPendingMaterialReceipts, confirmMaterialReceipt } from '../../libs/farmer';
+import { getPendingMaterialReceipts, confirmMaterialReceipt, bulkConfirmMaterialReceipts } from '../../libs/farmer';
 import { PendingMaterialReceiptResponse } from '../../types/api';
 import { useUser } from '../../libs/auth';
 
@@ -43,6 +43,7 @@ export const MaterialReceiptsScreen = () => {
   );
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [imageViewerUrl, setImageViewerUrl] = useState<string | null>(null);
+  const [isBulkConfirming, setIsBulkConfirming] = useState(false);
 
   // Fetch pending receipts
   const {
@@ -67,13 +68,16 @@ export const MaterialReceiptsScreen = () => {
       }),
     onSuccess: (response) => {
       if (response.succeeded) {
+        // Refetch immediately
+        queryClient.invalidateQueries({ queryKey: ['pending-material-receipts', user?.id] });
+        refetch();
+        
         Alert.alert('Thành công', 'Đã xác nhận nhận vật liệu!', [
           {
             text: 'OK',
             onPress: () => {
               setIsModalVisible(false);
               setSelectedReceipt(null);
-              queryClient.invalidateQueries({ queryKey: ['pending-material-receipts'] });
             },
           },
         ]);
@@ -110,6 +114,55 @@ export const MaterialReceiptsScreen = () => {
 
   const handleViewImage = (imageUrl: string) => {
     setImageViewerUrl(imageUrl);
+  };
+
+  const handleBulkConfirm = () => {
+    if (!pendingReceipts || pendingReceipts.length === 0) {
+      Alert.alert('Thông báo', 'Không có vật liệu nào để xác nhận');
+      return;
+    }
+
+    Alert.alert(
+      'Xác nhận tất cả',
+      `Bạn có chắc chắn muốn xác nhận tất cả ${pendingReceipts.length} vật liệu?`,
+      [
+        {
+          text: 'Hủy',
+          style: 'cancel',
+        },
+        {
+          text: 'Xác nhận',
+          onPress: async () => {
+            setIsBulkConfirming(true);
+            try {
+              const distributionIds = pendingReceipts.map((r) => r.id);
+              const result = await bulkConfirmMaterialReceipts({
+                farmerId: user?.id || '',
+                distributionIds,
+                notes: 'Xác nhận hàng loạt',
+              });
+
+              if (result.succeeded) {
+                // Refetch immediately
+                queryClient.invalidateQueries({ queryKey: ['pending-material-receipts', user?.id] });
+                refetch();
+                
+                Alert.alert(
+                  'Thành công',
+                  `Đã xác nhận ${result.data?.successCount || pendingReceipts.length} vật liệu!`
+                );
+              } else {
+                Alert.alert('Lỗi', result.errors?.join(', ') || 'Không thể xác nhận hàng loạt');
+              }
+            } catch (error: any) {
+              Alert.alert('Lỗi', error?.message || 'Không thể xác nhận hàng loạt');
+            } finally {
+              setIsBulkConfirming(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (isLoading) {
@@ -240,6 +293,29 @@ export const MaterialReceiptsScreen = () => {
         </View>
 
         <Spacer size="lg" />
+
+        {/* Bulk Confirm Button */}
+        {pendingReceipts.length > 1 && (
+          <>
+            <TouchableOpacity
+              style={styles.bulkConfirmButton}
+              onPress={handleBulkConfirm}
+              disabled={isBulkConfirming}
+            >
+              {isBulkConfirming ? (
+                <ActivityIndicator size="small" color={colors.white} />
+              ) : (
+                <>
+                  <Ionicons name="checkmark-done" size={20} color={colors.white} />
+                  <BodySemibold style={styles.bulkConfirmButtonText}>
+                    Xác nhận tất cả ({pendingReceipts.length})
+                  </BodySemibold>
+                </>
+              )}
+            </TouchableOpacity>
+            <Spacer size="lg" />
+          </>
+        )}
 
         {/* Receipts List */}
         <ScrollView showsVerticalScrollIndicator={false}>
@@ -379,6 +455,26 @@ const styles = StyleSheet.create({
   listTitle: {
     fontSize: getFontSize(16),
     color: greenTheme.primary,
+  },
+  bulkConfirmButton: {
+    backgroundColor: greenTheme.primary,
+    borderRadius: moderateScale(borderRadius.lg),
+    paddingVertical: getSpacing(spacing.md),
+    paddingHorizontal: getSpacing(spacing.lg),
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: getSpacing(spacing.sm),
+    shadowColor: greenTheme.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  bulkConfirmButtonText: {
+    color: colors.white,
+    fontSize: getFontSize(16),
+    fontWeight: '700',
   },
   loadingContainer: {
     flex: 1,

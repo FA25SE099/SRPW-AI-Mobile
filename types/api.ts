@@ -1012,6 +1012,23 @@ export type ConfirmMaterialReceiptResponse = {
   errors?: string[] | null;
 };
 
+export type BulkConfirmMaterialReceiptRequest = {
+  farmerId: string;
+  distributionIds: string[];
+  notes?: string | null;
+};
+
+export type BulkConfirmMaterialReceiptResponse = {
+  succeeded: boolean;
+  data?: {
+    successCount: number;
+    failedCount: number;
+    failedIds?: string[];
+  } | null;
+  message?: string | null;
+  errors?: string[] | null;
+};
+
 // Farmer Report Types
 export type FarmerReport = {
   id: string;
