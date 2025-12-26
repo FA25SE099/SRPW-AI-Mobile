@@ -13,5 +13,6 @@ export { FarmerTasksScreen } from './TasksScreen';
 export { EconomicsScreen } from './EconomicsScreen';
 export { CompleteTaskScreen } from './CompleteTaskScreen';
 export { CreateReportScreen } from './CreateReportScreen';
+export { MaterialReceiptsScreen } from './MaterialReceiptsScreen';
 export { ReportsScreen } from './ReportsScreen';
 

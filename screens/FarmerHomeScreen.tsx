@@ -12,6 +12,7 @@ import { Container, Avatar, Spacer } from '../components/ui';
 import { useUser } from '../libs/auth';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialDistributionWidget } from '../components/farmer/MaterialDistributionWidget';
 
 // Mock data
 const mockStats = {
@@ -138,6 +139,10 @@ export const FarmerHomeScreen = () => {
               ))}
             </View>
 
+            <Spacer size="xl" />
+
+            {/* Material Distribution Widget */}
+            <MaterialDistributionWidget />
             <Spacer size="xl" />
 
             {/* Season Progress Card */}
