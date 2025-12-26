@@ -1,7 +1,7 @@
 module.exports = {
   expo: {
     name: "Duc Thanh Coop",
-    slug: "duc-thanh-coop",
+    slug: "MyApp",
     version: "1.0.0",
     scheme: "duc-thanh-coop",
     orientation: "portrait",
@@ -63,7 +63,8 @@ module.exports = {
       ]
     ],
     extra: {
-      apiUrl: "https://4bldd7d2-5100.asse.devtunnels.ms/api",
+      // apiUrl: "https://riceproduction-hef0e2b3gbc5akay.southeastasia-01.azurewebsites.net/api",
+      apiUrl: "http://157.66.218.227:5000/api",
       router: {},
       eas: {
         projectId: "5cce9704-e29b-495f-b7a4-e39106109240"
