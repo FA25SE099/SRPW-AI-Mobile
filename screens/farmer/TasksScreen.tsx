@@ -33,6 +33,11 @@ import { FarmerPlot, TodayTaskResponse, PlotCultivationPlan } from '../../types/
 import { getCurrentFarmerPlots, getTodayTasks, startTask, getPlotCultivationPlans } from '../../libs/farmer';
 import { TaskDetailModal } from './TaskDetailModal';
 import { Alert } from 'react-native';
+import {
+  translateTaskStatus,
+  translatePriority,
+  translateTaskType,
+} from '../../utils/translations';
 
 export const FarmerTasksScreen = () => {
   const router = useRouter();
@@ -661,7 +666,7 @@ export const FarmerTasksScreen = () => {
                           letterSpacing: 0.5,
                         }}
                       >
-                        {task.status.replace(/([A-Z])/g, ' $1').trim().toUpperCase()}
+                        {translateTaskStatus(task.status).toUpperCase()}
                       </BodySmall>
                     </View>
                     {task.isUav && (
@@ -694,7 +699,7 @@ export const FarmerTasksScreen = () => {
                     <View style={styles.taskHeaderInfo}>
                       <BodySemibold style={styles.taskTitle}>{task.taskName}</BodySemibold>
                       <BodySmall color={colors.textSecondary} style={{ marginTop: 2 }}>
-                        {task.taskType}
+                        {translateTaskType(task.taskType)}
                       </BodySmall>
                     </View>
                   </View>
@@ -747,7 +752,7 @@ export const FarmerTasksScreen = () => {
                           Ưu tiên
                         </BodySmall>
                       </View>
-                      <BodySemibold style={styles.detailValue}>{task.priority}</BodySemibold>
+                      <BodySemibold style={styles.detailValue}>{translatePriority(task.priority)}</BodySemibold>
                     </View>
                     {task.estimatedMaterialCost > 0 && (
                       <View style={styles.detailCard}>

@@ -40,6 +40,7 @@ import {
 import { FarmerPlot } from '../../types/api';
 import { getCurrentFarmerPlots, getPlotCultivationPlans } from '../../libs/farmer';
 import { useUser } from '../../libs/auth';
+import { translateTaskStatus } from '../../utils/translations';
 const DEFAULT_CENTER = {
   latitude: 11.2,
   longitude: 106.5,
@@ -160,7 +161,7 @@ const FieldCard = ({ field, onPressCard, onFocusOnMap, hasCultivationPlans }: Fi
         </View>
         <View style={styles.fieldDetailItem}>
           <BodySmall color={colors.textSecondary}>Trạng thái</BodySmall>
-          <BodySemibold>{field.status}</BodySemibold>
+          <BodySemibold>{translateTaskStatus(field.status)}</BodySemibold>
         </View>
         <View style={styles.fieldDetailItem}>
           <BodySmall color={colors.textSecondary}>Cảnh báo</BodySmall>
@@ -607,7 +608,7 @@ export const FieldsScreen = () => {
                     </View>
                     <View style={styles.infoTagDetailItem}>
                       <BodySmall color={colors.textSecondary}>Trạng thái:</BodySmall>
-                      <BodySemibold>{selectedPlotInfo.plot.status}</BodySemibold>
+                      <BodySemibold>{translateTaskStatus(selectedPlotInfo.plot.status)}</BodySemibold>
                     </View>
                   </View>
                   <Spacer size="sm" />
@@ -654,7 +655,7 @@ export const FieldsScreen = () => {
                 style={styles.closeButton}
                 onPress={() => setIsMapFullscreen(false)}
               >
-                <Body color={colors.primary}>Close</Body>
+                <Body color={colors.primary}>Đóng</Body>
               </TouchableOpacity>
               <View style={styles.fullscreenHeaderButtons}>
                 <Button
@@ -676,7 +677,7 @@ export const FieldsScreen = () => {
                     }
                   }}
                 >
-                  Reset View
+                  Đặt lại vị trí
                 </Button>
               </View>
             </View>
@@ -721,7 +722,7 @@ export const FieldsScreen = () => {
                     </View>
                     <View style={styles.infoTagDetailItem}>
                       <BodySmall color={colors.textSecondary}>Trạng thái:</BodySmall>
-                      <BodySemibold>{selectedPlotInfo.plot.status}</BodySemibold>
+                      <BodySemibold>{translateTaskStatus(selectedPlotInfo.plot.status)}</BodySemibold>
                     </View>
                   </View>
                   <Spacer size="sm" />
