@@ -22,6 +22,8 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing } from '../../theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Polygon, G } from 'react-native-svg';
+import * as MediaLibrary from 'expo-media-library';
+import * as FileSystem from 'expo-file-system';
 
 // Responsive breakpoints
 const BREAKPOINTS = {
@@ -190,12 +192,27 @@ export const DiseaseResultsScreen = () => {
     router.back();
   };
 
-  const handleSaveReport = () => {
-    Alert.alert(
-      'Save Report',
-      'Report saved to your farm log successfully',
-      [{ text: 'OK' }]
-    );
+  const handleSaveReport = async () => {
+    try {
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Cần quyền truy cập', 'Vui lòng cấp quyền truy cập thư viện ảnh để lưu ảnh.');
+        return;
+      }
+
+      let fileUri = imageUri;
+      if (imageUri.startsWith('http') || imageUri.startsWith('https')) {
+        const filename = imageUri.split('/').pop() || `disease_result_${Date.now()}.jpg`;
+        const downloadRes = await FileSystem.downloadAsync(imageUri, FileSystem.documentDirectory + filename);
+        fileUri = downloadRes.uri;
+      }
+
+      await MediaLibrary.createAssetAsync(fileUri);
+      Alert.alert('Thành công', 'Đã lưu ảnh vào thư viện!', [{ text: 'OK' }]);
+    } catch (error) {
+      console.error('Error saving image:', error);
+      Alert.alert('Lỗi', 'Không thể lưu ảnh.');
+    }
   };
 
   if (!result || !imageUri || isLoading) {
@@ -485,7 +502,7 @@ export const DiseaseResultsScreen = () => {
               style={styles.primaryButtonGradient}
             >
               <Ionicons name="download-outline" size={20} color="#FFFFFF" />
-              <Text style={styles.primaryButtonText}>Lưu báo cáo</Text>
+              <Text style={styles.primaryButtonText}>Lưu ảnh</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -911,4 +928,3 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
 });
-

@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   useWindowDimensions,
+  RefreshControl,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router';
@@ -132,6 +133,7 @@ export const FarmerTasksScreen = () => {
     isLoading,
     error,
     refetch,
+    isRefetching,
   } = useQuery({
     queryKey: ['today-tasks', { plotCultivationId: apiPlotCultivationId, status: apiStatusFilter }],
     queryFn: () => getTodayTasks({ plotCultivationId: apiPlotCultivationId, statusFilter: apiStatusFilter }),
@@ -625,12 +627,17 @@ export const FarmerTasksScreen = () => {
         <Spacer size="xl" />
 
         {/* Tasks List */}
-        {filteredTasks.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Body color={colors.textSecondary}>Không tìm thấy công việc nào</Body>
-          </View>
-        ) : (
-          <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={[greenTheme.primary]} />}
+          contentContainerStyle={filteredTasks.length === 0 ? { flexGrow: 1 } : undefined}
+        >
+          {filteredTasks.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Body color={colors.textSecondary}>Không tìm thấy công việc nào</Body>
+            </View>
+          ) : (
+            <>
             {filteredTasks.map((task: TodayTaskResponse, index: number) => {
               // Find the first approved task index
               const firstApprovedIndex = filteredTasks.findIndex(
@@ -857,10 +864,12 @@ export const FarmerTasksScreen = () => {
                             } as any);
                           }}
                         >
-                          <Ionicons name="warning-outline" size={16} color={colors.error} style={{ marginRight: 4 }} />
-                          <BodySemibold style={[styles.secondaryActionButtonText, { color: colors.error }]}>
-                            Báo cáo
-                          </BodySemibold>
+                          <View style={styles.secondaryActionButtonContent}>
+                            <Ionicons name="warning-outline" size={16} color={colors.error} style={{ marginRight: 4 }} />
+                            <BodySemibold style={[styles.secondaryActionButtonText, { color: colors.error }]}>
+                              Báo cáo
+                            </BodySemibold>
+                          </View>
                         </TouchableOpacity>
                       </>
                     )}
@@ -920,8 +929,9 @@ export const FarmerTasksScreen = () => {
               </TouchableOpacity>
             );
             })}
-          </ScrollView>
-        )}
+            </>
+          )}
+        </ScrollView>
       </Container>
       <TaskDetailModal
         visible={isDetailVisible}
@@ -1361,4 +1371,3 @@ const styles = StyleSheet.create({
     color: greenTheme.primary,
   },
 });
-

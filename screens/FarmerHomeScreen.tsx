@@ -3,8 +3,8 @@
  * Clean dashboard with contemporary design
  */
 
-import React from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Text, StatusBar, Platform, ImageBackground } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Text, StatusBar, Platform, ImageBackground, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { colors, spacing, borderRadius } from '../theme';
@@ -13,6 +13,7 @@ import { useUser } from '../libs/auth';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { MaterialDistributionWidget } from '../components/farmer/MaterialDistributionWidget';
+import { useQueryClient } from '@tanstack/react-query';
 
 // Mock data
 const mockStats = {
@@ -39,7 +40,16 @@ const recentActivities = [
 
 export const FarmerHomeScreen = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { data: user } = useUser();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    queryClient.invalidateQueries().then(() => {
+      setRefreshing(false);
+    });
+  }, [queryClient]);
 
   const getActivityIcon = (type: string) => {
     const icons: { [key: string]: { name: string; type: 'Ionicons' | 'MaterialCommunityIcons'; color: string } } = {
@@ -63,7 +73,11 @@ export const FarmerHomeScreen = () => {
     <>
       <StatusBar barStyle="light-content" backgroundColor="#10b981" />
       <SafeAreaView style={{ flex: 1, backgroundColor: '#10b981' }} edges={['top', 'bottom', 'left', 'right']}>  
-        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          style={styles.container} 
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#10b981']} tintColor="#10b981" />}
+        >
           {/* Header with Background Image */}
           <ImageBackground
             source={require('../assets/ricepaddy.jpg')}

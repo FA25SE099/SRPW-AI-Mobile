@@ -79,6 +79,7 @@ export const CompleteTaskScreen = () => {
     [key: string]: { quantity: string; notes: string };
   }>({});
   const [areaError, setAreaError] = useState<string | null>(null);
+  const [areaInput, setAreaInput] = useState('');
 
   const createFarmLogMutation = useMutation({
     mutationFn: async () => {
@@ -315,8 +316,9 @@ export const CompleteTaskScreen = () => {
             <Input
               label="Diện tích thực tế (ha)"
               placeholder="0.00"
-              value={formData.actualAreaCovered?.toString() || ''}
+              value={areaInput}
               onChangeText={(text) => {
+                setAreaInput(text);
                 const num = parseFloat(text);
                 const actualArea = isNaN(num) ? null : num;
                 
@@ -333,7 +335,7 @@ export const CompleteTaskScreen = () => {
                 });
               }}
               keyboardType="decimal-pad"
-              style={areaError ? { borderColor: colors.error } : undefined}
+              style={[styles.areaInput, areaError ? { borderColor: colors.error } : undefined]}
             />
             {areaError && (
               <BodySmall color={colors.error} style={styles.errorText}>
@@ -615,18 +617,23 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: moderateScale(borderRadius.md),
   },
+  areaInput: {
+    height: verticalScale(56),
+    justifyContent: 'center',
+  },
   removeImageButton: {
     position: 'absolute',
-    top: scale(-8),
-    right: scale(-8),
-    width: scale(24),
-    height: scale(24),
-    borderRadius: scale(12),
+    top: scale(-10),
+    right: scale(-10),
+    width: scale(32),
+    height: scale(32),
+    borderRadius: scale(16),
     backgroundColor: colors.error,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
     borderColor: greenTheme.cardBackground,
+    zIndex: 1,
   },
   errorText: {
     marginTop: getSpacing(spacing.xs),
