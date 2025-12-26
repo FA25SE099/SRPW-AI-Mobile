@@ -65,6 +65,8 @@ export const UavExecutionReportScreen = () => {
     notes: '',
   });
   const [proofImages, setProofImages] = useState<ProofImage[]>([]);
+  const [areaError, setAreaError] = useState<string | null>(null);
+  const [areaInput, setAreaInput] = useState(servicedAreaParam || '');
 
   const missingIdentifiers = !orderId || !plotId;
 
@@ -154,6 +156,9 @@ export const UavExecutionReportScreen = () => {
       const actualAreaValue = Number(formState.actualArea || '0');
       if (Number.isNaN(actualAreaValue) || actualAreaValue <= 0) {
         throw new Error('Actual area must be greater than zero.');
+      }
+      if (resolvedArea && actualAreaValue > resolvedArea) {
+        throw new Error(`Diện tích thực tế không được vượt quá diện tích dự kiến (${resolvedArea.toFixed(2)} ha)`);
       }
 
       return reportUavOrderCompletion({
@@ -267,27 +272,57 @@ export const UavExecutionReportScreen = () => {
             <Card variant="elevated" style={styles.card}>
               <H3 style={styles.sectionTitle}>Chi tiết báo cáo</H3>
               <Spacer size="md" />
-              <BodySmall color={colors.textSecondary}>
+              {/* <BodySmall color={colors.textSecondary}>
                 Chi phí thực tế (₫) <BodySmall color={colors.error}>*</BodySmall>
-              </BodySmall>
-              <Spacer size="xs" />
+              </BodySmall> */}
+              {/* <Spacer size="xs" />
               <Input
                 value={formState.actualCost}
                 onChangeText={(text) => setFormState((prev) => ({ ...prev, actualCost: text }))}
                 keyboardType="decimal-pad"
                 placeholder="Nhập chi phí dịch vụ thực tế"
               />
-              <Spacer size="md" />
+              <Spacer size="md" /> */}
               <BodySmall color={colors.textSecondary}>
                 Diện tích thực tế đã phủ (ha) <BodySmall color={colors.error}>*</BodySmall>
               </BodySmall>
               <Spacer size="xs" />
               <Input
-                value={formState.actualArea}
-                onChangeText={(text) => setFormState((prev) => ({ ...prev, actualArea: text }))}
+                value={areaInput}
+                onChangeText={(text) => {
+                  setAreaInput(text);
+                  const num = parseFloat(text);
+                  const actualArea = isNaN(num) ? null : num;
+                  
+                  // Validate against expected serviced area
+                  if (actualArea !== null && resolvedArea && actualArea > resolvedArea) {
+                    setAreaError(`Diện tích thực tế không được vượt quá diện tích dự kiến (${resolvedArea.toFixed(2)} ha)`);
+                  } else {
+                    setAreaError(null);
+                  }
+                  
+                  setFormState((prev) => ({ ...prev, actualArea: text }));
+                }}
                 keyboardType="decimal-pad"
                 placeholder="Nhập diện tích thực tế đã phủ"
+                style={[styles.areaInput, areaError ? { borderColor: colors.error } : undefined]}
               />
+              {areaError && (
+                <>
+                  <Spacer size="xs" />
+                  <BodySmall color={colors.error}>
+                    {areaError}
+                  </BodySmall>
+                </>
+              )}
+              {resolvedArea && !areaError && (
+                <>
+                  <Spacer size="xs" />
+                  <BodySmall color={colors.textSecondary}>
+                    Diện tích dự kiến: {resolvedArea.toFixed(2)} ha
+                  </BodySmall>
+                </>
+              )}
               <Spacer size="md" />
               <BodySmall color={colors.textSecondary}>Ghi chú</BodySmall>
               <Spacer size="xs" />
@@ -422,6 +457,10 @@ const styles = StyleSheet.create({
     color: greenTheme.primary,
     fontWeight: '700',
   },
+  areaInput: {
+    height: verticalScale(56),
+    justifyContent: 'center',
+  },
   mediaButtons: {
     flexDirection: 'row',
     gap: spacing.sm,
@@ -469,4 +508,3 @@ const styles = StyleSheet.create({
     backgroundColor: greenTheme.primary,
   },
 });
-

@@ -31,6 +31,14 @@ export const translateTaskStatus = (status: string): string => {
     case 'emergencyapproval':
     case 'emergency-approval':
       return 'Hoàn thành khẩn cấp';
+    case 'pending-approval':
+      return 'Chờ thực hiện';
+    case 'pending approval':
+      return 'Chờ thực hiện';
+    case 'pendingapproval':
+      return 'Chờ thực hiện';
+    case 'pending_approval':
+      return 'Chờ thực hiện';
     case 'cancelled':
     case 'canceled':
       return 'Đã hủy';
@@ -73,6 +81,11 @@ export const translateTaskType = (taskType: string): string => {
       return 'Trồng trọt';
     case 'other':
       return 'Khác';
+    case 'pendingapproval':
+    case 'pending-approval':
+    case 'pending approval':
+    case 'pending_approval':
+      return 'Chờ thực hiện';
     default:
       return taskType; // Return original if no translation found
   }
@@ -163,4 +176,3 @@ export const translateEnumsInArray = <T extends Record<string, any>>(
 ): T[] => {
   return arr.map((item) => translateEnumsInObject(item, fields));
 };
-

@@ -1306,6 +1306,8 @@ const styles = StyleSheet.create({
     borderRadius: moderateScale(borderRadius.full),
     borderWidth: 1,
     borderColor: colors.error + '40',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   overdueText: {
     color: colors.error,
