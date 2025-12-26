@@ -31,6 +31,10 @@ import {
 } from '../../components/ui';
 import { getUavServiceOrders } from '../../libs/uav';
 import { UavServiceOrder } from '../../types/api';
+import {
+  translateTaskStatus,
+  translatePriority,
+} from '../../utils/translations';
 
 export const UavOrdersScreen = () => {
   const router = useRouter();
@@ -233,7 +237,7 @@ export const UavOrdersScreen = () => {
                           style={getPriorityBadgeStyle(getPriorityColor(order.priority))}
                         >
                           <BodySmall style={{ color: getPriorityColor(order.priority) }}>
-                            {order.priority}
+                            {translatePriority(order.priority)}
                           </BodySmall>
                         </Badge>
                       </View>
@@ -244,7 +248,7 @@ export const UavOrdersScreen = () => {
                       style={getStatusBadgeStyle(getStatusColor(order.status))}
                     >
                       <BodySmall style={{ color: getStatusColor(order.status) }}>
-                        {order.status.replace(/([A-Z])/g, ' $1').trim()}
+                        {translateTaskStatus(order.status)}
                       </BodySmall>
                     </Badge>
                   </View>

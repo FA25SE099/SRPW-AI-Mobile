@@ -34,6 +34,12 @@ import {
 } from '../../components/ui';
 import { getFarmerReports } from '../../libs/farmer';
 import { FarmerReport } from '../../types/api';
+import {
+  translateTaskStatus,
+  translateSeverity,
+  translateReportType,
+  translateTaskType,
+} from '../../utils/translations';
 
 export const ReportsScreen = () => {
   const router = useRouter();
@@ -328,7 +334,7 @@ export const ReportsScreen = () => {
                         <BodySmall
                           style={{ color: getSeverityColor(report.severity), fontSize: 10 }}
                         >
-                          {report.severity.toUpperCase()}
+                          {translateSeverity(report.severity).toUpperCase()}
                         </BodySmall>
                       </Badge>
                     </View>
@@ -361,7 +367,7 @@ export const ReportsScreen = () => {
                           </BodySemibold>
                           {report.affectedTaskType && (
                             <BodySmall color={colors.textSecondary} style={styles.affectedTaskType}>
-                              {report.affectedTaskType}
+                              {translateTaskType(report.affectedTaskType)}
                             </BodySmall>
                           )}
                         </View>
@@ -421,7 +427,7 @@ export const ReportsScreen = () => {
                       <BodySmall
                         style={{ color: getStatusColor(report.status), fontSize: 10 }}
                       >
-                        {report.status}
+                        {translateTaskStatus(report.status)}
                       </BodySmall>
                     </Badge>
                     {report.cultivationPlanName && (

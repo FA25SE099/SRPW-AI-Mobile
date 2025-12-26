@@ -45,6 +45,10 @@ import {
 import { createEmergencyReport, getPlotCultivationPlans, detectPestInImage } from '../../libs/farmer';
 import { useUser } from '../../libs/auth';
 import { uploadFile } from '../../libs/api-client';
+import {
+  translateSeverity,
+  translateReportType,
+} from '../../utils/translations';
 
 const ALERT_TYPES: AlertType[] = ['Pest', 'Weather', 'Disease', 'Other'];
 const SEVERITY_LEVELS: Severity[] = ['Low', 'Medium', 'High', 'Critical'];
@@ -168,7 +172,7 @@ export const CreateReportScreen = () => {
       Alert.alert(
         'Đã gửi báo cáo',
         'Báo cáo khẩn cấp của bạn đã được gửi thành công. ' +
-        (images.length > 0 ? 'Images will be analyzed by AI.' : ''),
+        (images.length > 0 ? 'Ảnh sẽ được phân tích bởi AI.' : ''),
         [
           {
             text: 'OK',
@@ -185,7 +189,7 @@ export const CreateReportScreen = () => {
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Please grant gallery access to upload images.');
+      Alert.alert('Cần quyền truy cập', 'Vui lòng cấp quyền truy cập thư viện để tải lên ảnh.');
       return;
     }
 
@@ -440,7 +444,7 @@ export const CreateReportScreen = () => {
                 style={styles.picker}
                 onPress={() => setShowAlertTypePicker(!showAlertTypePicker)}
               >
-                <Body>{formData.alertType}</Body>
+                <Body>{translateReportType(formData.alertType)}</Body>
                 <Body>{showAlertTypePicker ? '▲' : '▼'}</Body>
               </TouchableOpacity>
               {showAlertTypePicker && (
@@ -457,7 +461,7 @@ export const CreateReportScreen = () => {
                         setShowAlertTypePicker(false);
                       }}
                     >
-                      <Body>{type}</Body>
+                      <Body>{translateReportType(type)}</Body>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -478,7 +482,7 @@ export const CreateReportScreen = () => {
                       { backgroundColor: getSeverityColor(formData.severity) },
                     ]}
                   />
-                  <Body>{formData.severity}</Body>
+                  <Body>{translateSeverity(formData.severity)}</Body>
                 </View>
                 <Body>{showSeverityPicker ? '▲' : '▼'}</Body>
               </TouchableOpacity>
@@ -503,7 +507,7 @@ export const CreateReportScreen = () => {
                             { backgroundColor: getSeverityColor(severity) },
                           ]}
                         />
-                        <Body>{severity}</Body>
+                        <Body>{translateSeverity(severity)}</Body>
                       </View>
                     </TouchableOpacity>
                   ))}
@@ -954,7 +958,7 @@ const styles = StyleSheet.create({
   },
   largeImage: {
     width: '100%',
-    height: '80%',
+    height: '100%',
   },
   imagesGrid: {
     flexDirection: 'row',

@@ -33,6 +33,7 @@ import {
 } from '../../components/ui';
 import { getPlotCultivationPlans } from '../../libs/farmer';
 import { PlotCultivationPlan } from '../../types/api';
+import { translateTaskStatus } from '../../utils/translations';
 
 export const PlotPlansScreen = () => {
   const router = useRouter();
@@ -140,7 +141,7 @@ export const PlotPlansScreen = () => {
                     }
                     style={styles.statusText}
                   >
-                    {plan.status}
+                    {translateTaskStatus(plan.status)}
                   </BodySmall>
                 </View>
 

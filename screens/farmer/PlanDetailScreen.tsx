@@ -38,6 +38,10 @@ import {
   FarmLogDetailResponse,
 } from '../../types/api';
 import { TaskDetailModal } from './TaskDetailModal';
+import {
+  translateTaskStatus,
+  translatePriority,
+} from '../../utils/translations';
 
 export const PlanDetailScreen = () => {
   const router = useRouter();
@@ -188,7 +192,7 @@ export const PlanDetailScreen = () => {
                           }
                           style={{ fontWeight: '600' }}
                         >
-                          {task.status}
+                          {translateTaskStatus(task.status)}
                         </BodySmall>
                       </View>
                       {task.description && (
@@ -205,7 +209,7 @@ export const PlanDetailScreen = () => {
                         {dayjs(task.scheduledDate).format('MMM D, YYYY')}
                       </BodySmall>
                       <BodySmall color={colors.textSecondary}>
-                        Ưu tiên: {task.priority}
+                        Ưu tiên: {translatePriority(task.priority)}
                       </BodySmall>
                       {typeof task.actualMaterialCost === 'number' && (
                         <BodySmall color={colors.textSecondary}>

@@ -17,6 +17,11 @@ import { useQuery } from '@tanstack/react-query';
 import { getCultivationTaskDetail } from '../../libs/farmer';
 import { CultivationTaskDetailResponse } from '../../types/api';
 import dayjs from 'dayjs';
+import {
+  translateTaskStatus,
+  translatePriority,
+  translateTaskType,
+} from '../../utils/translations';
 
 type Props = {
   visible: boolean;
@@ -75,11 +80,11 @@ export const TaskDetailModal = ({ visible, taskId, onClose }: Props) => {
         <View style={styles.badgeRow}>
           <View style={[styles.statusBadge, { backgroundColor: greenTheme.primaryLighter }]}>
             <BodySmall style={[styles.badgeText, { color: greenTheme.primary }]}>
-              {detail.status.replace(/([A-Z])/g, ' $1').trim()}
+              {translateTaskStatus(detail.status)}
             </BodySmall>
           </View>
           <View style={[styles.statusBadge, { backgroundColor: greenTheme.primaryLighter }]}>
-            <BodySmall style={[styles.badgeText, { color: greenTheme.primary }]}>Ưu tiên: {detail.priority}</BodySmall>
+            <BodySmall style={[styles.badgeText, { color: greenTheme.primary }]}>Ưu tiên: {translatePriority(detail.priority)}</BodySmall>
           </View>
         </View>
 

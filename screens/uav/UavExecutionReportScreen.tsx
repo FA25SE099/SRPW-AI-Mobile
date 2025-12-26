@@ -33,6 +33,7 @@ import {
 } from '../../components/ui';
 import { getUavOrderDetail, reportUavOrderCompletion } from '../../libs/uav';
 import { useUser } from '../../libs/auth';
+import { translateTaskStatus } from '../../utils/translations';
 
 type ProofImage = {
   uri: string;
@@ -257,7 +258,7 @@ export const UavExecutionReportScreen = () => {
                 Diện tích dự kiến: {resolvedArea.toFixed(2)} ha
               </BodySmall>
               <BodySmall color={colors.textSecondary}>
-                Trạng thái: {assignment.status.replace(/([A-Z])/g, ' $1').trim()}
+                Trạng thái: {translateTaskStatus(assignment.status)}
               </BodySmall>
             </Card>
 

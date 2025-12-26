@@ -37,6 +37,11 @@ import {
 import { Coordinate } from '../../types/coordinates';
 import { getUavOrderDetail } from '../../libs/uav';
 import { UavOrderDetail } from '../../types/api';
+import {
+  translateTaskStatus,
+  translatePriority,
+  translateTaskType,
+} from '../../utils/translations';
 
 const DEFAULT_CENTER = {
   latitude: 11.2,
@@ -359,7 +364,7 @@ export const UavOrderDetailScreen = () => {
                   style={getStatusBadgeStyle(getStatusColor(order.status))}
                 >
                   <BodySmall style={{ color: getStatusColor(order.status) }}>
-                    {order.status.replace(/([A-Z])/g, ' $1').trim()} Trạng thái
+                    {translateTaskStatus(order.status)}
                   </BodySmall>
                 </Badge>
                 <Spacer size="xs" />
@@ -368,7 +373,7 @@ export const UavOrderDetailScreen = () => {
                   style={getPriorityBadgeStyle(getPriorityColor(order.priority))}
                 >
                   <BodySmall style={{ color: getPriorityColor(order.priority) }}>
-                    {order.priority} Độ ưu tiên
+                    {translatePriority(order.priority)}
                   </BodySmall>
                 </Badge>
               </View>
@@ -442,7 +447,7 @@ export const UavOrderDetailScreen = () => {
                       </View>
                       <View style={styles.infoTagDetailItem}>
                         <BodySmall color={colors.textSecondary}>Trạng thái:</BodySmall>
-                        <BodySemibold>{selectedPlotInfo.status.replace(/([A-Z])/g, ' $1').trim()}</BodySemibold>
+                        <BodySemibold>{translateTaskStatus(selectedPlotInfo.status)}</BodySemibold>
                       </View>
                     </View>
                   </Card>
@@ -521,7 +526,7 @@ export const UavOrderDetailScreen = () => {
                     {assignment.cultivationTaskName && (
                       <BodySmall color={greenTheme.primary} style={{ marginTop: 4 }}>
                         Công việc: {assignment.cultivationTaskName}
-                        {assignment.taskType && ` (${assignment.taskType})`}
+                        {assignment.taskType && ` (${translateTaskType(assignment.taskType)})`}
                       </BodySmall>
                     )}
                   </View>
@@ -530,7 +535,7 @@ export const UavOrderDetailScreen = () => {
                     style={getStatusBadgeStyle(getStatusColor(assignment.status))}
                   >
                     <BodySmall style={{ color: getStatusColor(assignment.status) }}>
-                      {assignment.status.replace(/([A-Z])/g, ' $1').trim()}
+                      {translateTaskStatus(assignment.status)}
                     </BodySmall>
                   </Badge>
                 </View>

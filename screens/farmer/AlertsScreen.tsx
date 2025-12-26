@@ -29,6 +29,10 @@ import {
   Spacer,
 } from '../../components/ui';
 import { Alert } from '../../types/api';
+import {
+  translateSeverity,
+  translateReportType,
+} from '../../utils/translations';
 
 // Mock data
 const mockAlerts: Alert[] = [
@@ -217,7 +221,7 @@ export const AlertsScreen = () => {
                         <BodySmall
                           style={{ color: getSeverityColor(alert.severity), fontSize: 10 }}
                         >
-                          {alert.severity.toUpperCase()}
+                          {translateSeverity(alert.severity).toUpperCase()}
                         </BodySmall>
                       </Badge>
                     </View>
