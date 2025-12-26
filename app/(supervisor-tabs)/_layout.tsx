@@ -8,6 +8,18 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme';
 
+// Green theme colors for nature-friendly design
+const greenTheme = {
+  primary: '#2E7D32', // Forest green
+  primaryLight: '#4CAF50', // Medium green
+  primaryLighter: '#E8F5E9', // Light green background
+  accent: '#66BB6A', // Accent green
+  success: '#10B981', // Success green
+  background: '#F1F8F4', // Very light green tint
+  cardBackground: '#FFFFFF',
+  border: '#C8E6C9', // Light green border
+};
+
 export default function SupervisorTabsLayout() {
   return (
     <Tabs
@@ -26,7 +38,7 @@ export default function SupervisorTabsLayout() {
           shadowOpacity: 0.1,
           shadowRadius: 8,
         },
-        tabBarActiveTintColor: colors.primary,
+        tabBarActiveTintColor: greenTheme.primary,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarLabelStyle: {
           fontSize: 12,

@@ -664,6 +664,12 @@ export const FarmerTasksScreen = () => {
                         {task.status.replace(/([A-Z])/g, ' $1').trim().toUpperCase()}
                       </BodySmall>
                     </View>
+                    {task.isUav && (
+                      <View style={styles.uavBadge}>
+                        <Ionicons name="airplane-outline" size={12} color={greenTheme.primary} style={{ marginRight: 4 }} />
+                        <BodySmall style={styles.uavBadgeText}>UAV</BodySmall>
+                      </View>
+                    )}
                     {task.isOverdue && (
                       <View style={styles.overdueBadge}>
                         <Ionicons name="warning-outline" size={12} color={colors.error} style={{ marginRight: 4 }} />
@@ -834,7 +840,7 @@ export const FarmerTasksScreen = () => {
                         >
                           <View style={styles.primaryActionButtonContent}>
                             <BodySemibold style={styles.primaryActionButtonText}>
-                              Xác nhận hoàn thành
+                              Hoàn thành
                             </BodySemibold>
                           </View>
                         </TouchableOpacity>
@@ -853,7 +859,7 @@ export const FarmerTasksScreen = () => {
                         >
                           <Ionicons name="warning-outline" size={16} color={colors.error} style={{ marginRight: 4 }} />
                           <BodySemibold style={[styles.secondaryActionButtonText, { color: colors.error }]}>
-                            Báo cáo vấn đề
+                            Báo cáo
                           </BodySemibold>
                         </TouchableOpacity>
                       </>
@@ -1261,6 +1267,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: verticalScale(260),
     paddingVertical: getSpacing(spacing['4xl']),
+  },
+  uavBadge: {
+    backgroundColor: greenTheme.primaryLighter,
+    paddingHorizontal: getSpacing(spacing.sm),
+    paddingVertical: getSpacing(4),
+    borderRadius: moderateScale(borderRadius.full),
+    borderWidth: 1,
+    borderColor: greenTheme.primary + '40',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  uavBadgeText: {
+    color: greenTheme.primary,
+    fontSize: getFontSize(10),
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   overdueBadge: {
     backgroundColor: colors.error + '20',

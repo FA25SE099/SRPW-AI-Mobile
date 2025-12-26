@@ -498,39 +498,6 @@ export const UavOrderDetailScreen = () => {
 
           <Spacer size="md" />
 
-          {/* Materials */}
-          {/* <Card variant="elevated" style={styles.card}>
-            <H4>Vật liệu & Liều lượng</H4>
-            <Spacer size="md" />
-            {order.materials.length === 0 && (
-              <BodySmall color={colors.textSecondary}>Không có vật liệu được gán.</BodySmall>
-            )}
-            {order.materials.map((material) => (
-              <View key={material.materialId} style={styles.materialCard}>
-                <View style={styles.materialHeader}>
-                  <BodySemibold>{material.materialName}</BodySemibold>
-                  <Badge variant="neutral" style={styles.dosageBadge}>
-                    <BodySmall>{material.quantityPerHa} {material.materialUnit}/ha</BodySmall>
-                  </Badge>
-                </View>
-                <Spacer size="sm" />
-                <View style={styles.materialDetails}>
-                  <View style={styles.materialDetailItem}>
-                    <BodySmall color={colors.textSecondary}>Tổng số lượng:</BodySmall>
-                    <BodySemibold>
-                      {material.totalQuantityRequired} {material.materialUnit}
-                    </BodySemibold>
-                  </View>
-                  <View style={styles.materialDetailItem}>
-                    <BodySmall color={colors.textSecondary}>Chi phí dự kiến:</BodySmall>
-                    <BodySemibold>
-                      {material.totalEstimatedCost.toLocaleString()}₫
-                    </BodySemibold>
-                  </View>
-                </View>
-              </View>
-            ))}
-          </Card> */}
 
           <Spacer size="md" />
 
@@ -551,6 +518,12 @@ export const UavOrderDetailScreen = () => {
                     <BodySmall color={colors.textSecondary}>
                       Diện tích: {assignment.servicedArea} ha
                     </BodySmall>
+                    {assignment.cultivationTaskName && (
+                      <BodySmall color={greenTheme.primary} style={{ marginTop: 4 }}>
+                        Công việc: {assignment.cultivationTaskName}
+                        {assignment.taskType && ` (${assignment.taskType})`}
+                      </BodySmall>
+                    )}
                   </View>
                   <Badge
                     variant="neutral"
@@ -562,12 +535,6 @@ export const UavOrderDetailScreen = () => {
                   </Badge>
                 </View>
                 <Spacer size="sm" />
-                {/* <View style={styles.assignmentMeta}>
-                  <BodySmall color={colors.textSecondary}>Chi phí thực tế:</BodySmall>
-                  <BodySemibold>
-                    {assignment.actualCost ? `${assignment.actualCost.toLocaleString()}₫` : '—'}
-                  </BodySemibold>
-                </View> */}
                 {assignment.completionDate && (
                   <View style={styles.assignmentMeta}>
                     <BodySmall color={colors.textSecondary}>Hoàn thành:</BodySmall>
@@ -580,6 +547,40 @@ export const UavOrderDetailScreen = () => {
                   <>
                     <Spacer size="xs" />
                     <BodySmall color={colors.textSecondary}>{assignment.reportNotes}</BodySmall>
+                  </>
+                )}
+                {assignment.materials && assignment.materials.length > 0 && (
+                  <>
+                    <Spacer size="sm" />
+                    <View style={styles.materialsSection}>
+                      <BodySemibold style={styles.materialsTitle}>Vật liệu cần thiết</BodySemibold>
+                      <Spacer size="xs" />
+                      {assignment.materials.map((material) => (
+                        <View key={material.materialId} style={styles.materialCard}>
+                          <View style={styles.materialHeader}>
+                            <BodySemibold>{material.materialName}</BodySemibold>
+                            <Badge variant="neutral" style={styles.dosageBadge}>
+                              <BodySmall>{material.quantityPerHa} {material.materialUnit}/ha</BodySmall>
+                            </Badge>
+                          </View>
+                          <Spacer size="xs" />
+                          <View style={styles.materialDetails}>
+                            <View style={styles.materialDetailItem}>
+                              <BodySmall color={colors.textSecondary}>Tổng số lượng:</BodySmall>
+                              <BodySemibold>
+                                {material.totalQuantityRequired} {material.materialUnit}
+                              </BodySemibold>
+                            </View>
+                            <View style={styles.materialDetailItem}>
+                              <BodySmall color={colors.textSecondary}>Chi phí dự kiến:</BodySmall>
+                              <BodySemibold>
+                                {material.totalEstimatedCost.toLocaleString()}₫
+                              </BodySemibold>
+                            </View>
+                          </View>
+                        </View>
+                      ))}
+                    </View>
                   </>
                 )}
                 {assignment.proofUrls.length > 0 && (
@@ -1047,11 +1048,23 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs / 2,
     fontSize: 10,
   },
-  materialCard: {
+  materialsSection: {
     backgroundColor: greenTheme.primaryLighter,
     borderRadius: borderRadius.md,
     padding: spacing.md,
-    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+  },
+  materialsTitle: {
+    fontSize: 14,
+    color: greenTheme.primary,
+    fontWeight: '700',
+  },
+  materialCard: {
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: borderRadius.md,
+    padding: spacing.sm,
+    marginBottom: spacing.xs,
     borderWidth: 1,
     borderColor: greenTheme.border,
   },
