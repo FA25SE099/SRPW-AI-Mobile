@@ -30,8 +30,8 @@ export const MaterialDistributionWidget = () => {
     return null;
   }
 
-  const hasOverdue = (summary.totalOverdue || 0) > 0;
-  const hasUrgent = (summary.totalUrgent || 0) > 0;
+  const hasOverdue = (summary.overdueCount || 0) > 0;
+  const hasUrgent = (summary.dueTodayCount || 0) > 0;
 
   return (
     <TouchableOpacity
@@ -51,7 +51,7 @@ export const MaterialDistributionWidget = () => {
           </View>
           {hasOverdue && (
             <View style={styles.badge}>
-              <BodySmall style={styles.badgeText}>{summary.totalOverdue}</BodySmall>
+              <BodySmall style={styles.badgeText}>{summary.overdueCount}</BodySmall>
             </View>
           )}
         </View>
@@ -62,8 +62,8 @@ export const MaterialDistributionWidget = () => {
           <Spacer size="xs" />
           <BodySmall color={colors.textSecondary} style={styles.widgetSubtitle}>
             {summary.totalPending} chờ xác nhận
-            {hasOverdue && ` • ${summary.totalOverdue} quá hạn`}
-            {!hasOverdue && hasUrgent && ` • ${summary.totalUrgent} khẩn cấp`}
+            {hasOverdue && ` • ${summary.overdueCount} quá hạn`}
+            {!hasOverdue && hasUrgent && ` • ${summary.dueTodayCount} hôm nay`}
           </BodySmall>
         </View>
 

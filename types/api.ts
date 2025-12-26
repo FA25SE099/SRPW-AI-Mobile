@@ -963,29 +963,39 @@ export type MaterialDistributionResponse = {
 
 export type PendingMaterialReceiptResponse = {
   id: string;
-  materialDistributionId: string;
+  plotCultivationId: string;
+  plotName: string;
+  farmerId: string;
+  farmerName: string;
+  farmerPhone: string;
+  materialId: string;
   materialName: string;
-  materialUnit: string;
   quantity: number;
   unit: string;
-  plotId: string;
-  plotName: string;
-  plotSoThuaSoTo: string;
-  supervisorId: string;
-  supervisorName: string;
+  status: string;
+  scheduledDistributionDate: string;
+  distributionDeadline: string;
   actualDistributionDate: string;
+  supervisorConfirmationDeadline: string;
   farmerConfirmationDeadline: string;
+  supervisorConfirmedBy: string;
+  supervisorName: string;
+  supervisorConfirmedAt: string;
   supervisorNotes?: string | null;
+  farmerConfirmedAt?: string | null;
+  farmerNotes?: string | null;
   imageUrls?: string[] | null;
-  daysUntilDeadline: number;
   isOverdue: boolean;
-  isUrgent: boolean;
+  isSupervisorOverdue: boolean;
+  isFarmerOverdue: boolean;
 };
 
 export type MaterialDistributionSummary = {
+  farmerId: string;
   totalPending: number;
-  totalOverdue: number;
-  totalUrgent: number;
+  overdueCount: number;
+  dueTodayCount: number;
+  dueTomorrowCount: number;
   pendingReceipts: PendingMaterialReceiptResponse[];
 };
 

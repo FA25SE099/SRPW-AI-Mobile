@@ -359,24 +359,42 @@ export const getFarmerProfile = async (): Promise<FarmerProfileResponse> => {
 
 // Material Distribution APIs
 export const getPendingMaterialReceipts = async (farmerId: string): Promise<MaterialDistributionSummary> => {
+  console.log('📤 [getPendingMaterialReceipts] Fetching for farmer:', farmerId);
+  
   const response = await api.get<MaterialDistributionSummary>(
-    `/api/material-distribution/farmer/${farmerId}/pending`
+    `/material-distributions/farmer/${farmerId}/pending`
   );
 
-  return response as unknown as MaterialDistributionSummary;
+  const data = response as unknown as MaterialDistributionSummary;
+  
+  console.log('✅ [getPendingMaterialReceipts] Response:', {
+    totalPending: data.totalPending,
+    overdueCount: data.overdueCount,
+    receiptsCount: data.pendingReceipts?.length || 0,
+  });
+
+  return data;
 };
 
 export const confirmMaterialReceipt = async (
   request: ConfirmMaterialReceiptRequest
 ): Promise<ConfirmMaterialReceiptResponse> => {
+  console.log('📤 [confirmMaterialReceipt] Sending request:', {
+    materialDistributionId: request.materialDistributionId,
+    farmerId: request.farmerId,
+    hasNotes: !!request.notes,
+  });
+
   const response = await api.post<ConfirmMaterialReceiptResponse>(
-    '/api/material-distribution/confirm-receipt',
+    '/material-distribution/confirm-receipt',
     {
       materialDistributionId: request.materialDistributionId,
       farmerId: request.farmerId,
       notes: request.notes || null,
     }
   );
+
+  console.log('✅ [confirmMaterialReceipt] Response received:', response);
 
   return response as unknown as ConfirmMaterialReceiptResponse;
 };

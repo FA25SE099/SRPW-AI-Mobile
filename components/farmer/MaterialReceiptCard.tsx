@@ -35,8 +35,10 @@ export const MaterialReceiptCard: React.FC<MaterialReceiptCardProps> = ({
   onConfirm,
   onViewImage,
 }) => {
-  const isUrgent = receipt.isUrgent && !receipt.isOverdue;
-  const isOverdue = receipt.isOverdue;
+  // Calculate days until deadline
+  const daysUntilDeadline = dayjs(receipt.farmerConfirmationDeadline).diff(dayjs(), 'day');
+  const isOverdue = receipt.isFarmerOverdue || daysUntilDeadline < 0;
+  const isUrgent = !isOverdue && daysUntilDeadline <= 1;
 
   return (
     <TouchableOpacity
@@ -54,7 +56,7 @@ export const MaterialReceiptCard: React.FC<MaterialReceiptCardProps> = ({
           <View style={styles.overdueBar}>
             <Ionicons name="warning" size={16} color={colors.white} />
             <BodySmall style={styles.overdueBarText}>
-              ⚠️ Quá hạn {Math.abs(receipt.daysUntilDeadline)} ngày
+              ⚠️ Quá hạn {Math.abs(daysUntilDeadline)} ngày
             </BodySmall>
           </View>
         )}
@@ -91,7 +93,7 @@ export const MaterialReceiptCard: React.FC<MaterialReceiptCardProps> = ({
             <BodySmall color={greenTheme.primary} style={styles.label}>
               Thửa đất:
             </BodySmall>
-            <Body style={styles.value}>{receipt.plotSoThuaSoTo}</Body>
+            <Body style={styles.value}>{receipt.plotName}</Body>
           </View>
         </View>
 

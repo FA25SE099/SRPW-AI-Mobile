@@ -95,8 +95,14 @@ export const MaterialReceiptsScreen = () => {
 
   const handleConfirmSubmit = (notes: string) => {
     if (selectedReceipt) {
+      console.log('🔍 [MaterialReceipts] Confirming receipt:', {
+        id: selectedReceipt.id,
+        materialName: selectedReceipt.materialName,
+        plotName: selectedReceipt.plotName,
+      });
+      
       confirmMutation.mutate({
-        materialDistributionId: selectedReceipt.materialDistributionId,
+        materialDistributionId: selectedReceipt.id, // Backend uses 'id' field
         notes,
       });
     }
@@ -208,27 +214,27 @@ export const MaterialReceiptsScreen = () => {
             <BodySmall color={colors.textSecondary}>Chờ xác nhận</BodySmall>
           </View>
 
-          {(summary?.totalOverdue || 0) > 0 && (
+          {(summary?.overdueCount || 0) > 0 && (
             <View style={[styles.summaryCard, styles.summaryCardOverdue]}>
               <View style={styles.summaryCardIcon}>
                 <Ionicons name="warning" size={24} color={colors.error} />
               </View>
               <BodySemibold style={[styles.summaryCardValue, { color: colors.error }]}>
-                {summary?.totalOverdue || 0}
+                {summary?.overdueCount || 0}
               </BodySemibold>
               <BodySmall color={colors.error}>Quá hạn</BodySmall>
             </View>
           )}
 
-          {(summary?.totalUrgent || 0) > 0 && (
+          {(summary?.dueTodayCount || 0) > 0 && (
             <View style={[styles.summaryCard, styles.summaryCardUrgent]}>
               <View style={styles.summaryCardIcon}>
                 <Ionicons name="time" size={24} color={colors.warning} />
               </View>
               <BodySemibold style={[styles.summaryCardValue, { color: colors.warning }]}>
-                {summary?.totalUrgent || 0}
+                {summary?.dueTodayCount || 0}
               </BodySemibold>
-              <BodySmall color={colors.warning}>Khẩn cấp</BodySmall>
+              <BodySmall color={colors.warning}>Hôm nay</BodySmall>
             </View>
           )}
         </View>
