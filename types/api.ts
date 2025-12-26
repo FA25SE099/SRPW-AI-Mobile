@@ -919,3 +919,81 @@ export type FarmerProfileResponse = {
   farmCode: string | null;
   plotCount: number;
 };
+
+// Material Distribution Types
+export type MaterialDistributionStatus = 'Pending' | 'PartiallyConfirmed' | 'Completed' | 'Overdue';
+
+export type MaterialDistributionResponse = {
+  id: string;
+  materialDistributionId: string;
+  materialId: string;
+  materialName: string;
+  materialUnit: string;
+  quantity: number;
+  unit: string;
+  plotId: string;
+  plotName: string;
+  plotSoThuaSoTo: string;
+  farmerId: string;
+  farmerName: string;
+  farmerPhone: string;
+  supervisorId: string;
+  supervisorName: string;
+  supervisorPhone: string;
+  status: MaterialDistributionStatus;
+  scheduledDistributionDate: string;
+  distributionDeadline: string;
+  actualDistributionDate?: string | null;
+  supervisorConfirmationDeadline: string;
+  farmerConfirmationDeadline: string;
+  supervisorConfirmedAt?: string | null;
+  farmerConfirmedAt?: string | null;
+  supervisorNotes?: string | null;
+  farmerNotes?: string | null;
+  imageUrls?: string[] | null;
+  isSupervisorOverdue: boolean;
+  isFarmerOverdue: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PendingMaterialReceiptResponse = {
+  id: string;
+  materialDistributionId: string;
+  materialName: string;
+  materialUnit: string;
+  quantity: number;
+  unit: string;
+  plotId: string;
+  plotName: string;
+  plotSoThuaSoTo: string;
+  supervisorId: string;
+  supervisorName: string;
+  actualDistributionDate: string;
+  farmerConfirmationDeadline: string;
+  supervisorNotes?: string | null;
+  imageUrls?: string[] | null;
+  daysUntilDeadline: number;
+  isOverdue: boolean;
+  isUrgent: boolean;
+};
+
+export type MaterialDistributionSummary = {
+  totalPending: number;
+  totalOverdue: number;
+  totalUrgent: number;
+  pendingReceipts: PendingMaterialReceiptResponse[];
+};
+
+export type ConfirmMaterialReceiptRequest = {
+  materialDistributionId: string;
+  farmerId: string;
+  notes?: string | null;
+};
+
+export type ConfirmMaterialReceiptResponse = {
+  succeeded: boolean;
+  data?: string | null;
+  message?: string | null;
+  errors?: string[] | null;
+};

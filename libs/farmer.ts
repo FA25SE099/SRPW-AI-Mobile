@@ -17,6 +17,9 @@ import {
   StartTaskRequest,
   StartTaskResponse,
   FarmerProfileResponse,
+  MaterialDistributionSummary,
+  ConfirmMaterialReceiptRequest,
+  ConfirmMaterialReceiptResponse,
 } from '@/types/api';
 
 type GetFarmerPlotsParams = {
@@ -279,5 +282,29 @@ export const getFarmerProfile = async (): Promise<FarmerProfileResponse> => {
   const response = await api.get<FarmerProfileResponse>('/Farmer/profile');
 
   return response as unknown as FarmerProfileResponse;
+};
+
+// Material Distribution APIs
+export const getPendingMaterialReceipts = async (): Promise<MaterialDistributionSummary> => {
+  const response = await api.get<MaterialDistributionSummary>(
+    '/api/material-distribution/farmer/pending'
+  );
+
+  return response as unknown as MaterialDistributionSummary;
+};
+
+export const confirmMaterialReceipt = async (
+  request: ConfirmMaterialReceiptRequest
+): Promise<ConfirmMaterialReceiptResponse> => {
+  const response = await api.post<ConfirmMaterialReceiptResponse>(
+    '/api/material-distribution/confirm-receipt',
+    {
+      materialDistributionId: request.materialDistributionId,
+      farmerId: request.farmerId,
+      notes: request.notes || null,
+    }
+  );
+
+  return response as unknown as ConfirmMaterialReceiptResponse;
 };
 
