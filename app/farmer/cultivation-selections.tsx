@@ -154,33 +154,21 @@ export default function CultivationSelectionsScreen() {
 
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
-                <View style={[styles.statIcon, { backgroundColor: '#dcfce7' }]}>
-                  <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-                </View>
-                <View>
-                  <Text style={styles.statValue}>{selections?.confirmedPlots || 0}</Text>
-                  <Text style={styles.statLabel}>Đã xác nhận</Text>
-                </View>
+                <Ionicons name="checkmark-circle" size={24} color="#10b981" />
+                <Text style={styles.statValue}>{selections?.confirmedPlots || 0}</Text>
+                <Text style={styles.statLabel}>Đã xác nhận</Text>
               </View>
 
               <View style={styles.statItem}>
-                <View style={[styles.statIcon, { backgroundColor: '#fef3c7' }]}>
-                  <Ionicons name="time" size={20} color="#f59e0b" />
-                </View>
-                <View>
-                  <Text style={styles.statValue}>{selections?.pendingPlots || 0}</Text>
-                  <Text style={styles.statLabel}>Chưa chọn</Text>
-                </View>
+                <Ionicons name="time" size={24} color="#f59e0b" />
+                <Text style={styles.statValue}>{selections?.pendingPlots || 0}</Text>
+                <Text style={styles.statLabel}>Chưa chọn</Text>
               </View>
 
               <View style={styles.statItem}>
-                <View style={[styles.statIcon, { backgroundColor: '#e0e7ff' }]}>
-                  <Ionicons name="grid" size={20} color="#6366f1" />
-                </View>
-                <View>
-                  <Text style={styles.statValue}>{selections?.totalPlots || 0}</Text>
-                  <Text style={styles.statLabel}>Tổng số</Text>
-                </View>
+                <Ionicons name="grid" size={24} color="#6366f1" />
+                <Text style={styles.statValue}>{selections?.totalPlots || 0}</Text>
+                <Text style={styles.statLabel}>Tổng số</Text>
               </View>
             </View>
           </View>
@@ -338,19 +326,13 @@ const styles = StyleSheet.create({
   },
   statItem: {
     flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.xs,
     backgroundColor: '#f9fafb',
     padding: spacing.md,
     borderRadius: borderRadius.md,
-  },
-  statIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
   },
   statValue: {
     fontSize: 18,
@@ -389,4 +371,3 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-
