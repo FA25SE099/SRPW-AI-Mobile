@@ -60,17 +60,34 @@ export interface FarmerCultivationSelections {
 
 export interface YearSeason {
   id: string;
-  year: number;
   seasonId: string;
   seasonName: string;
+  seasonType: string;
+  clusterId: string;
+  clusterName: string;
+  year: number;
   riceVarietyId?: string;
   riceVarietyName?: string;
   startDate: string;
   endDate: string;
-  allowFarmerSelection: boolean;
-  farmerSelectionWindowStart?: string;
-  farmerSelectionWindowEnd?: string;
-  isActive: boolean;
+  breakStartDate?: string;
+  breakEndDate?: string;
+  planningWindowStart: string;
+  planningWindowEnd: string;
+  status: string;
+  notes?: string;
+  managedByExpertId?: string;
+  managedByExpertName?: string;
+  groupCount: number;
+  daysUntilStart: number;
+  daysUntilEnd: number;
+  isInPlanningWindow: boolean;
+  displayName: string;
+}
+
+export interface ActiveYearSeasonsResponse {
+  activeSeasons: YearSeason[];
+  totalCount: number;
 }
 
 export interface SelectCultivationPreferencesRequest {

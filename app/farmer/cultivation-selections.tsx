@@ -16,6 +16,7 @@ import { Container, Spacer, Button } from '@/components/ui';
 import { PlotSelectionCard } from '@/components/farmer/PlotSelectionCard';
 import { DeadlineCountdown } from '@/components/farmer/DeadlineCountdown';
 import { getFarmerCultivationSelections, getActiveYearSeasons } from '@/libs/farmerCultivation';
+import { getCurrentFarmerPlots } from '@/libs/farmer';
 import { useUser } from '@/libs/auth';
 import { FarmerCultivationSelections, YearSeason } from '@/types/farmerCultivation';
 
@@ -30,6 +31,7 @@ export default function CultivationSelectionsScreen() {
   const [selections, setSelections] = useState<FarmerCultivationSelections | null>(null);
   const [activeYearSeasons, setActiveYearSeasons] = useState<YearSeason[]>([]);
   const [selectedYearSeasonId, setSelectedYearSeasonId] = useState<string>(yearSeasonId || '');
+  const [activeYearSeason, setActiveYearSeason] = useState<YearSeason | null>(null);
 
   useEffect(() => {
     loadData();
@@ -41,17 +43,26 @@ export default function CultivationSelectionsScreen() {
     try {
       setLoading(true);
 
-      const yearSeasons = await getActiveYearSeasons();
+      // Get farmer's plots to extract clusterId
+      const plots = await getCurrentFarmerPlots({ pageSize: 1 });
+      const clusterId = plots.length > 0 ? plots[0].groupId : undefined;
+
+      // Get active year seasons filtered by farmer's cluster
+      const yearSeasons = await getActiveYearSeasons(clusterId);
       setActiveYearSeasons(yearSeasons);
 
       let currentYearSeasonId = selectedYearSeasonId;
       if (!currentYearSeasonId && yearSeasons.length > 0) {
-        const farmerSelectionSeason = yearSeasons.find((ys) => ys.allowFarmerSelection);
-        currentYearSeasonId = farmerSelectionSeason?.id || yearSeasons[0].id;
+        // Find season with PlanningOpen status
+        const planningOpenSeason = yearSeasons.find((ys) => ys.status === 'PlanningOpen');
+        currentYearSeasonId = planningOpenSeason?.id || yearSeasons[0].id;
         setSelectedYearSeasonId(currentYearSeasonId);
       }
 
       if (currentYearSeasonId) {
+        const currentSeason = yearSeasons.find(ys => ys.id === currentYearSeasonId);
+        setActiveYearSeason(currentSeason || null);
+        
         const selectionsData = await getFarmerCultivationSelections(
           user.id,
           currentYearSeasonId
@@ -116,11 +127,14 @@ export default function CultivationSelectionsScreen() {
         }
       >
         <Container padding="lg">
-          {selections?.selectionDeadline && (
+          {activeYearSeason?.isInPlanningWindow && activeYearSeason.planningWindowEnd && (
             <>
               <DeadlineCountdown
-                deadline={selections.selectionDeadline}
-                daysRemaining={selections.daysUntilDeadline}
+                deadline={activeYearSeason.planningWindowEnd}
+                daysRemaining={Math.ceil(
+                  (new Date(activeYearSeason.planningWindowEnd).getTime() - new Date().getTime()) /
+                    (1000 * 60 * 60 * 24)
+                )}
               />
               <Spacer size="md" />
             </>
