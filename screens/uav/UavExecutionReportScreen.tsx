@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   areaInput: {
-    height: verticalScale(56),
+    height: 40,
     justifyContent: 'center',
   },
   mediaButtons: {
