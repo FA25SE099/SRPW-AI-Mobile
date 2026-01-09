@@ -1,3 +1,4 @@
+// Environment variables are automatically loaded by Expo and available via process.env
 module.exports = {
   expo: {
     name: "MyApp",
@@ -63,12 +64,12 @@ module.exports = {
       ]
     ],
     extra: {
-      apiUrl: "https://4bldd7d2-5100.asse.devtunnels.ms/api",
+      apiUrl: process.env.EXPO_PUBLIC_API_URL,
       router: {},
       eas: {
         projectId: "5cce9704-e29b-495f-b7a4-e39106109240"
       },
-      mapboxAccessToken: "pk.eyJ1IjoiZHVjbmd1eWVuMTIwNDA0IiwiYSI6ImNtamF4b3RuNDA3N3gzZnF4Z2RiZGNudGgifQ.frZ1ll3lizDPgi9DPb4kEw"
+      mapboxAccessToken: process.env.EXPO_PUBLIC_MAPBOX_TOKEN || "pk.eyJ1IjoiZHVjbmd1eWVuMTIwNDA0IiwiYSI6ImNtamF4b3RuNDA3N3gzZnF4Z2RiZGNudGgifQ.frZ1ll3lizDPgi9DPb4kEw"
     }
   }
 };
