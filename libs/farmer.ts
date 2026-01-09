@@ -1,5 +1,4 @@
 import { Platform } from 'react-native';
-import * as FileSystem from 'expo-file-system';
 import { api, uploadFile } from './api-client';
 import { env } from '@/configs/env';
 import { tokenStorage } from './token-storage';
@@ -17,6 +16,11 @@ import {
   StartTaskRequest,
   StartTaskResponse,
   FarmerProfileResponse,
+  MaterialDistributionSummary,
+  ConfirmMaterialReceiptRequest,
+  ConfirmMaterialReceiptResponse,
+  BulkConfirmMaterialReceiptRequest,
+  BulkConfirmMaterialReceiptResponse,
   GetFarmerReportsRequest,
   GetFarmerReportsResponse,
 } from '@/types/api';
@@ -353,6 +357,103 @@ export const getFarmerProfile = async (): Promise<FarmerProfileResponse> => {
   const response = await api.get<FarmerProfileResponse>('/Farmer/profile');
 
   return response as unknown as FarmerProfileResponse;
+};
+
+// Material Distribution APIs
+export const getPendingMaterialReceipts = async (farmerId: string): Promise<MaterialDistributionSummary> => {
+  console.log('📤 [getPendingMaterialReceipts] Fetching for farmer:', farmerId);
+  
+  const response = await api.get<MaterialDistributionSummary>(
+    `/material-distribution/farmer/${farmerId}/pending`
+  );
+
+  const data = response as unknown as MaterialDistributionSummary;
+  
+  console.log('✅ [getPendingMaterialReceipts] Response:', {
+    totalPending: data.totalPending,
+    overdueCount: data.overdueCount,
+    receiptsCount: data.pendingReceipts?.length || 0,
+  });
+
+  return data;
+};
+
+export const confirmMaterialReceipt = async (
+  request: ConfirmMaterialReceiptRequest
+): Promise<ConfirmMaterialReceiptResponse> => {
+  console.log('📤 [confirmMaterialReceipt] Sending request:', {
+    materialDistributionId: request.materialDistributionId,
+    farmerId: request.farmerId,
+    hasNotes: !!request.notes,
+  });
+
+  try {
+    const response = await api.post<ConfirmMaterialReceiptResponse>(
+      '/material-distribution/confirm-receipt',
+      {
+        materialDistributionId: request.materialDistributionId,
+        farmerId: request.farmerId,
+        notes: request.notes || null,
+      }
+    );
+
+    console.log('✅ [confirmMaterialReceipt] Response received:', response);
+
+    // If we get here without error, it's a success (200 status)
+    return {
+      succeeded: true,
+      data: response as any,
+      message: 'Xác nhận thành công',
+      errors: null,
+    } as ConfirmMaterialReceiptResponse;
+  } catch (error: any) {
+    console.error('❌ [confirmMaterialReceipt] Error:', error);
+    return {
+      succeeded: false,
+      data: null,
+      message: error?.response?.data?.message || error?.message || 'Không thể xác nhận',
+      errors: error?.response?.data?.errors || [error?.message || 'Unknown error'],
+    };
+  }
+};
+
+export const bulkConfirmMaterialReceipts = async (
+  request: BulkConfirmMaterialReceiptRequest
+): Promise<BulkConfirmMaterialReceiptResponse> => {
+  console.log('📤 [bulkConfirmMaterialReceipts] Sending bulk request:', {
+    farmerId: request.farmerId,
+    count: request.distributionIds.length,
+    hasNotes: !!request.notes,
+  });
+
+  try {
+    const response = await api.post<BulkConfirmMaterialReceiptResponse>(
+      '/material-distribution/confirm-receipt-bulk',
+      {
+        farmerId: request.farmerId,
+        distributionIds: request.distributionIds,
+        notes: request.notes || null,
+      }
+    );
+
+    console.log('✅ [bulkConfirmMaterialReceipts] Response received:', response);
+
+    // If we get here without error, it's a success (200 status)
+    return {
+      succeeded: true,
+      data: response as any,
+      message: 'Xác nhận hàng loạt thành công',
+      errors: null,
+    } as BulkConfirmMaterialReceiptResponse;
+  } catch (error: any) {
+    console.error('❌ [bulkConfirmMaterialReceipts] Error:', error);
+    return {
+      succeeded: false,
+      data: null,
+      message: error?.response?.data?.message || error?.message || 'Không thể xác nhận hàng loạt',
+      errors: error?.response?.data?.errors || [error?.message || 'Unknown error'],
+    };
+  }
 };
 
 export const getFarmerReports = async (

@@ -168,7 +168,10 @@ export const LoginScreen = () => {
             <Spacer size="sm" />
 
             {/* Forgot Password */}
-            <TouchableOpacity style={styles.forgotPassword}>
+            <TouchableOpacity 
+              style={styles.forgotPassword}
+              onPress={() => router.push('/auth/forgot-password')}
+            >
               <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
             </TouchableOpacity>
           </View>
@@ -189,17 +192,6 @@ export const LoginScreen = () => {
             </TouchableOpacity>
           </View>
 
-          <Spacer size="md" />
-
-          {/* Sign Up Link */}
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Quên mật khẩu? </Text>
-            <TouchableOpacity onPress={() => router.push('/auth/register')}>
-              <Text style={styles.signUpText}>Liên hệ hỗ trợ</Text>
-            </TouchableOpacity>
-          </View>
-
-          <Spacer size="xl" />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

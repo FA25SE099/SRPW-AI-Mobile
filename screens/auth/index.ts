@@ -5,4 +5,6 @@
 
 export { LoginScreen } from './LoginScreen';
 export { OnboardingScreen } from './OnboardingScreen';
+export { ForgotPasswordScreen } from './ForgotPasswordScreen';
+export { ChangePasswordScreen } from './ChangePasswordScreen';
 

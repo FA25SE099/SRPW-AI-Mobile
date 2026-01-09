@@ -125,19 +125,19 @@ export const TaskDetailModal = ({ visible, taskId, onClose }: Props) => {
         <BodySemibold>Chi phí & Diện tích</BodySemibold>
         <Spacer size="xs" />
         <View style={styles.infoRow}>
-          <BodySmall color={colors.textSecondary}>Vật liệu dự kiến:</BodySmall>
+          <BodySmall color={colors.textSecondary}>Chi phí dự kiến:</BodySmall>
           <BodySmall>{detail.estimatedMaterialCost.toLocaleString()}₫</BodySmall>
         </View>
-        <View style={styles.infoRow}>
+        {/* <View style={styles.infoRow}>
           <BodySmall color={colors.textSecondary}>Vật liệu thực tế:</BodySmall>
           <BodySmall>{detail.actualMaterialCost.toLocaleString()}₫</BodySmall>
-        </View>
-        {detail.actualServiceCost > 0 && (
+        </View> */}
+        {/* {detail.actualServiceCost > 0 && (
           <View style={styles.infoRow}>
             <BodySmall color={colors.textSecondary}>Dịch vụ thực tế:</BodySmall>
             <BodySmall>{detail.actualServiceCost.toLocaleString()}₫</BodySmall>
           </View>
-        )}
+        )} */}
         <View style={styles.infoRow}>
           <BodySmall color={colors.textSecondary}>Diện tích thửa:</BodySmall>
           <BodySmall>{detail.plotArea?.toFixed(2)} ha</BodySmall>
@@ -156,8 +156,8 @@ export const TaskDetailModal = ({ visible, taskId, onClose }: Props) => {
                   {material.plannedTotalEstimatedCost.toLocaleString()}₫
                 </BodySmall>
                 <BodySmall color={colors.textSecondary}>
-                  Số lượng dự kiến: {material.actualQuantityUsed} {material.materialUnit} • Chi phí thực tế:{' '}
-                  {material.actualCost.toLocaleString()}₫
+                  Số lượng dự kiến: {material.actualQuantityUsed} {material.materialUnit}
+                   {/* • Chi phí thực tế:{' '}                  {material.actualCost.toLocaleString()}₫ */}
                 </BodySmall>
                 {material.logNotes && (
                   <BodySmall color={colors.textSecondary}>Ghi chú: {material.logNotes}</BodySmall>

@@ -3,7 +3,7 @@
  * Display AI detection results with bounding boxes
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -22,6 +22,9 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing } from '../../theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Polygon, G } from 'react-native-svg';
+import * as MediaLibrary from 'expo-media-library';
+import * as FileSystem from 'expo-file-system';
+import { captureRef } from 'react-native-view-shot';
 
 // Responsive breakpoints
 const BREAKPOINTS = {
@@ -122,6 +125,7 @@ export const DiseaseResultsScreen = () => {
   const [imageUri, setImageUri] = useState<string>('');
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
   const [isLoading, setIsLoading] = useState(true);
+  const viewRef = useRef(null);
 
   // Responsive calculations
   const isSmallScreen = windowDimensions.width < BREAKPOINTS.small;
@@ -190,12 +194,28 @@ export const DiseaseResultsScreen = () => {
     router.back();
   };
 
-  const handleSaveReport = () => {
-    Alert.alert(
-      'Save Report',
-      'Report saved to your farm log successfully',
-      [{ text: 'OK' }]
-    );
+  const handleSaveReport = async () => {
+    try {
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Cần quyền truy cập', 'Vui lòng cấp quyền truy cập thư viện ảnh để lưu ảnh.');
+        return;
+      }
+
+      if (viewRef.current) {
+        const uri = await captureRef(viewRef, {
+          format: 'jpg',
+          quality: 0.9,
+          result: 'tmpfile',
+        });
+        
+        await MediaLibrary.createAssetAsync(uri);
+        Alert.alert('Thành công', 'Đã lưu ảnh (kèm kết quả) vào thư viện!', [{ text: 'OK' }]);
+      }
+    } catch (error) {
+      console.error('Error saving image:', error);
+      Alert.alert('Lỗi', 'Không thể lưu ảnh.');
+    }
   };
 
   if (!result || !imageUri || isLoading) {
@@ -254,7 +274,11 @@ export const DiseaseResultsScreen = () => {
       >
         {/* Image with Pest Masks */}
         <View style={[styles.imageContainer, isMediumScreen && styles.imageContainerMedium]}>
-          <View style={[styles.imageWrapper, { width: displayWidth, height: displayHeight }]}>
+          <View 
+            ref={viewRef}
+            collapsable={false}
+            style={[styles.imageWrapper, { width: displayWidth, height: displayHeight }]}
+          >
             <Image
               source={{ uri: imageUri }}
               style={styles.image}
@@ -485,7 +509,7 @@ export const DiseaseResultsScreen = () => {
               style={styles.primaryButtonGradient}
             >
               <Ionicons name="download-outline" size={20} color="#FFFFFF" />
-              <Text style={styles.primaryButtonText}>Lưu báo cáo</Text>
+              <Text style={styles.primaryButtonText}>Lưu ảnh</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -911,4 +935,3 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
 });
-

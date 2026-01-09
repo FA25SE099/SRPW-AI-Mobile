@@ -182,18 +182,18 @@ export const ProductionPlanDetailsScreen = () => {
               <BodySmall style={styles.summarySubtext}>completed</BodySmall>
             </Card>
 
-            <Card style={styles.summaryCard}>
+            {/* <Card style={styles.summaryCard}>
               <BodySmall style={styles.summaryLabel}>Days</BodySmall>
               <H4 style={styles.summaryValue}>{planDetail.daysElapsed}</H4>
               <BodySmall style={styles.summarySubtext}>elapsed</BodySmall>
-            </Card>
+            </Card> */}
 
-            <Card style={styles.summaryCard}>
+            {/* <Card style={styles.summaryCard}>
               <BodySmall style={styles.summaryLabel}>Cost</BodySmall>
               <BodySmall style={styles.summaryValueSmall}>
                 {formatCurrency(planDetail.totalActualCost || planDetail.totalEstimatedCost)}
               </BodySmall>
-            </Card>
+            </Card> */}
           </View>
 
           <Spacer size="lg" />
@@ -219,13 +219,13 @@ export const ProductionPlanDetailsScreen = () => {
                           <View style={styles.stageHeaderText}>
                             <BodySemibold>{stage.stageName}</BodySemibold>
                             <BodySmall style={styles.stageDays}>
-                              Day {stage.startDay} - {stage.endDay}
+                              Stage {stage.stageOrder} - {stage.status}
                             </BodySmall>
                           </View>
                         </View>
-                        <BodySmall style={styles.stageProgress}>
+                        {/* <BodySmall style={styles.stageProgress}>
                           {stage.progressPercentage.toFixed(0)}%
-                        </BodySmall>
+                        </BodySmall> */}
                       </View>
 
                       <Spacer size="xs" />

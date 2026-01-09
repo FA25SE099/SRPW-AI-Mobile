@@ -28,8 +28,8 @@
         <action android:name="android.intent.action.VIEW"/>
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
-        <data android:scheme="myapp"/>
-        <data android:scheme="exp+myapp"/>
+        <data android:scheme="duc-thanh-coop"/>
+        <data android:scheme="exp+duc-thanh-coop"/>
       </intent-filter>
     </activity>
   </application>

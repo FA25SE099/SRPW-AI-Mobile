@@ -3,7 +3,7 @@
  * Submit emergency reports for plots about pests, weather, disease, etc.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -21,6 +21,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { captureRef } from 'react-native-view-shot';
 import { colors, spacing, borderRadius, shadows } from '../../theme';
 import { scale, moderateScale, getFontSize, getSpacing, isTablet, verticalScale } from '../../utils/responsive';
 import {
@@ -91,6 +92,7 @@ export const CreateReportScreen = () => {
     offsetY?: number;
   } | null>(null);
   const [selectedPestIndex, setSelectedPestIndex] = useState<number | null>(null);
+  const viewRef = useRef(null);
 
   // Fetch cultivations for the selected plot
   const { data: cultivationsData } = useQuery({
@@ -284,6 +286,31 @@ export const CreateReportScreen = () => {
       setPestDetectionResults(null);
       setAnnotatedImageDimensions(null);
       setSelectedPestIndex(null);
+    }
+  };
+
+  const handleAddAnnotatedImage = async () => {
+    try {
+      if (viewRef.current) {
+        const uri = await captureRef(viewRef, {
+          format: 'jpg',
+          quality: 0.8,
+          result: 'tmpfile',
+        });
+        
+        const fileName = `annotated_report_${Date.now()}.jpg`;
+        const newImage = {
+          uri: uri,
+          type: 'image/jpeg',
+          name: fileName,
+        };
+        
+        setImages([...images, newImage]);
+        Alert.alert('Thành công', 'Đã thêm ảnh có kết quả phân tích vào danh sách ảnh báo cáo.');
+      }
+    } catch (error) {
+      console.error('Failed to capture view', error);
+      Alert.alert('Lỗi', 'Không thể chụp ảnh kết quả.');
     }
   };
 
@@ -611,6 +638,7 @@ export const CreateReportScreen = () => {
                       </BodySmall>
                       <Spacer size="md" />
                       <View style={styles.largeImageWrapper}>
+                        <View ref={viewRef} collapsable={false} style={{ width: '100%', height: '100%' }}>
                         <Image 
                           source={{ uri: images[0].uri }} 
                           style={styles.largeImage}
@@ -753,6 +781,7 @@ export const CreateReportScreen = () => {
                             })}
                           </View>
                         )}
+                        </View>
                         <TouchableOpacity
                           style={styles.removeImageButton}
                           onPress={() => removeImage(0)}
@@ -760,6 +789,16 @@ export const CreateReportScreen = () => {
                           <Ionicons name="close-circle" size={28} color={colors.white} />
                         </TouchableOpacity>
                       </View>
+                      <Spacer size="sm" />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onPress={handleAddAnnotatedImage}
+                        style={{ borderColor: greenTheme.primary, backgroundColor: greenTheme.primaryLighter }}
+                      >
+                        <Ionicons name="add-circle-outline" size={18} color={greenTheme.primary} style={{ marginRight: 8 }} />
+                        Thêm ảnh kết quả vào báo cáo
+                      </Button>
                     </View>
                   )}
                   

@@ -54,6 +54,28 @@ const greenTheme = {
   border: '#C8E6C9', // Light green border
 };
 
+const getStatusColor = (status: string): string => {
+  switch (status) {
+    case 'Completed':
+      return greenTheme.success;
+    case 'InProgress':
+    case 'Approved':
+      return greenTheme.primary;
+    case 'PendingApproval':
+    case 'OnHold':
+      return '#F59E0B';
+    case 'Draft':
+    case 'Pending':
+      return colors.textTertiary;
+    case 'Cancelled':
+    case 'Emergency':
+    case 'EmergencyApproval':
+      return colors.error;
+    default:
+      return colors.textSecondary;
+  }
+};
+
 export const PlotCultivationDetailScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams<{
@@ -97,19 +119,6 @@ export const PlotCultivationDetailScreen = () => {
     staleTime: 0,
     refetchOnMount: true,
   });
-
-  const getStatusColor = (status: string): string => {
-    switch (status) {
-      case 'Completed':
-        return greenTheme.success;
-      case 'InProgress':
-        return greenTheme.primary;
-      case 'Pending':
-        return colors.textTertiary;
-      default:
-        return colors.textSecondary;
-    }
-  };
 
   const getTaskIcon = (taskType: string) => {
     switch (taskType) {
@@ -279,7 +288,10 @@ export const PlotCultivationDetailScreen = () => {
               <Ionicons name="trending-up-outline" size={32} color={greenTheme.primary} />
               <Spacer size="xs" />
               <BodySmall style={styles.overviewLabel}>Status</BodySmall>
-              <Badge variant="primary" style={{ alignSelf: 'center', backgroundColor: greenTheme.primary }}>
+              <Badge
+                style={{ alignSelf: 'center', backgroundColor: getStatusColor(cultivationPlan.status) + '20' }}
+                textStyle={{ color: getStatusColor(cultivationPlan.status), fontWeight: '600' }}
+              >
                 {cultivationPlan.status}
               </Badge>
             </Card>
@@ -358,7 +370,12 @@ export const PlotCultivationDetailScreen = () => {
                     />
                     <BodySemibold>{stage.stageName}</BodySemibold>
                   </View>
-                    <Badge variant="primary" style={{ backgroundColor: greenTheme.primary }}>{stage.tasks.length} tasks</Badge>
+                  <Badge
+                    style={{ backgroundColor: greenTheme.primary + '20' }}
+                    textStyle={{ color: greenTheme.primary, fontWeight: '600' }}
+                  >
+                    {stage.tasks.length} tasks
+                  </Badge>
                 </TouchableOpacity>
 
                 {stage.description && expandedStages[stage.stageId] && (
@@ -380,7 +397,6 @@ export const PlotCultivationDetailScreen = () => {
                         plotCultivationId={cultivationPlan.plotCultivationId}
                         isExpanded={expandedTasks[task.taskId]}
                         onToggle={() => toggleTask(task.taskId)}
-                        getStatusColor={getStatusColor}
                         getTaskIcon={getTaskIcon}
                         formatDate={formatDate}
                         onViewImages={handleViewImages}
@@ -463,7 +479,6 @@ const TaskItem = ({
   plotCultivationId,
   isExpanded,
   onToggle,
-  getStatusColor,
   getTaskIcon,
   formatDate,
   onViewImages,
@@ -473,7 +488,6 @@ const TaskItem = ({
   plotCultivationId: string;
   isExpanded: boolean;
   onToggle: () => void;
-  getStatusColor: (status: string) => keyof typeof colors;
   getTaskIcon: (taskType: string) => any;
   formatDate: (date?: string) => string;
   onViewImages: (urls: string[]) => void;
@@ -542,7 +556,10 @@ const TaskItem = ({
           <Ionicons name={getTaskIcon(task.taskType)} size={18} color={greenTheme.primary} />
           <Body style={styles.taskName}>{task.taskName}</Body>
         </View>
-        <Badge variant="primary" style={{ backgroundColor: getStatusColor(task.status) }}>
+        <Badge
+          style={{ backgroundColor: getStatusColor(task.status) + '20' }}
+          textStyle={{ color: getStatusColor(task.status), fontWeight: '600' }}
+        >
           {task.status}
         </Badge>
       </TouchableOpacity>
@@ -630,7 +647,7 @@ const TaskItem = ({
           </View>
 
           {/* Report Late Button - Only shown for latest version */}
-          {selectedVersionId === null && (
+          {selectedVersionId === null && task.status !== 'Completed' && task.status !== 'EmergencyApproval' && (
             <>
               <Spacer size="sm" />
               <TouchableOpacity

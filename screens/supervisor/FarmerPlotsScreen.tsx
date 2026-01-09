@@ -549,21 +549,35 @@ export const FarmerPlotsScreen = () => {
 
             {priceResult && (
               <ScrollView style={styles.priceResultScroll}>
-                {priceResult.materialCostDetails?.map((material: any, index: number) => (
+                {priceResult.materialCostItems?.map((material: any, index: number) => (
                   <View key={index} style={styles.materialRow}>
                     <BodySmall style={styles.materialName}>{material.materialName}</BodySmall>
                     <BodySmall>
-                      {material.quantity} {material.unit}
+                      {material.totalQuantityNeeded} {material.unit}
                     </BodySmall>
-                    <BodySemibold>{formatCurrency(material.cost)}</BodySemibold>
+                    <BodySemibold>{formatCurrency(material.totalCost)}</BodySemibold>
                   </View>
+                  
                 ))}
+
+                {priceResult.taskCostBreakdowns && (
+                  <>
+                    <Spacer size="md" />
+                    <H4>Task Breakdown</H4>
+                    {priceResult.taskCostBreakdowns.map((task: any, index: number) => (
+                      <View key={`task-${index}`} style={styles.materialRow}>
+                        <BodySemibold style={styles.materialName}>{task.taskName}</BodySemibold>
+                        <BodySemibold>{formatCurrency(task.totalTaskCost)}</BodySemibold>
+                      </View>
+                    ))}
+                  </>
+                )}
 
                 <Spacer size="md" />
                 <View style={styles.totalRow}>
                   <BodySemibold>Total Cost:</BodySemibold>
                   <H4 style={{ color: colors.primary }}>
-                    {formatCurrency(priceResult.totalCost)}
+                    {formatCurrency(priceResult.totalCostForArea)}
                   </H4>
                 </View>
               </ScrollView>

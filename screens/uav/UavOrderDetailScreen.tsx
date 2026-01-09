@@ -489,7 +489,7 @@ export const UavOrderDetailScreen = () => {
                 </View>
               </>
             )}
-            <Spacer size="sm" />
+            {/* <Spacer size="sm" />
             <View style={styles.infoRow}>
               <BodySmall color={colors.textSecondary}>Chi phí dự kiến:</BodySmall>
               <BodySemibold>{order.estimatedCost?.toLocaleString() ?? 0}₫</BodySemibold>
@@ -498,7 +498,7 @@ export const UavOrderDetailScreen = () => {
             <View style={styles.infoRow}>
               <BodySmall color={colors.textSecondary}>Chi phí thực tế:</BodySmall>
               <BodySemibold>{order.actualCost?.toLocaleString() ?? 0}₫</BodySemibold>
-            </View>
+            </View> */}
           </Card>
 
           <Spacer size="md" />
@@ -518,7 +518,7 @@ export const UavOrderDetailScreen = () => {
                 onPress={() => focusPlotOnMap(assignment.plotId)}
               >
                 <View style={styles.assignmentHeader}>
-                  <View>
+                  <View style={{ flex: 1, marginRight: spacing.sm }}>
                     <BodySemibold>{assignment.plotName}</BodySemibold>
                     <BodySmall color={colors.textSecondary}>
                       Diện tích: {assignment.servicedArea} ha
@@ -576,12 +576,12 @@ export const UavOrderDetailScreen = () => {
                                 {material.totalQuantityRequired} {material.materialUnit}
                               </BodySemibold>
                             </View>
-                            <View style={styles.materialDetailItem}>
+                            {/* <View style={styles.materialDetailItem}>
                               <BodySmall color={colors.textSecondary}>Chi phí dự kiến:</BodySmall>
                               <BodySemibold>
                                 {material.totalEstimatedCost.toLocaleString()}₫
                               </BodySemibold>
-                            </View>
+                            </View> */}
                           </View>
                         </View>
                       ))}
@@ -633,23 +633,29 @@ export const UavOrderDetailScreen = () => {
                 {assignment.status !== 'Completed' && (
                   <>
                     <Spacer size="sm" />
-                    <TouchableOpacity
-                      style={styles.reportButton}
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        router.push({
-                          pathname: '/uav/orders/[orderId]/report',
-                          params: {
-                            orderId: order.orderId,
-                            plotId: assignment.plotId,
-                            plotName: assignment.plotName,
-                            servicedArea: assignment.servicedArea.toString(),
-                          },
-                        } as any);
-                      }}
-                    >
-                      <BodySemibold style={styles.reportButtonText}>Báo cáo hoàn thành</BodySemibold>
-                    </TouchableOpacity>
+                    {dayjs(order.scheduledDate).startOf('day').isAfter(dayjs().startOf('day')) ? (
+                      <View style={[styles.reportButton, { borderColor: colors.textSecondary, opacity: 0.6 }]}>
+                        <BodySemibold style={{ color: colors.textSecondary }}>Chưa thể bắt đầu</BodySemibold>
+                      </View>
+                    ) : (
+                      <TouchableOpacity
+                        style={styles.reportButton}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          router.push({
+                            pathname: '/uav/orders/[orderId]/report',
+                            params: {
+                              orderId: order.orderId,
+                              plotId: assignment.plotId,
+                              plotName: assignment.plotName,
+                              servicedArea: assignment.servicedArea.toString(),
+                            },
+                          } as any);
+                        }}
+                      >
+                        <BodySemibold style={styles.reportButtonText}>Báo cáo hoàn thành</BodySemibold>
+                      </TouchableOpacity>
+                    )}
                   </>
                 )}
               </TouchableOpacity>
@@ -1002,7 +1008,7 @@ const styles = StyleSheet.create({
   assignmentHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   assignmentMeta: {
     flexDirection: 'row',
@@ -1177,4 +1183,3 @@ const getPriorityBadgeStyle = (color: string): ViewStyle => {
     borderColor: color,
   };
 };
-

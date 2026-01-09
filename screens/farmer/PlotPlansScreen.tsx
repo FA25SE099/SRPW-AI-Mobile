@@ -158,12 +158,12 @@ export const PlotPlansScreen = () => {
                       {dayjs(plan.plantingDate).format('MMM D, YYYY')}
                     </BodySemibold>
                   </View>
-                  <View style={styles.detailItem}>
+                  {/* <View style={styles.detailItem}>
                     <BodySmall color={colors.textSecondary}>Năng suất thực tế</BodySmall>
                     <BodySemibold>
                       {plan.actualYield ? `${plan.actualYield} kg` : 'Chưa có'}
                     </BodySemibold>
-                  </View>
+                  </View> */}
                 </View>
 
                 <Spacer size="md" />

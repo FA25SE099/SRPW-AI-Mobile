@@ -120,8 +120,19 @@ api.interceptors.response.use(
         return data;
       }
 
-      // Return the unwrapped data for successful results
-      return data.data;
+      // If there's a data property, unwrap it
+      if ('data' in data) {
+        return data.data;
+      }
+
+      // If there's no data property but there's a message, return an object with the message
+      // This handles endpoints like change-password, forgot-password that return just a message
+      if (data.message) {
+        return { message: data.message };
+      }
+
+      // Fallback: return the whole response
+      return data;
     }
 
     // For responses without Result<T> wrapper, return as-is

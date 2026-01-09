@@ -131,7 +131,7 @@ export const PlanDetailScreen = () => {
             <Body>←</Body>
           </TouchableOpacity>
           <H3 style={styles.headerTitle}>{plan.planName || planName}</H3>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             onPress={() =>
               router.push({
                 pathname: '/farmer/reports/create',
@@ -141,7 +141,7 @@ export const PlanDetailScreen = () => {
             style={styles.reportButton}
           >
             <BodySmall color={colors.error}>Báo cáo</BodySmall>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         <BodySmall color={colors.textSecondary}>

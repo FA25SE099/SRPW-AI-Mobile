@@ -378,6 +378,17 @@ export const ProfileScreen = () => {
 
         <Spacer size="xl" />
         
+        {/* Change Password Button */}
+        <Button 
+          onPress={() => router.push('/auth/change-password')} 
+          variant="outline" 
+          fullWidth
+        >
+          {isFarmer ? 'Thay đổi mật khẩu' : 'Change Password'}
+        </Button>
+
+        <Spacer size="md" />
+        
         {/* Logout Button */}
         {isSupervisor && (
         <Button onPress={handleLogout} variant="outline" loading={logout.isPending} fullWidth>

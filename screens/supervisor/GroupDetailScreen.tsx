@@ -173,7 +173,7 @@ export const GroupDetailScreen = () => {
 
           {/* Production Plans Section */}
           <View style={styles.sectionHeader}>
-            <H4>Production Plans ({productionPlans.length})</H4>
+            <H4>Production Plan</H4>
           </View>
 
           <Spacer size="sm" />

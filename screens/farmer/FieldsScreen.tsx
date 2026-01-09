@@ -163,10 +163,10 @@ const FieldCard = ({ field, onPressCard, onFocusOnMap, hasCultivationPlans }: Fi
           <BodySmall color={colors.textSecondary}>Trạng thái</BodySmall>
           <BodySemibold>{translateTaskStatus(field.status)}</BodySemibold>
         </View>
-        <View style={styles.fieldDetailItem}>
+        {/* <View style={styles.fieldDetailItem}>
           <BodySmall color={colors.textSecondary}>Cảnh báo</BodySmall>
           <BodySemibold>{field.activeAlerts}</BodySemibold>
-        </View>
+        </View> */}
       </View>
       <Spacer size="md" />
       <View style={styles.buttonRow}>

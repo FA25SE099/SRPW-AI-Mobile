@@ -3,8 +3,8 @@
  * Clean dashboard with contemporary design
  */
 
-import React from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Text, StatusBar, Platform, ImageBackground } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Text, StatusBar, Platform, ImageBackground, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { colors, spacing, borderRadius } from '../theme';
@@ -12,6 +12,9 @@ import { Container, Avatar, Spacer } from '../components/ui';
 import { useUser } from '../libs/auth';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialDistributionWidget } from '../components/farmer/MaterialDistributionWidget';
+import { useQueryClient } from '@tanstack/react-query';
+import { CultivationSelectionWidget } from '../components/farmer/CultivationSelectionWidget';
 
 // Mock data
 const mockStats = {
@@ -38,7 +41,16 @@ const recentActivities = [
 
 export const FarmerHomeScreen = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { data: user } = useUser();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    queryClient.invalidateQueries().then(() => {
+      setRefreshing(false);
+    });
+  }, [queryClient]);
 
   const getActivityIcon = (type: string) => {
     const icons: { [key: string]: { name: string; type: 'Ionicons' | 'MaterialCommunityIcons'; color: string } } = {
@@ -62,7 +74,11 @@ export const FarmerHomeScreen = () => {
     <>
       <StatusBar barStyle="light-content" backgroundColor="#10b981" />
       <SafeAreaView style={{ flex: 1, backgroundColor: '#10b981' }} edges={['top', 'bottom', 'left', 'right']}>  
-        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          style={styles.container} 
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#10b981']} tintColor="#10b981" />}
+        >
           {/* Header with Background Image */}
           <ImageBackground
             source={require('../assets/ricepaddy.jpg')}
@@ -80,9 +96,9 @@ export const FarmerHomeScreen = () => {
                   />
                   <Text style={styles.topUserName}>{user?.firstName} {user?.lastName}</Text>
                 </View>
-                <TouchableOpacity style={styles.bellButton}>
+                {/* <TouchableOpacity style={styles.bellButton}>
                   <Ionicons name="notifications-outline" size={26} color="#FFFFFF" />
-                </TouchableOpacity>
+                </TouchableOpacity> */}
               </View>
 
               {/* Welcome Message */}
@@ -115,7 +131,7 @@ export const FarmerHomeScreen = () => {
 
             {/* Quick Actions */}
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Hành động nhanh</Text>
+              <Text style={styles.sectionTitle}>Danh sách tác vụ</Text>
             </View>
             <Spacer size="md" />
             <View style={styles.quickActionsGrid}>
@@ -138,6 +154,14 @@ export const FarmerHomeScreen = () => {
               ))}
             </View>
 
+            <Spacer size="xl" />
+
+            {/* Cultivation Selection Widget */}
+            <CultivationSelectionWidget />
+            <Spacer size="xl" />
+
+            {/* Material Distribution Widget */}
+            <MaterialDistributionWidget />
             <Spacer size="xl" />
 
             {/* Season Progress Card */}
