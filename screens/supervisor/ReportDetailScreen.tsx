@@ -109,10 +109,10 @@ export const ReportDetailScreen = () => {
       queryClient.invalidateQueries({ queryKey: ['supervisor-reports'] });
       setShowResolveModal(false);
       setResolutionNotes('');
-      Alert.alert('Success', 'Report has been resolved successfully');
+      Alert.alert('Thành công', 'Đã giải quyết báo cáo thành công');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.message || 'Failed to resolve report');
+      Alert.alert('Lỗi', error.message || 'Không thể giải quyết báo cáo');
     },
   });
 
@@ -152,15 +152,15 @@ export const ReportDetailScreen = () => {
         <Container>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={greenTheme.primary} />
-            <BodySemibold style={styles.backText}>Back</BodySemibold>
+            <BodySemibold style={styles.backText}>Quay lại</BodySemibold>
           </TouchableOpacity>
           <Spacer size="xl" />
           <View style={styles.emptyState}>
             <Ionicons name="alert-circle" size={48} color={colors.error} />
             <Spacer size="md" />
-            <BodySemibold style={styles.emptyTitle}>Report not found</BodySemibold>
+            <BodySemibold style={styles.emptyTitle}>Không tìm thấy báo cáo</BodySemibold>
             <BodySmall style={styles.emptyText}>
-              The report you're looking for doesn't exist or has been removed.
+              Báo cáo bạn đang tìm không tồn tại hoặc đã bị xóa.
             </BodySmall>
           </View>
         </Container>
@@ -175,7 +175,7 @@ export const ReportDetailScreen = () => {
       <Container>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={greenTheme.primary} />
-          <BodySemibold style={styles.backText}>Back</BodySemibold>
+          <BodySemibold style={styles.backText}>Quay lại</BodySemibold>
         </TouchableOpacity>
         <Spacer size="md" />
 
@@ -198,7 +198,7 @@ export const ReportDetailScreen = () => {
                     ] as any}
                     textStyle={{ color: getSeverityColor(report.severity) }}
                   >
-                    {report.severity} Severity
+                    {report.severity} Mức độ
                   </Badge>
                   <Badge
                     style={styles.typeBadge}
@@ -224,7 +224,7 @@ export const ReportDetailScreen = () => {
 
           {/* Description */}
           <Card style={styles.sectionCard}>
-            <H4 style={styles.sectionTitle}>Description</H4>
+            <H4 style={styles.sectionTitle}>Mô tả</H4>
             <Spacer size="sm" />
             <Body style={styles.description}>{report.description}</Body>
           </Card>
@@ -233,7 +233,7 @@ export const ReportDetailScreen = () => {
 
           {/* Plot Information */}
           <Card style={styles.sectionCard}>
-            <H4 style={styles.sectionTitle}>Plot Information</H4>
+            <H4 style={styles.sectionTitle}>Thông tin Thửa</H4>
             <Spacer size="sm" />
             <View style={styles.infoList}>
               {report.plotName && (
@@ -244,7 +244,7 @@ export const ReportDetailScreen = () => {
                     color={colors.textSecondary}
                   />
                   <View style={styles.infoItemContent}>
-                    <BodySmall style={styles.infoLabel}>Plot Name</BodySmall>
+                    <BodySmall style={styles.infoLabel}>Tên Thửa</BodySmall>
                     <BodySemibold>{report.plotName}</BodySemibold>
                   </View>
                 </View>
@@ -257,7 +257,7 @@ export const ReportDetailScreen = () => {
                     color={colors.textSecondary}
                   />
                   <View style={styles.infoItemContent}>
-                    <BodySmall style={styles.infoLabel}>Area</BodySmall>
+                    <BodySmall style={styles.infoLabel}>Diện tích</BodySmall>
                     <BodySemibold>{report.plotArea} ha</BodySemibold>
                   </View>
                 </View>
@@ -270,7 +270,7 @@ export const ReportDetailScreen = () => {
                     color={colors.textSecondary}
                   />
                   <View style={styles.infoItemContent}>
-                    <BodySmall style={styles.infoLabel}>Coordinates</BodySmall>
+                    <BodySmall style={styles.infoLabel}>Tọa độ</BodySmall>
                     <BodySmall style={styles.coordinatesText}>
                       {report.coordinates}
                     </BodySmall>
@@ -285,7 +285,7 @@ export const ReportDetailScreen = () => {
                     color={colors.textSecondary}
                   />
                   <View style={styles.infoItemContent}>
-                    <BodySmall style={styles.infoLabel}>Cultivation Plan</BodySmall>
+                    <BodySmall style={styles.infoLabel}>Kế hoạch Canh tác</BodySmall>
                     <BodySemibold>{report.cultivationPlanName}</BodySemibold>
                   </View>
                 </View>
@@ -298,7 +298,7 @@ export const ReportDetailScreen = () => {
                     color={colors.textSecondary}
                   />
                   <View style={styles.infoItemContent}>
-                    <BodySmall style={styles.infoLabel}>Affected Task</BodySmall>
+                    <BodySmall style={styles.infoLabel}>Công việc Bị ảnh hưởng</BodySmall>
                     <BodySemibold>{report.affectedTaskVersionName}</BodySemibold>
                     <BodySemibold>{report.affectedTaskName}</BodySemibold>
                     {report.affectedTaskType && (
@@ -316,7 +316,7 @@ export const ReportDetailScreen = () => {
 
           {/* Reporter Information */}
           <Card style={styles.sectionCard}>
-            <H4 style={styles.sectionTitle}>Reporter Information</H4>
+            <H4 style={styles.sectionTitle}>Thông tin Người Báo cáo</H4>
             <Spacer size="sm" />
             <View style={styles.infoList}>
               <View style={styles.infoItem}>
@@ -326,7 +326,7 @@ export const ReportDetailScreen = () => {
                   color={colors.textSecondary}
                 />
                 <View style={styles.infoItemContent}>
-                  <BodySmall style={styles.infoLabel}>Reported By</BodySmall>
+                  <BodySmall style={styles.infoLabel}>Báo cáo Bởi</BodySmall>
                   <BodySemibold>{report.reportedBy}</BodySemibold>
                 </View>
               </View>
@@ -338,7 +338,7 @@ export const ReportDetailScreen = () => {
                     color={colors.textSecondary}
                   />
                   <View style={styles.infoItemContent}>
-                    <BodySmall style={styles.infoLabel}>Role</BodySmall>
+                    <BodySmall style={styles.infoLabel}>Vai trò</BodySmall>
                     <BodySemibold>{report.reportedByRole}</BodySemibold>
                   </View>
                 </View>
@@ -350,7 +350,7 @@ export const ReportDetailScreen = () => {
                   color={colors.textSecondary}
                 />
                 <View style={styles.infoItemContent}>
-                  <BodySmall style={styles.infoLabel}>Reported At</BodySmall>
+                  <BodySmall style={styles.infoLabel}>Báo cáo Lúc</BodySmall>
                   <BodySemibold>{formatDate(report.reportedAt)}</BodySemibold>
                 </View>
               </View>
@@ -362,7 +362,7 @@ export const ReportDetailScreen = () => {
                     color={colors.textSecondary}
                   />
                   <View style={styles.infoItemContent}>
-                    <BodySmall style={styles.infoLabel}>Farmer</BodySmall>
+                    <BodySmall style={styles.infoLabel}>Nông dân</BodySmall>
                     <BodySemibold>{report.farmerName}</BodySemibold>
                   </View>
                 </View>
@@ -375,7 +375,7 @@ export const ReportDetailScreen = () => {
                     color={colors.textSecondary}
                   />
                   <View style={styles.infoItemContent}>
-                    <BodySmall style={styles.infoLabel}>Cluster</BodySmall>
+                    <BodySmall style={styles.infoLabel}>Cụm</BodySmall>
                     <BodySemibold>{report.clusterName}</BodySemibold>
                   </View>
                 </View>
@@ -389,7 +389,7 @@ export const ReportDetailScreen = () => {
           {report.images && report.images.length > 0 && (
             <>
               <Card style={styles.sectionCard}>
-                <H4 style={styles.sectionTitle}>Attached Images</H4>
+                <H4 style={styles.sectionTitle}>Ảnh Đính kèm</H4>
                 <Spacer size="sm" />
                 <ScrollView
                   horizontal
@@ -415,7 +415,7 @@ export const ReportDetailScreen = () => {
             <>
               <Card style={[styles.sectionCard, styles.resolutionCard] as any}>
                 <H4 style={[styles.sectionTitle, { color: colors.success }]}>
-                  Resolution Information
+                  Thông tin Giải quyết
                 </H4>
                 <Spacer size="sm" />
                 <View style={styles.infoList}>
@@ -426,7 +426,7 @@ export const ReportDetailScreen = () => {
                       color={colors.success}
                     />
                     <View style={styles.infoItemContent}>
-                      <BodySmall style={styles.infoLabel}>Resolved By</BodySmall>
+                      <BodySmall style={styles.infoLabel}>Giải quyết Bởi</BodySmall>
                       <BodySemibold>{report.resolvedBy}</BodySemibold>
                     </View>
                   </View>
@@ -438,7 +438,7 @@ export const ReportDetailScreen = () => {
                         color={colors.success}
                       />
                       <View style={styles.infoItemContent}>
-                        <BodySmall style={styles.infoLabel}>Resolved At</BodySmall>
+                        <BodySmall style={styles.infoLabel}>Giải quyết Lúc</BodySmall>
                         <BodySemibold>{formatDate(report.resolvedAt)}</BodySemibold>
                       </View>
                     </View>
@@ -451,7 +451,7 @@ export const ReportDetailScreen = () => {
                         color={colors.success}
                       />
                       <View style={styles.infoItemContent}>
-                        <BodySmall style={styles.infoLabel}>Resolution Notes</BodySmall>
+                        <BodySmall style={styles.infoLabel}>Ghi chú Giải quyết</BodySmall>
                         <Body style={styles.resolutionNotes}>
                           {report.resolutionNotes}
                         </Body>

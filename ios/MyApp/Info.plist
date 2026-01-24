@@ -27,14 +27,14 @@
 		<dict>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>myapp</string>
-				<string>com.myapp</string>
+				<string>duc-thanh-coop</string>
+				<string>com.ducthanhcoop</string>
 			</array>
 		</dict>
 		<dict>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>exp+myapp</string>
+				<string>exp+duc-thanh-coop</string>
 			</array>
 		</dict>
 	</array>

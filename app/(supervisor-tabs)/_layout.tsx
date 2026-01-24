@@ -50,7 +50,7 @@ export default function SupervisorTabsLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: 'Home',
+          title: 'Trang chủ',
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons 
               name={focused ? 'home' : 'home-outline'} 
@@ -63,7 +63,7 @@ export default function SupervisorTabsLayout() {
       <Tabs.Screen
         name="farmers"
         options={{
-          title: 'Farmers',
+          title: 'Nông dân',
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons 
               name={focused ? 'people' : 'people-outline'} 
@@ -76,7 +76,7 @@ export default function SupervisorTabsLayout() {
       <Tabs.Screen
         name="plans"
         options={{
-          title: 'Plans',
+          title: 'Kế hoạch',
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons 
               name={focused ? 'document-text' : 'document-text-outline'} 
@@ -89,7 +89,7 @@ export default function SupervisorTabsLayout() {
       <Tabs.Screen
         name="economics"
         options={{
-          title: 'Economics',
+          title: 'Kinh tế',
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons 
               name={focused ? 'cash' : 'cash-outline'} 
@@ -102,7 +102,7 @@ export default function SupervisorTabsLayout() {
       <Tabs.Screen
         name="late"
         options={{
-          title: 'Late',
+          title: 'Trễ',
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons 
               name={focused ? 'time' : 'time-outline'} 
@@ -115,7 +115,7 @@ export default function SupervisorTabsLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: 'Hồ sơ',
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons 
               name={focused ? 'person' : 'person-outline'} 

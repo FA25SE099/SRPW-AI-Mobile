@@ -59,7 +59,7 @@ module.exports = {
         "@rnmapbox/maps",
         {
           "RNMapboxMapsImpl": "mapbox",
-          "MAPBOX_DOWNLOADS_TOKEN": "sk.eyJ1IjoiZHVjbmd1eWVuMTIwNDA0IiwiYSI6ImNtamF4d2RmOTA1ajczY3F4dHNqbXhkOGwifQ.1ytcAiJBgUe-d2MNShpoZw"
+          "MAPBOX_DOWNLOADS_TOKEN": process.env.EXPO_SECRET_MAPBOX_TOKEN
         }
       ]
     ],

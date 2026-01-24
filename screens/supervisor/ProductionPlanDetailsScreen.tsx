@@ -105,13 +105,13 @@ export const ProductionPlanDetailsScreen = () => {
           <Spacer size="md" />
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={greenTheme.primary} />
-            <BodySemibold style={styles.backText}>Back</BodySemibold>
+            <BodySemibold style={styles.backText}>Quay lại</BodySemibold>
           </TouchableOpacity>
           <Spacer size="xl" />
           <View style={styles.centered}>
             <ActivityIndicator size="large" color={greenTheme.primary} />
             <Spacer size="md" />
-            <BodySmall>Loading plan details...</BodySmall>
+            <BodySmall>Đang tải chi tiết kế hoạch...</BodySmall>
           </View>
         </Container>
       </SafeAreaView>
@@ -125,11 +125,11 @@ export const ProductionPlanDetailsScreen = () => {
           <Spacer size="md" />
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={greenTheme.primary} />
-            <BodySemibold style={styles.backText}>Back</BodySemibold>
+            <BodySemibold style={styles.backText}>Quay lại</BodySemibold>
           </TouchableOpacity>
           <Spacer size="xl" />
           <View style={styles.centered}>
-            <Body>Plan not found</Body>
+            <Body>Không tìm thấy kế hoạch</Body>
           </View>
         </Container>
       </SafeAreaView>
@@ -145,7 +145,7 @@ export const ProductionPlanDetailsScreen = () => {
           {/* Header */}
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={greenTheme.primary} />
-            <BodySemibold style={styles.backText}>Back to Plans</BodySemibold>
+            <BodySemibold style={styles.backText}>Quay lại Kế hoạch</BodySemibold>
           </TouchableOpacity>
 
           <Spacer size="md" />
@@ -160,7 +160,7 @@ export const ProductionPlanDetailsScreen = () => {
           {/* Summary Cards */}
           <View style={styles.summaryGrid}>
             <Card style={styles.summaryCard}>
-              <BodySmall style={styles.summaryLabel}>Progress</BodySmall>
+              <BodySmall style={styles.summaryLabel}>Tiến độ</BodySmall>
               <H4 style={styles.summaryValue}>
                 {planDetail.overallProgressPercentage.toFixed(0)}%
               </H4>
@@ -175,11 +175,11 @@ export const ProductionPlanDetailsScreen = () => {
             </Card>
 
             <Card style={styles.summaryCard}>
-              <BodySmall style={styles.summaryLabel}>Tasks</BodySmall>
+              <BodySmall style={styles.summaryLabel}>Công việc</BodySmall>
               <H4 style={styles.summaryValue}>
                 {planDetail.completedTasks}/{planDetail.totalTasks}
               </H4>
-              <BodySmall style={styles.summarySubtext}>completed</BodySmall>
+              <BodySmall style={styles.summarySubtext}>đã hoàn thành</BodySmall>
             </Card>
 
             {/* <Card style={styles.summaryCard}>
@@ -351,7 +351,7 @@ const ProductionPlanTaskItem = ({ task, getStatusColor, formatDate, formatCurren
           <Spacer size="sm" />
           {task.description && (
             <>
-              <BodySmall style={styles.label}>Description</BodySmall>
+              <BodySmall style={styles.label}>Mô tả</BodySmall>
               <Body>{task.description}</Body>
               <Spacer size="sm" />
             </>
@@ -359,7 +359,7 @@ const ProductionPlanTaskItem = ({ task, getStatusColor, formatDate, formatCurren
 
           {task.materials && task.materials.length > 0 && (
             <>
-              <BodySmall style={styles.label}>Materials</BodySmall>
+              <BodySmall style={styles.label}>Vật tư</BodySmall>
               {task.materials.map((material: any, idx: number) => (
                 <View key={idx} style={styles.materialItem}>
                   <Body style={styles.materialName}>{material.materialName}</Body>
@@ -371,12 +371,12 @@ const ProductionPlanTaskItem = ({ task, getStatusColor, formatDate, formatCurren
           )}
 
           <View style={styles.taskFooter}>
-            <BodySmall style={styles.taskCost}>Est. Cost: {formatCurrency(task.estimatedCost)}</BodySmall>
+            <BodySmall style={styles.taskCost}>Chi phí Ước tính: {formatCurrency(task.estimatedCost)}</BodySmall>
           </View>
 
           {/* Inline Farm Logs */}
           <Spacer size="md" />
-          <BodySmall style={styles.label}>Farm Logs</BodySmall>
+          <BodySmall style={styles.label}>Nhật ký Nông trại</BodySmall>
           {loadingLogs ? (
             <ActivityIndicator size="small" color={colors.primary} />
           ) : logs.length > 0 ? (
@@ -384,7 +384,7 @@ const ProductionPlanTaskItem = ({ task, getStatusColor, formatDate, formatCurren
               <View key={log.farmLogId} style={styles.inlineLogCard}>
                 <View style={styles.farmLogHeader}>
                   <View>
-                    <BodySemibold style={{fontSize: 13}}>{log.farmerName || 'Farmer'}</BodySemibold>
+                    <BodySemibold style={{fontSize: 13}}>{log.farmerName || 'Nông dân'}</BodySemibold>
                     {(log.soThua || log.soTo) && (
                       <BodySmall style={styles.farmLogPlot}>Thửa {log.soThua}, Tờ {log.soTo}</BodySmall>
                     )}
@@ -419,7 +419,7 @@ const ProductionPlanTaskItem = ({ task, getStatusColor, formatDate, formatCurren
             ))
           ) : (
             <View style={{padding: 10, alignItems: 'center'}}>
-              <BodySmall style={{color: colors.textTertiary}}>No logs recorded</BodySmall>
+              <BodySmall style={{color: colors.textTertiary}}>Chưa có nhật ký nào</BodySmall>
             </View>
           )}
         </View>

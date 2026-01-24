@@ -90,7 +90,7 @@ export const FarmersListScreen = () => {
             {farmer.isVerified && (
               <Badge variant="success" size="sm">
                 <Ionicons name="checkmark-circle" size={12} color={colors.success} />
-                {' '}Verified
+                {' '}Đã xác thực
               </Badge>
             )}
           </View>
@@ -118,7 +118,7 @@ export const FarmersListScreen = () => {
           <View style={styles.detailRow}>
             <Ionicons name="map-outline" size={16} color={colors.textSecondary} />
             <BodySmall style={styles.detailText}>
-              {farmer.plotCount || 0} plots
+              {farmer.plotCount || 0} thửa
             </BodySmall>
           </View>
         </View>
@@ -127,11 +127,11 @@ export const FarmersListScreen = () => {
 
         <View style={styles.farmerFooter}>
           <Badge variant={farmer.isActive ? 'success' : 'neutral'} size="sm">
-            {farmer.isActive ? 'Active' : 'Inactive'}
+            {farmer.isActive ? 'Hoạt động' : 'Không hoạt động'}
           </Badge>
           {farmer.lastActivityAt && (
             <BodySmall style={styles.lastActivity}>
-              Last activity: {new Date(farmer.lastActivityAt).toLocaleDateString()}
+              Hoạt động cuối: {new Date(farmer.lastActivityAt).toLocaleDateString()}
             </BodySmall>
           )}
         </View>
@@ -158,9 +158,9 @@ export const FarmersListScreen = () => {
     <SafeAreaView style={styles.container} edges={['top']}>
       <Container>
         <Spacer size="md" />
-        <H3>Farmers</H3>
+        <H3>Nông dân</H3>
         <BodySmall style={styles.subtitle}>
-          Select a farmer to view their plots
+          Chọn nông dân để xem thửa của họ
         </BodySmall>
         <Spacer size="lg" />
 
@@ -181,7 +181,7 @@ export const FarmersListScreen = () => {
             <View style={styles.emptyState}>
               <Ionicons name="people-outline" size={64} color={colors.textSecondary} />
               <Spacer size="md" />
-              <Body style={styles.emptyText}>No farmers found</Body>
+              <Body style={styles.emptyText}>Không tìm thấy nông dân</Body>
             </View>
           }
         />

@@ -196,9 +196,9 @@ export const ReportsScreen = () => {
             <Ionicons name="arrow-back" size={24} color={greenTheme.primary} />
           </TouchableOpacity>
           <View style={styles.header}>
-            <H3>Emergency Reports</H3>
+            <H3>Báo cáo Khẩn cấp</H3>
             <BodySmall color={colors.textSecondary}>
-              {totalCount || 0} total reports
+              {totalCount || 0} tổng số báo cáo
             </BodySmall>
           </View>
         </View>
@@ -217,7 +217,7 @@ export const ReportsScreen = () => {
               <Ionicons name="alert-circle" size={20} color={colors.error} />
             </View>
             <View style={styles.statContent}>
-              <BodySmall style={styles.statLabel}>Total</BodySmall>
+              <BodySmall style={styles.statLabel}>Tổng</BodySmall>
               <BodySemibold style={styles.statValue}>{stats.total ?? 0}</BodySemibold>
             </View>
           </Card>
@@ -227,7 +227,7 @@ export const ReportsScreen = () => {
               <Ionicons name="time-outline" size={20} color="#F59E0B" />
             </View>
             <View style={styles.statContent}>
-              <BodySmall style={styles.statLabel}>Pending</BodySmall>
+              <BodySmall style={styles.statLabel}>Chờ</BodySmall>
               <BodySemibold style={styles.statValue}>{stats.pending ?? 0}</BodySemibold>
             </View>
           </Card>
@@ -237,7 +237,7 @@ export const ReportsScreen = () => {
               <Ionicons name="checkmark-circle" size={20} color={colors.success} />
             </View>
             <View style={styles.statContent}>
-              <BodySmall style={styles.statLabel}>Resolved</BodySmall>
+              <BodySmall style={styles.statLabel}>Đã giải quyết</BodySmall>
               <BodySemibold style={styles.statValue}>{stats.resolved ?? 0}</BodySemibold>
             </View>
           </Card>
@@ -247,7 +247,7 @@ export const ReportsScreen = () => {
               <Ionicons name="warning" size={20} color={colors.error} />
             </View>
             <View style={styles.statContent}>
-              <BodySmall style={styles.statLabel}>Critical</BodySmall>
+              <BodySmall style={styles.statLabel}>Nghiêm trọng</BodySmall>
               <BodySemibold style={styles.statValue}>{stats.critical ?? 0}</BodySemibold>
             </View>
           </Card>
@@ -260,7 +260,7 @@ export const ReportsScreen = () => {
           <Ionicons name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search reports..."
+            placeholder="Tìm kiếm báo cáo..."
             placeholderTextColor={colors.textSecondary}
             value={searchInput}
             onChangeText={setSearchInput}

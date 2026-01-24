@@ -132,9 +132,9 @@ export const FarmLogsReviewScreen = () => {
       <Container padding="lg">
         {/* Header */}
         <View style={styles.header}>
-          <H3>Farm Logs Review</H3>
+          <H3>Xem xét Nhật ký Nông trại</H3>
           <BodySmall color={colors.textSecondary}>
-            {filteredLogs.length} logs
+            {filteredLogs.length} nhật ký
           </BodySmall>
         </View>
 
@@ -150,7 +150,7 @@ export const FarmLogsReviewScreen = () => {
             ]}
           >
             <BodySmall color={statusFilter === 'all' ? colors.white : colors.textDark}>
-              All
+              Tất cả
             </BodySmall>
           </TouchableOpacity>
           <TouchableOpacity
@@ -161,7 +161,7 @@ export const FarmLogsReviewScreen = () => {
             ]}
           >
             <BodySmall color={statusFilter === 'pending' ? colors.white : colors.textDark}>
-              Pending
+              Chờ duyệt
             </BodySmall>
           </TouchableOpacity>
           <TouchableOpacity
@@ -172,7 +172,7 @@ export const FarmLogsReviewScreen = () => {
             ]}
           >
             <BodySmall color={statusFilter === 'approved' ? colors.white : colors.textDark}>
-              Approved
+              Đã duyệt
             </BodySmall>
           </TouchableOpacity>
         </View>
@@ -208,15 +208,15 @@ export const FarmLogsReviewScreen = () => {
 
                 <View style={styles.logDetails}>
                   <View style={styles.logDetailItem}>
-                    <BodySmall color={colors.textSecondary}>Date:</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Ngày:</BodySmall>
                     <BodySmall>{dayjs(log.loggedDate).format('MMM DD, YYYY')}</BodySmall>
                   </View>
                   <View style={styles.logDetailItem}>
-                    <BodySmall color={colors.textSecondary}>Completion:</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Hoàn thành:</BodySmall>
                     <BodySmall>{log.completionPercentage}%</BodySmall>
                   </View>
                   <View style={styles.logDetailItem}>
-                    <BodySmall color={colors.textSecondary}>Area:</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Diện tích:</BodySmall>
                     <BodySmall>{log.actualAreaCovered} ha</BodySmall>
                   </View>
                 </View>
@@ -225,7 +225,7 @@ export const FarmLogsReviewScreen = () => {
 
                 {log.workDescription && (
                   <>
-                    <BodySmall color={colors.textSecondary}>Description:</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Mô tả:</BodySmall>
                     <Spacer size="xs" />
                     <Body>{log.workDescription}</Body>
                     <Spacer size="md" />
@@ -234,7 +234,7 @@ export const FarmLogsReviewScreen = () => {
 
                 {log.materials && log.materials.length > 0 && (
                   <>
-                    <BodySmall color={colors.textSecondary}>Materials Used:</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Vật tư Đã sử dụng:</BodySmall>
                     <Spacer size="xs" />
                     {log.materials.map((material, idx) => (
                       <Body key={idx} style={styles.materialItem}>
@@ -247,7 +247,7 @@ export const FarmLogsReviewScreen = () => {
 
                 {log.photoUrls && log.photoUrls.length > 0 && (
                   <>
-                    <BodySmall color={colors.textSecondary}>Photos:</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Ảnh:</BodySmall>
                     <Spacer size="sm" />
                     <View style={styles.imageContainer}>
                       <Image source={{ uri: currentImage }} style={styles.image} />
@@ -297,14 +297,14 @@ export const FarmLogsReviewScreen = () => {
                       onPress={() => handleReject(log.id)}
                       style={[styles.actionButton, { borderColor: colors.error }]}
                     >
-                      <BodySmall style={{ color: colors.error }}>Reject</BodySmall>
+                      <BodySmall style={{ color: colors.error }}>Từ chối</BodySmall>
                     </Button>
                     <Button
                       size="sm"
                       onPress={() => handleApprove(log.id)}
                       style={styles.actionButton}
                     >
-                      <BodySmall color={colors.white}>Approve</BodySmall>
+                      <BodySmall color={colors.white}>Duyệt</BodySmall>
                     </Button>
                   </View>
                 )}

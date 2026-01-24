@@ -27,7 +27,7 @@ const greenTheme = {
 const quickActions = [
   { 
     id: '1', 
-    title: 'Farmers', 
+    title: 'Nông dân', 
     iconName: 'people', 
     iconType: 'Ionicons', 
     gradient: ['#2E7D32', '#1B5E20'] as const, 
@@ -35,7 +35,7 @@ const quickActions = [
   },
   { 
     id: '2', 
-    title: 'Plans', 
+    title: 'Kế hoạch', 
     iconName: 'document-text', 
     iconType: 'Ionicons', 
     gradient: ['#2E7D32', '#1B5E20'] as const, 
@@ -43,7 +43,7 @@ const quickActions = [
   },
   { 
     id: '3', 
-    title: 'Economics', 
+    title: 'Kinh tế', 
     iconName: 'cash', 
     iconType: 'Ionicons', 
     gradient: ['#2E7D32', '#1B5E20'] as const, 
@@ -51,7 +51,7 @@ const quickActions = [
   },
   { 
     id: '4', 
-    title: 'Late Management', 
+    title: 'Trễ', 
     iconName: 'time', 
     iconType: 'Ionicons', 
     gradient: ['#FF3B30', '#D32F2F'] as const, 
@@ -59,7 +59,7 @@ const quickActions = [
   },
   { 
     id: '5', 
-    title: 'Draw Polygons', 
+    title: 'Vẽ thửa đất', 
     iconName: 'map', 
     iconType: 'Ionicons', 
     gradient: ['#4CAF50', '#388E3C'] as const, 
@@ -67,7 +67,7 @@ const quickActions = [
   },
   { 
     id: '6', 
-    title: 'Reports', 
+    title: 'Báo cáo', 
     iconName: 'document-text', 
     iconType: 'Ionicons', 
     gradient: ['#4CAF50', '#388E3C'] as const, 
@@ -116,8 +116,8 @@ export const SupervisorHomeScreen = () => {
 
               {/* Welcome Message */}
               <View style={styles.welcomeSection}>
-                <Text style={styles.welcomeText}>Welcome to</Text>
-                <Text style={styles.appTitle}>Supervisor Management System</Text>
+                <Text style={styles.welcomeText}>Chào mừng đến với</Text>
+                <Text style={styles.appTitle}>Hệ thống Quản lý Giám sát</Text>
               </View>
             </View>
           </ImageBackground>
@@ -128,7 +128,7 @@ export const SupervisorHomeScreen = () => {
 
             {/* Quick Actions */}
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Quick Actions</Text>
+              <Text style={styles.sectionTitle}>Hành động Nhanh</Text>
             </View>
             <Spacer size="md" />
             <View style={styles.quickActionsGrid}>

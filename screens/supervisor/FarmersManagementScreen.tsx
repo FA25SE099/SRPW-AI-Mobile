@@ -120,9 +120,9 @@ export const FarmersManagementScreen = () => {
       <Container padding="lg">
         {/* Header */}
         <View style={styles.header}>
-          <H3>Farmers Management</H3>
+          <H3>Quản lý Nông dân</H3>
           <BodySmall color={colors.textSecondary}>
-            {filteredFarmers.length} farmers
+            {filteredFarmers.length} nông dân
           </BodySmall>
         </View>
 
@@ -132,7 +132,7 @@ export const FarmersManagementScreen = () => {
         <View style={styles.searchContainer}>
           <TextInput
             style={styles.searchInput}
-            placeholder="Search farmers..."
+            placeholder="Tìm kiếm nông dân..."
             placeholderTextColor={colors.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -153,7 +153,7 @@ export const FarmersManagementScreen = () => {
             <BodySmall
               color={statusFilter === 'all' ? colors.white : colors.textDark}
             >
-              All
+              Tất cả
             </BodySmall>
           </TouchableOpacity>
           <TouchableOpacity
@@ -166,7 +166,7 @@ export const FarmersManagementScreen = () => {
             <BodySmall
               color={statusFilter === 'active' ? colors.white : colors.textDark}
             >
-              Active
+              Hoạt động
             </BodySmall>
           </TouchableOpacity>
           <TouchableOpacity
@@ -179,7 +179,7 @@ export const FarmersManagementScreen = () => {
             <BodySmall
               color={statusFilter === 'needs-attention' ? colors.white : colors.textDark}
             >
-              Needs Attention
+              Cần chú ý
             </BodySmall>
           </TouchableOpacity>
         </View>
@@ -209,7 +209,7 @@ export const FarmersManagementScreen = () => {
                         ]}
                       >
                         <BodySmall style={{ color: getStatusColor(farmer.status) }}>
-                          {farmer.status === 'needs-attention' ? 'Attention' : 'Active'}
+                          {farmer.status === 'needs-attention' ? 'Cần chú ý' : 'Hoạt động'}
                         </BodySmall>
                       </Badge>
                     </View>
@@ -221,15 +221,15 @@ export const FarmersManagementScreen = () => {
 
                 <View style={styles.farmerStats}>
                   <View style={styles.statItem}>
-                    <BodySmall color={colors.textSecondary}>Fields</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Thửa</BodySmall>
                     <BodySemibold>{farmer.totalFields}</BodySemibold>
                   </View>
                   <View style={styles.statItem}>
-                    <BodySmall color={colors.textSecondary}>Active Tasks</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Công việc Đang làm</BodySmall>
                     <BodySemibold>{farmer.activeTasks}</BodySemibold>
                   </View>
                   <View style={styles.statItem}>
-                    <BodySmall color={colors.textSecondary}>Completion</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Hoàn thành</BodySmall>
                     <BodySemibold style={{ color: getCompletionColor(farmer.completionRate) }}>
                       {farmer.completionRate}%
                     </BodySemibold>
@@ -255,7 +255,7 @@ export const FarmersManagementScreen = () => {
                 <Spacer size="sm" />
 
                 <BodySmall color={colors.textSecondary}>
-                  Last activity: {new Date(farmer.lastActivity).toLocaleDateString()}
+                  Hoạt động cuối: {new Date(farmer.lastActivity).toLocaleDateString()}
                 </BodySmall>
               </Card>
               <Spacer size="md" />

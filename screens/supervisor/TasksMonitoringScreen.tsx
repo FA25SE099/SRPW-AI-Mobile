@@ -134,9 +134,9 @@ export const TasksMonitoringScreen = () => {
       <Container padding="lg">
         {/* Header */}
         <View style={styles.header}>
-          <H3>Tasks Monitoring</H3>
+          <H3>Giám sát Công việc</H3>
           <BodySmall color={colors.textSecondary}>
-            {filteredTasks.length} tasks
+            {filteredTasks.length} công việc
           </BodySmall>
         </View>
 
@@ -152,7 +152,7 @@ export const TasksMonitoringScreen = () => {
             ]}
           >
             <BodySmall color={statusFilter === 'all' ? colors.white : colors.textDark}>
-              All
+              Tất cả
             </BodySmall>
           </TouchableOpacity>
           <TouchableOpacity
@@ -165,7 +165,7 @@ export const TasksMonitoringScreen = () => {
             <BodySmall
               color={statusFilter === 'pending-approval' ? colors.white : colors.textDark}
             >
-              Pending
+              Chờ duyệt
             </BodySmall>
           </TouchableOpacity>
           <TouchableOpacity
@@ -178,7 +178,7 @@ export const TasksMonitoringScreen = () => {
             <BodySmall
               color={statusFilter === 'in-progress' ? colors.white : colors.textDark}
             >
-              In Progress
+              Đang thực hiện
             </BodySmall>
           </TouchableOpacity>
           <TouchableOpacity
@@ -191,7 +191,7 @@ export const TasksMonitoringScreen = () => {
             <BodySmall
               color={statusFilter === 'completed' ? colors.white : colors.textDark}
             >
-              Completed
+              Đã hoàn thành
             </BodySmall>
           </TouchableOpacity>
         </View>
@@ -240,12 +240,12 @@ export const TasksMonitoringScreen = () => {
 
               <View style={styles.taskDetails}>
                 <View style={styles.taskDetailItem}>
-                  <BodySmall color={colors.textSecondary}>Due Date:</BodySmall>
+                  <BodySmall color={colors.textSecondary}>Ngày đến hạn:</BodySmall>
                   <BodySmall>{dayjs(task.dueDate).format('MMM DD, YYYY')}</BodySmall>
                 </View>
                 {task.submittedDate && (
                   <View style={styles.taskDetailItem}>
-                    <BodySmall color={colors.textSecondary}>Submitted:</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Đã nộp:</BodySmall>
                     <BodySmall>{dayjs(task.submittedDate).format('MMM DD, YYYY')}</BodySmall>
                   </View>
                 )}
@@ -261,14 +261,14 @@ export const TasksMonitoringScreen = () => {
                       onPress={() => handleReject(task.id)}
                       style={[styles.actionButton, { borderColor: colors.error }]}
                     >
-                      <BodySmall style={{ color: colors.error }}>Reject</BodySmall>
+                      <BodySmall style={{ color: colors.error }}>Từ chối</BodySmall>
                     </Button>
                     <Button
                       size="sm"
                       onPress={() => handleApprove(task.id)}
                       style={styles.actionButton}
                     >
-                      <BodySmall color={colors.white}>Approve</BodySmall>
+                      <BodySmall color={colors.white}>Duyệt</BodySmall>
                     </Button>
                   </View>
                 </>

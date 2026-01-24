@@ -72,11 +72,11 @@ export const TaskBottomSheet: React.FC<TaskBottomSheetProps> = ({
           style={styles.summary}
         >
           <View style={styles.summaryRow}>
-            <BodySemibold>Tasks: {tasks.length}</BodySemibold>
-            <BodySmall color={colors.textSecondary}>Tap to expand</BodySmall>
+            <BodySemibold>Công việc: {tasks.length}</BodySemibold>
+            <BodySmall color={colors.textSecondary}>Nhấn để mở rộng</BodySmall>
           </View>
           <View style={styles.summaryRow}>
-            <BodySemibold>Completed: {completedPlots.length}</BodySemibold>
+            <BodySemibold>Đã hoàn thành: {completedPlots.length}</BodySemibold>
             <Body>↑</Body>
           </View>
         </TouchableOpacity>
@@ -89,7 +89,7 @@ export const TaskBottomSheet: React.FC<TaskBottomSheetProps> = ({
                 onPress={() => onTabChange('tasks')}
               >
                 <BodySmall color={activeTab === 'tasks' ? colors.white : colors.textPrimary}>
-                  Tasks ({tasks.length})
+                  Công việc ({tasks.length})
                 </BodySmall>
               </TouchableOpacity>
               <TouchableOpacity
@@ -97,7 +97,7 @@ export const TaskBottomSheet: React.FC<TaskBottomSheetProps> = ({
                 onPress={() => onTabChange('completed')}
               >
                 <BodySmall color={activeTab === 'completed' ? colors.white : colors.textPrimary}>
-                  Completed ({completedPlots.length})
+                  Đã hoàn thành ({completedPlots.length})
                 </BodySmall>
               </TouchableOpacity>
             </View>
@@ -109,7 +109,7 @@ export const TaskBottomSheet: React.FC<TaskBottomSheetProps> = ({
                 {tasks.length === 0 ? (
                   <View style={styles.emptyState}>
                     <BodySmall color={colors.textSecondary} style={styles.emptyText}>
-                      No drawing tasks available
+                      Không có công việc vẽ nào
                     </BodySmall>
                   </View>
                 ) : (
@@ -132,7 +132,7 @@ export const TaskBottomSheet: React.FC<TaskBottomSheetProps> = ({
                 {completedPlots.length === 0 ? (
                   <View style={styles.emptyState}>
                     <BodySmall color={colors.textSecondary} style={styles.emptyText}>
-                      No plots with polygon yet
+                      Chưa có thửa nào có đa giác
                     </BodySmall>
                   </View>
                 ) : (
@@ -154,19 +154,19 @@ export const TaskBottomSheet: React.FC<TaskBottomSheetProps> = ({
 
             {/* Instructions */}
             <Card variant="elevated" style={styles.instructionsCard}>
-              <H4>Instructions</H4>
+              <H4>Hướng dẫn</H4>
               <Spacer size="sm" />
               <BodySmall color={colors.textSecondary}>
-                1. Select a task from the list
+                1. Chọn một công việc từ danh sách
               </BodySmall>
               <BodySmall color={colors.textSecondary}>
-                2. Tap on map to add polygon points
+                2. Nhấn vào bản đồ để thêm điểm đa giác
               </BodySmall>
               <BodySmall color={colors.textSecondary}>
-                3. Add at least 3 points to form a polygon
+                3. Thêm ít nhất 3 điểm để tạo đa giác
               </BodySmall>
               <BodySmall color={colors.textSecondary}>
-                4. Tap Save to complete the task
+                4. Nhấn Lưu để hoàn thành công việc
               </BodySmall>
             </Card>
           </ScrollView>

@@ -85,17 +85,17 @@ export const EconomicsScreen = () => {
 
   const handleCalculate = async () => {
     if (!selectedPlan) {
-      Alert.alert('Error', 'Please select a standard plan');
+      Alert.alert('Lỗi', 'Vui lòng chọn kế hoạch tiêu chuẩn');
       return;
     }
 
     if (!usePlot && !area) {
-      Alert.alert('Error', 'Please enter an area');
+      Alert.alert('Lỗi', 'Vui lòng nhập diện tích');
       return;
     }
 
     if (usePlot && !selectedPlot) {
-      Alert.alert('Error', 'Please select a plot');
+      Alert.alert('Lỗi', 'Vui lòng chọn thửa');
       return;
     }
 
@@ -104,17 +104,17 @@ export const EconomicsScreen = () => {
     const otherCostsNum = parseFloat(otherCosts);
 
     if (isNaN(pricePerKgNum) || pricePerKgNum <= 0) {
-      Alert.alert('Error', 'Please enter a valid price per kg');
+      Alert.alert('Lỗi', 'Vui lòng nhập giá mỗi kg hợp lệ');
       return;
     }
 
     if (isNaN(expectedYieldNum) || expectedYieldNum <= 0) {
-      Alert.alert('Error', 'Please enter a valid expected yield');
+      Alert.alert('Lỗi', 'Vui lòng nhập sản lượng dự kiến hợp lệ');
       return;
     }
 
     if (isNaN(otherCostsNum) || otherCostsNum < 0) {
-      Alert.alert('Error', 'Please enter a valid other service cost');
+      Alert.alert('Lỗi', 'Vui lòng nhập chi phí dịch vụ khác hợp lệ');
       return;
     }
 
@@ -132,7 +132,7 @@ export const EconomicsScreen = () => {
       } else {
         const areaNum = parseFloat(area);
         if (isNaN(areaNum) || areaNum <= 0) {
-          Alert.alert('Error', 'Please enter a valid area');
+          Alert.alert('Lỗi', 'Vui lòng nhập diện tích hợp lệ');
           return;
         }
         request.area = areaNum;
@@ -141,7 +141,7 @@ export const EconomicsScreen = () => {
       const result = await calculateStandardPlanProfitAnalysis(request);
       setAnalysisResult(result);
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to calculate profit analysis');
+      Alert.alert('Lỗi', error.message || 'Không thể tính toán phân tích lợi nhuận');
     } finally {
       setIsCalculating(false);
     }
@@ -157,26 +157,26 @@ export const EconomicsScreen = () => {
   return (
     <Container>
       <ScrollView style={styles.container}>
-        <Text style={styles.title}>Profit Analysis Calculator</Text>
+        <Text style={styles.title}>Máy tính Phân tích Lợi nhuận</Text>
 
         {/* Standard Plan Selection */}
         <View style={styles.section}>
-          <Text style={styles.label}>Select Standard Plan *</Text>
+          <Text style={styles.label}>Chọn Kế hoạch Tiêu chuẩn *</Text>
           {isLoadingPlans ? (
             <ActivityIndicator />
           ) : plansError ? (
             <View style={styles.errorContainer}>
               <Text style={styles.errorText}>
-                ⚠️ Unable to load standard plans. The backend endpoint may not be available yet.
+                ⚠️ Không thể tải kế hoạch tiêu chuẩn. Endpoint backend có thể chưa khả dụng.
               </Text>
               <Text style={styles.errorSubtext}>
-                Error: {plansError instanceof Error ? plansError.message : 'Unknown error'}
+                Lỗi: {plansError instanceof Error ? plansError.message : 'Lỗi không xác định'}
               </Text>
             </View>
           ) : !standardPlans || standardPlans.length === 0 ? (
             <View style={styles.errorContainer}>
               <Text style={styles.errorText}>
-                📋 No standard plans found. Please create a standard plan first.
+                📋 Không tìm thấy kế hoạch tiêu chuẩn. Vui lòng tạo kế hoạch tiêu chuẩn trước.
               </Text>
             </View>
           ) : (
@@ -185,7 +185,7 @@ export const EconomicsScreen = () => {
               onPress={() => setShowPlanModal(true)}
             >
               <Text style={styles.selectButtonText}>
-                {selectedPlanName || '-- Select Plan --'}
+                {selectedPlanName || '-- Chọn Kế hoạch --'}
               </Text>
             </TouchableOpacity>
           )}
@@ -200,7 +200,7 @@ export const EconomicsScreen = () => {
         >
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Select Standard Plan</Text>
+              <Text style={styles.modalTitle}>Chọn Kế hoạch Tiêu chuẩn</Text>
               <FlatList
                 data={standardPlans || []}
                 keyExtractor={(item) => item.id}
@@ -228,7 +228,7 @@ export const EconomicsScreen = () => {
                 style={styles.modalCloseButton}
                 onPress={() => setShowPlanModal(false)}
               >
-                <Text style={styles.modalCloseButtonText}>Cancel</Text>
+                <Text style={styles.modalCloseButtonText}>Hủy</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -237,7 +237,7 @@ export const EconomicsScreen = () => {
         {/* Use Plot Toggle */}
         <View style={styles.section}>
           <View style={styles.switchRow}>
-            <Text style={styles.label}>Use Plot Instead of Area</Text>
+            <Text style={styles.label}>Sử dụng Thửa thay vì Diện tích</Text>
             <Switch value={usePlot} onValueChange={setUsePlot} />
           </View>
         </View>
@@ -245,7 +245,7 @@ export const EconomicsScreen = () => {
         {/* Farmer Selection (only show when usePlot is true) */}
         {usePlot && (
           <View style={styles.section}>
-            <Text style={styles.label}>Select Farmer *</Text>
+            <Text style={styles.label}>Chọn Nông dân *</Text>
             {isFarmersLoading ? (
               <ActivityIndicator />
             ) : (
@@ -255,8 +255,8 @@ export const EconomicsScreen = () => {
               >
                 <Text style={styles.selectButtonText}>
                   {selectedFarmerData
-                    ? selectedFarmerData.fullName || selectedFarmerData.farmCode || 'Unknown Farmer'
-                    : '-- Select Farmer --'}
+                    ? selectedFarmerData.fullName || selectedFarmerData.farmCode || 'Nông dân không xác định'
+                    : '-- Chọn Nông dân --'}
                 </Text>
               </TouchableOpacity>
             )}
@@ -266,9 +266,9 @@ export const EconomicsScreen = () => {
         {/* Plot or Area Selection */}
         {usePlot ? (
           <View style={styles.section}>
-            <Text style={styles.label}>Select Plot *</Text>
+            <Text style={styles.label}>Chọn Thửa *</Text>
             {!selectedFarmer ? (
-              <Text style={styles.helperText}>Please select a farmer first</Text>
+              <Text style={styles.helperText}>Vui lòng chọn nông dân trước</Text>
             ) : isLoadingPlots ? (
               <ActivityIndicator />
             ) : (
@@ -277,17 +277,17 @@ export const EconomicsScreen = () => {
                 onPress={() => setShowPlotModal(true)}
               >
                 <Text style={styles.selectButtonText}>
-                  {selectedPlotName || '-- Select Plot --'}
+                  {selectedPlotName || '-- Chọn Thửa --'}
                 </Text>
               </TouchableOpacity>
             )}
           </View>
         ) : (
           <View style={styles.section}>
-            <Text style={styles.label}>Area (hectares) *</Text>
+            <Text style={styles.label}>Diện tích (hecta) *</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter area in hectares"
+              placeholder="Nhập diện tích theo hecta"
               keyboardType="decimal-pad"
               value={area}
               onChangeText={setArea}
@@ -304,7 +304,7 @@ export const EconomicsScreen = () => {
         >
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Select Plot</Text>
+              <Text style={styles.modalTitle}>Chọn Thửa</Text>
               <FlatList
                 data={plots}
                 keyExtractor={(item: any) => item.plotId}
@@ -327,7 +327,7 @@ export const EconomicsScreen = () => {
                 style={styles.modalCloseButton}
                 onPress={() => setShowPlotModal(false)}
               >
-                <Text style={styles.modalCloseButtonText}>Cancel</Text>
+                <Text style={styles.modalCloseButtonText}>Hủy</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -342,7 +342,7 @@ export const EconomicsScreen = () => {
         >
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Select Farmer</Text>
+              <Text style={styles.modalTitle}>Chọn Nông dân</Text>
               <FlatList
                 data={farmers || []}
                 keyExtractor={(item) => item.farmerId}
@@ -358,7 +358,7 @@ export const EconomicsScreen = () => {
                     }}
                   >
                     <Text style={styles.modalItemText}>
-                      {item.fullName || item.farmCode || 'Unknown Farmer'}
+                      {item.fullName || item.farmCode || 'Nông dân không xác định'}
                     </Text>
                     {item.address && (
                       <Text style={styles.modalItemSubtext}>{item.address}</Text>
@@ -373,7 +373,7 @@ export const EconomicsScreen = () => {
                 style={styles.modalCloseButton}
                 onPress={() => setShowFarmerModal(false)}
               >
-                <Text style={styles.modalCloseButtonText}>Cancel</Text>
+                <Text style={styles.modalCloseButtonText}>Hủy</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -381,10 +381,10 @@ export const EconomicsScreen = () => {
 
         {/* Price per kg */}
         <View style={styles.section}>
-          <Text style={styles.label}>Price per Kg Rice (VND) *</Text>
+          <Text style={styles.label}>Giá mỗi Kg Lúa (VND) *</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter price per kg"
+            placeholder="Nhập giá mỗi kg"
             keyboardType="numeric"
             value={pricePerKg}
             onChangeText={setPricePerKg}
@@ -393,10 +393,10 @@ export const EconomicsScreen = () => {
 
         {/* Expected Yield */}
         <View style={styles.section}>
-          <Text style={styles.label}>Expected Yield per Ha (kg) *</Text>
+          <Text style={styles.label}>Sản lượng Dự kiến mỗi Ha (kg) *</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter expected yield"
+            placeholder="Nhập sản lượng dự kiến"
             keyboardType="numeric"
             value={expectedYield}
             onChangeText={setExpectedYield}
@@ -405,10 +405,10 @@ export const EconomicsScreen = () => {
 
         {/* Other Service Costs */}
         <View style={styles.section}>
-          <Text style={styles.label}>Other Service Cost per Ha (VND)</Text>
+          <Text style={styles.label}>Chi phí Dịch vụ Khác mỗi Ha (VND)</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter other costs (optional)"
+            placeholder="Nhập chi phí khác (tùy chọn)"
             keyboardType="numeric"
             value={otherCosts}
             onChangeText={setOtherCosts}
@@ -424,49 +424,49 @@ export const EconomicsScreen = () => {
           {isCalculating ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Calculate Profit Analysis</Text>
+            <Text style={styles.buttonText}>Tính toán Phân tích Lợi nhuận</Text>
           )}
         </TouchableOpacity>
 
         {/* Results */}
         {analysisResult && (
           <View style={styles.results}>
-            <Text style={styles.resultsTitle}>Analysis Results</Text>
+            <Text style={styles.resultsTitle}>Kết quả Phân tích</Text>
 
             <View style={styles.resultSection}>
-              <Text style={styles.sectionTitle}>Per Hectare (1 ha)</Text>
+              <Text style={styles.sectionTitle}>Mỗi Hecta (1 ha)</Text>
               <View style={styles.resultRow}>
-                <Text style={styles.resultLabel}>Revenue:</Text>
+                <Text style={styles.resultLabel}>Doanh thu:</Text>
                 <Text style={styles.resultValue}>
                   {formatCurrency(analysisResult.expectedRevenuePerHa)}
                 </Text>
               </View>
               <View style={styles.resultRow}>
-                <Text style={styles.resultLabel}>Material Cost:</Text>
+                <Text style={styles.resultLabel}>Chi phí Vật tư:</Text>
                 <Text style={styles.resultValue}>
                   {formatCurrency(analysisResult.materialCostPerHa)}
                 </Text>
               </View>
               <View style={styles.resultRow}>
-                <Text style={styles.resultLabel}>Other Costs:</Text>
+                <Text style={styles.resultLabel}>Chi phí Khác:</Text>
                 <Text style={styles.resultValue}>
                   {formatCurrency(analysisResult.otherServiceCostPerHa)}
                 </Text>
               </View>
               <View style={styles.resultRow}>
-                <Text style={styles.resultLabel}>Total Cost:</Text>
+                <Text style={styles.resultLabel}>Tổng Chi phí:</Text>
                 <Text style={[styles.resultValue, styles.bold]}>
                   {formatCurrency(analysisResult.totalCostPerHa)}
                 </Text>
               </View>
               <View style={styles.resultRow}>
-                <Text style={[styles.resultLabel, styles.bold]}>Profit:</Text>
+                <Text style={[styles.resultLabel, styles.bold]}>Lợi nhuận:</Text>
                 <Text style={[styles.resultValue, styles.bold, styles.profit]}>
                   {formatCurrency(analysisResult.profitPerHa)}
                 </Text>
               </View>
               <View style={styles.resultRow}>
-                <Text style={styles.resultLabel}>Profit Margin:</Text>
+                <Text style={styles.resultLabel}>Tỷ suất Lợi nhuận:</Text>
                 <Text style={[styles.resultValue, styles.profit]}>
                   {analysisResult.profitMarginPerHa.toFixed(2)}%
                 </Text>
@@ -475,40 +475,40 @@ export const EconomicsScreen = () => {
 
             <View style={styles.resultSection}>
               <Text style={styles.sectionTitle}>
-                Total for Area ({analysisResult.area} ha)
+                Tổng cho Diện tích ({analysisResult.area} ha)
               </Text>
               <View style={styles.resultRow}>
-                <Text style={styles.resultLabel}>Revenue:</Text>
+                <Text style={styles.resultLabel}>Doanh thu:</Text>
                 <Text style={styles.resultValue}>
                   {formatCurrency(analysisResult.expectedRevenueForArea)}
                 </Text>
               </View>
               <View style={styles.resultRow}>
-                <Text style={styles.resultLabel}>Material Cost:</Text>
+                <Text style={styles.resultLabel}>Chi phí Vật tư:</Text>
                 <Text style={styles.resultValue}>
                   {formatCurrency(analysisResult.materialCostForArea)}
                 </Text>
               </View>
               <View style={styles.resultRow}>
-                <Text style={styles.resultLabel}>Other Costs:</Text>
+                <Text style={styles.resultLabel}>Chi phí Khác:</Text>
                 <Text style={styles.resultValue}>
                   {formatCurrency(analysisResult.otherServiceCostForArea)}
                 </Text>
               </View>
               <View style={styles.resultRow}>
-                <Text style={styles.resultLabel}>Total Cost:</Text>
+                <Text style={styles.resultLabel}>Tổng Chi phí:</Text>
                 <Text style={[styles.resultValue, styles.bold]}>
                   {formatCurrency(analysisResult.totalCostForArea)}
                 </Text>
               </View>
               <View style={styles.resultRow}>
-                <Text style={[styles.resultLabel, styles.bold]}>Profit:</Text>
+                <Text style={[styles.resultLabel, styles.bold]}>Lợi nhuận:</Text>
                 <Text style={[styles.resultValue, styles.bold, styles.profit]}>
                   {formatCurrency(analysisResult.profitForArea)}
                 </Text>
               </View>
               <View style={styles.resultRow}>
-                <Text style={styles.resultLabel}>Profit Margin:</Text>
+                <Text style={styles.resultLabel}>Tỷ suất Lợi nhuận:</Text>
                 <Text style={[styles.resultValue, styles.profit]}>
                   {analysisResult.profitMarginForArea.toFixed(2)}%
                 </Text>

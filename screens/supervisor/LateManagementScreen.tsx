@@ -113,7 +113,7 @@ export const LateManagementScreen = () => {
             <View style={styles.cardHeaderText}>
               <BodySemibold>{item.fullName}</BodySemibold>
               {item.farmCode && (
-                <BodySmall style={styles.subtitle}>Code: {item.farmCode}</BodySmall>
+                <BodySmall style={styles.subtitle}>Mã: {item.farmCode}</BodySmall>
               )}
               <BodySmall style={styles.subtitle}>{item.phoneNumber}</BodySmall>
             </View>
@@ -125,21 +125,21 @@ export const LateManagementScreen = () => {
         
         <View style={styles.statsGrid}>
           <View style={styles.statItem}>
-            <BodySmall style={styles.statLabel}>Plots</BodySmall>
+            <BodySmall style={styles.statLabel}>Thửa</BodySmall>
             <BodySemibold style={styles.statValue}>
               {item.plotCount}
             </BodySemibold>
           </View>
           <View style={styles.statItem}>
-            <BodySmall style={styles.statLabel}>Late Count</BodySmall>
+            <BodySmall style={styles.statLabel}>Số lần Muộn</BodySmall>
             <BodySemibold style={[styles.statValue, { color: colors.error }]}>
               {item.lateCount}
             </BodySemibold>
           </View>
           <View style={styles.statItem}>
-            <BodySmall style={styles.statLabel}>Status</BodySmall>
+            <BodySmall style={styles.statLabel}>Trạng thái</BodySmall>
             <Badge variant={item.isActive ? 'success' : 'error'}>
-              {item.isActive ? 'Active' : 'Inactive'}
+              {item.isActive ? 'Hoạt động' : 'Không hoạt động'}
             </Badge>
           </View>
         </View>
@@ -180,21 +180,21 @@ export const LateManagementScreen = () => {
         
         <View style={styles.statsGrid}>
           <View style={styles.statItem}>
-            <BodySmall style={styles.statLabel}>Area</BodySmall>
+            <BodySmall style={styles.statLabel}>Diện tích</BodySmall>
             <BodySemibold style={styles.statValue}>
               {item.area ? item.area.toFixed(2) : '0.00'} ha
             </BodySemibold>
           </View>
           <View style={styles.statItem}>
-            <BodySmall style={styles.statLabel}>Late Count</BodySmall>
+            <BodySmall style={styles.statLabel}>Số lần Muộn</BodySmall>
             <BodySemibold style={[styles.statValue, { color: colors.error }]}>
               {item.lateCount}
             </BodySemibold>
           </View>
           <View style={styles.statItem}>
-            <BodySmall style={styles.statLabel}>Status</BodySmall>
+            <BodySmall style={styles.statLabel}>Trạng thái</BodySmall>
             <Badge variant={item.isActive ? 'success' : 'error'}>
-              {item.isActive ? 'Active' : 'Inactive'}
+              {item.isActive ? 'Hoạt động' : 'Không hoạt động'}
             </Badge>
           </View>
         </View>
@@ -212,17 +212,17 @@ export const LateManagementScreen = () => {
 
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={colors.dark} />
-          <BodySemibold style={styles.backText}>Back</BodySemibold>
+          <BodySemibold style={styles.backText}>Quay lại</BodySemibold>
         </TouchableOpacity>
 
         <Spacer size="sm" />
-        <H3>Late Management</H3>
+        <H3>Quản lý Muộn</H3>
         
         <Spacer size="sm" />
         <Card style={styles.descriptionCard}>
           <BodySmall style={styles.descriptionText}>
-            Track and manage farmers and plots with late task submissions in your groups.
-            View detailed late records and monitor compliance.
+            Theo dõi và quản lý nông dân và thửa có công việc nộp muộn trong các nhóm của bạn.
+            Xem bản ghi muộn chi tiết và giám sát tuân thủ.
           </BodySmall>
         </Card>
 
@@ -245,7 +245,7 @@ export const LateManagementScreen = () => {
                 activeTab === 'farmers' && styles.activeTabText,
               ]}
             >
-              Farmer Lateness
+              Nông dân Muộn
             </BodySmall>
           </TouchableOpacity>
 
@@ -264,7 +264,7 @@ export const LateManagementScreen = () => {
                 activeTab === 'plots' && styles.activeTabText,
               ]}
             >
-              Plot Lateness
+              Thửa Muộn
             </BodySmall>
           </TouchableOpacity>
         </View>
@@ -278,16 +278,16 @@ export const LateManagementScreen = () => {
           <Card style={styles.errorCard}>
             <Ionicons name="cloud-offline-outline" size={48} color={colors.warning} />
             <Spacer size="md" />
-            <Body style={styles.errorText}>API Endpoint Not Available</Body>
+            <Body style={styles.errorText}>API Endpoint Chưa Khả dụng</Body>
             <BodySmall style={styles.errorSubtext}>
-              The late management feature is not yet available on the backend.
-              This feature will be available once the API endpoints are implemented.
+              Tính năng quản lý muộn chưa khả dụng trên backend.
+              Tính năng này sẽ khả dụng sau khi các API endpoints được triển khai.
             </BodySmall>
             <Spacer size="md" />
             <TouchableOpacity onPress={handleRefresh} style={styles.retryButton}>
               <Ionicons name="refresh-outline" size={20} color={colors.primary} />
               <BodySmall style={{ color: colors.primary, marginLeft: spacing.xs }}>
-                Retry
+                Thử lại
               </BodySmall>
             </TouchableOpacity>
           </Card>
@@ -332,10 +332,10 @@ export const LateManagementScreen = () => {
             <Ionicons name="checkmark-circle-outline" size={48} color={colors.success} />
             <Spacer size="md" />
             <Body style={styles.emptyText}>
-              No late {activeTab === 'farmers' ? 'farmers' : 'plots'} found
+              Không tìm thấy {activeTab === 'farmers' ? 'nông dân' : 'thửa'} muộn
             </Body>
             <BodySmall style={styles.emptySubtext}>
-              All tasks are being completed on time!
+              Tất cả công việc đang được hoàn thành đúng hạn!
             </BodySmall>
           </Card>
         </Container>

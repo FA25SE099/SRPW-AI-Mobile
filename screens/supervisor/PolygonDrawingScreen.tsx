@@ -181,11 +181,11 @@ export const PolygonDrawingScreen = () => {
       await Promise.all([refetchPlots(), refetchTasks()]);
       
       console.log('🔄 Data refetched after task completion');
-      Alert.alert('Success', 'Polygon task completed successfully!');
+      Alert.alert('Thành công', 'Đã hoàn thành công việc đa giác thành công!');
     },
     onError: (error: any) => {
       console.error('❌ Error completing task:', error);
-      Alert.alert('Error', error.message || 'Failed to complete task');
+      Alert.alert('Lỗi', error.message || 'Không thể hoàn thành công việc');
     },
   });
 
@@ -216,11 +216,11 @@ export const PolygonDrawingScreen = () => {
       await Promise.all([refetchPlots(), refetchTasks()]);
       
       console.log('🔄 Data refetched after update');
-      Alert.alert('Success', 'Plot boundary updated successfully!');
+      Alert.alert('Thành công', 'Đã cập nhật ranh giới thửa thành công!');
     },
     onError: (error: any) => {
       console.error('❌ Error updating plot:', error);
-      Alert.alert('Error', error.message || 'Failed to update plot');
+      Alert.alert('Lỗi', error.message || 'Không thể cập nhật thửa');
     },
   });
 
@@ -393,13 +393,13 @@ export const PolygonDrawingScreen = () => {
     console.log('💾 Attempting to save polygon...');
     
     if (drawnPolygon.length < 3) {
-      Alert.alert('Error', 'Polygon must have at least 3 points');
+      Alert.alert('Lỗi', 'Đa giác phải có ít nhất 3 điểm');
       return;
     }
 
     // Check validation result
     if (!validationResult) {
-      Alert.alert('Validation Required', 'Please wait for polygon validation to complete');
+      Alert.alert('Cần Xác thực', 'Vui lòng đợi xác thực đa giác hoàn tất');
       return;
     }
 
@@ -407,8 +407,8 @@ export const PolygonDrawingScreen = () => {
     if (!validationResult.isValid) {
       console.log('❌ Validation failed, cannot save');
       Alert.alert(
-        'Validation Failed',
-        `${validationResult.message}\n\nDrawn Area: ${validationResult.drawnAreaHa} ha\nPlot Area: ${validationResult.plotAreaHa} ha\nDifference: ${validationResult.differencePercent.toFixed(1)}%\nMax Allowed: ${validationResult.tolerancePercent}%\n\nPlease redraw the polygon with correct area.`,
+        'Xác thực Thất bại',
+        `${validationResult.message}\n\nDiện tích Vẽ: ${validationResult.drawnAreaHa} ha\nDiện tích Thửa: ${validationResult.plotAreaHa} ha\nChênh lệch: ${validationResult.differencePercent.toFixed(1)}%\nTối đa Cho phép: ${validationResult.tolerancePercent}%\n\nVui lòng vẽ lại đa giác với diện tích đúng.`,
         [{ text: 'OK', style: 'default' }]
       );
       return;
@@ -472,22 +472,22 @@ export const PolygonDrawingScreen = () => {
     setFocusedTaskId(null); // Clear any focused task
     
     // Get plot coordinates
-    const coord = getCoordinatesFromGeoJSON(plot.coordinateGeoJson || '');
-    if (coord) {
+      const coord = getCoordinatesFromGeoJSON(plot.coordinateGeoJson || '');
+      if (coord) {
       console.log('📍 Plot coordinates:', coord);
       
       // Use setTimeout to ensure camera ref is ready
       setTimeout(() => {
         if (cameraRef.current) {
           console.log('📍 Moving camera to plot:', { longitude: coord.longitude, latitude: coord.latitude });
-          cameraRef.current.setCamera({
-            centerCoordinate: [coord.longitude, coord.latitude],
-            zoomLevel: 15,
-            animationDuration: 1000,
-          });
+        cameraRef.current.setCamera({
+          centerCoordinate: [coord.longitude, coord.latitude],
+          zoomLevel: 15,
+          animationDuration: 1000,
+        });
         } else {
           console.warn('⚠️ Camera ref is null when focusing plot');
-        }
+      }
       }, 100);
     } else {
       console.warn('⚠️ Could not get coordinates for plot:', plot.plotId);
@@ -567,7 +567,7 @@ export const PolygonDrawingScreen = () => {
       }, 100);
     } else {
       console.error('❌ Invalid coordinates:', { lat: result.lat, lon: result.lon });
-      Alert.alert('Error', 'Invalid location coordinates');
+      Alert.alert('Lỗi', 'Tọa độ vị trí không hợp lệ');
     }
   };
 
@@ -595,14 +595,14 @@ export const PolygonDrawingScreen = () => {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <BodySemibold color={colors.error}>Access Denied</BodySemibold>
+          <BodySemibold color={colors.error}>Truy cập Bị từ chối</BodySemibold>
           <Spacer size="md" />
           <BodySmall color={colors.textSecondary}>
-            This screen is only available for supervisors.
+            Màn hình này chỉ dành cho giám sát viên.
           </BodySmall>
           <Spacer size="lg" />
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Body color={colors.primary}>Go Back</Body>
+            <Body color={colors.primary}>Quay lại</Body>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -614,14 +614,14 @@ export const PolygonDrawingScreen = () => {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <BodySemibold color={colors.error}>Authentication Error</BodySemibold>
+          <BodySemibold color={colors.error}>Lỗi Xác thực</BodySemibold>
           <Spacer size="md" />
           <BodySmall color={colors.textSecondary}>
-            Your session has expired. Please log in again.
+            Phiên đăng nhập của bạn đã hết hạn. Vui lòng đăng nhập lại.
           </BodySmall>
           <Spacer size="lg" />
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Body color={colors.primary}>Go Back</Body>
+            <Body color={colors.primary}>Quay lại</Body>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -633,7 +633,7 @@ export const PolygonDrawingScreen = () => {
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <Spinner fullScreen />
-          <BodySmall color={colors.textSecondary}>Loading map data...</BodySmall>
+          <BodySmall color={colors.textSecondary}>Đang tải dữ liệu bản đồ...</BodySmall>
         </View>
       </SafeAreaView>
     );
@@ -647,9 +647,9 @@ export const PolygonDrawingScreen = () => {
           <Body>←</Body>
         </TouchableOpacity>
         <View style={styles.headerContent}>
-          <H3 style={styles.headerTitle}>Polygon Drawing</H3>
+          <H3 style={styles.headerTitle}>Vẽ Đa giác</H3>
           <BodySmall color={colors.textSecondary}>
-            {tasks.length} tasks • {completedPlots.length} completed
+            {tasks.length} công việc • {completedPlots.length} đã hoàn thành
           </BodySmall>
         </View>
         <TouchableOpacity
@@ -669,7 +669,7 @@ export const PolygonDrawingScreen = () => {
               <Ionicons name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Search location..."
+                placeholder="Tìm kiếm vị trí..."
                 placeholderTextColor={colors.textSecondary}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
@@ -767,20 +767,20 @@ export const PolygonDrawingScreen = () => {
               </TouchableOpacity>
               <BodySemibold style={styles.plotTagTitle}>
                 {tappedPlot.plot.soThua || tappedPlot.plot.soTo
-                  ? `So thua ${tappedPlot.plot.soThua ?? '-'} / So to ${tappedPlot.plot.soTo ?? '-'}`
-                  : 'Plot'}
+                  ? `Thửa ${tappedPlot.plot.soThua ?? '-'} / Tờ ${tappedPlot.plot.soTo ?? '-'}`
+                  : 'Thửa'}
               </BodySemibold>
               <BodySmall color={colors.textSecondary} style={styles.plotTagInfo}>
-                Area: {tappedPlot.plot.area.toFixed(2)} ha
+                Diện tích: {tappedPlot.plot.area.toFixed(2)} ha
               </BodySmall>
               {tappedPlot.plot.status && (
                 <BodySmall color={colors.textSecondary} style={styles.plotTagInfo}>
-                  Status: {tappedPlot.plot.status}
+                  Trạng thái: {tappedPlot.plot.status}
                 </BodySmall>
               )}
               {tappedPlot.plot.farmerName && (
                 <BodySmall color={colors.textSecondary} style={styles.plotTagInfo}>
-                  Farmer: {tappedPlot.plot.farmerName}
+                  Nông dân: {tappedPlot.plot.farmerName}
                 </BodySmall>
               )}
             </View>

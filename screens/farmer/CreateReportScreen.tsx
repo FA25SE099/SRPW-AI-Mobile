@@ -42,8 +42,10 @@ import {
   Severity,
   PlotCultivationPlan,
   PestDetectionResponse,
+  FullAnalysisResponse,
+  FullAnalysisResponseItem,
 } from '../../types/api';
-import { createEmergencyReport, getPlotCultivationPlans, detectPestInImage } from '../../libs/farmer';
+import { createEmergencyReport, getPlotCultivationPlans, analyzePestImageFull } from '../../libs/farmer';
 import { useUser } from '../../libs/auth';
 import { uploadFile } from '../../libs/api-client';
 import {
@@ -85,6 +87,7 @@ export const CreateReportScreen = () => {
   const [showCultivationPicker, setShowCultivationPicker] = useState(false);
   const [pestDetectionResults, setPestDetectionResults] = useState<PestDetectionResponse | null>(null);
   const [isDetectingPest, setIsDetectingPest] = useState(false);
+  const [fullAnalysisResult, setFullAnalysisResult] = useState<FullAnalysisResponseItem | null>(null);
   const [annotatedImageDimensions, setAnnotatedImageDimensions] = useState<{ 
     width: number; 
     height: number; 
@@ -284,6 +287,7 @@ export const CreateReportScreen = () => {
     // Clear pest detection results if we remove the first image
     if (index === 0) {
       setPestDetectionResults(null);
+      setFullAnalysisResult(null);
       setAnnotatedImageDimensions(null);
       setSelectedPestIndex(null);
     }
@@ -325,26 +329,36 @@ export const CreateReportScreen = () => {
     );
     
     try {
-      const result = await detectPestInImage(image);
-      setPestDetectionResults(result);
+      const fullResult = await analyzePestImageFull(image);
+      const firstResult = fullResult && fullResult.length > 0 ? fullResult[0] : null;
+
+      if (!firstResult) {
+        throw new Error('Không nhận được kết quả phân tích từ máy chủ');
+      }
+
+      setFullAnalysisResult(firstResult);
+
+      // Map detection part to existing PestDetectionResponse state for overlay UI
+      const detection = firstResult.detection as unknown as PestDetectionResponse;
+      setPestDetectionResults(detection);
       
       // Auto-fill form if pest detected
-      if (result.hasPest && result.totalDetections > 0) {
-        const topPest = result.detectedPests[0];
-        const pestNames = [...new Set(result.detectedPests.map(p => p.pestName))].join(', ');
+      if (detection.hasPest && detection.totalDetections > 0) {
+        const topPest = detection.detectedPests[0];
+        const pestNames = [...new Set(detection.detectedPests.map(p => p.pestName))].join(', ');
         
         setFormData({
           ...formData,
-          title: formData.title || `${pestNames} detected`,
+          title: formData.title || `${pestNames} đã phát hiện`,
           description: formData.description || 
-            `AI detected ${result.totalDetections} pest instance(s). Primary: ${topPest.pestName} (${topPest.confidence.toFixed(1)}% confidence).`,
-          severity: result.detectedPests.some(p => p.confidenceLevel === 'High') ? 'High' : 'Medium',
+            `Đã phát hiện ${detection.totalDetections} trường hợp sâu bệnh. Sâu bệnh chính: ${topPest.pestName} (${topPest.confidence.toFixed(1)}% độ tin cậy).`,
+          severity: detection.detectedPests.some(p => p.confidenceLevel === 'High') ? 'High' : 'Medium',
         });
         
         // Show success message
         Alert.alert(
-          'Analysis Complete!',
-          `Found ${result.totalDetections} pest instance(s). Check the marked areas on your image.`,
+          'Phân tích hoàn tất!',
+          `Đã phát hiện ${detection.totalDetections} trường hợp sâu bệnh. Xem các vùng đã đánh dấu trên ảnh của bạn.`,
           [{ text: 'OK' }],
         );
       } else {
@@ -356,7 +370,7 @@ export const CreateReportScreen = () => {
         );
       }
     } catch (error: any) {
-      console.warn('Pest detection failed:', error);
+      console.warn('Phân tích sâu bệnh thất bại:', error);
       const errorMessage = error.code === 'ECONNABORTED' 
         ? 'Phân tích mất quá nhiều thời gian và đã hết thời gian chờ. Vui lòng thử với ảnh nhỏ hơn hoặc gửi báo cáo thủ công.'
         : 'Không thể phân tích ảnh tự động. Bạn vẫn có thể gửi báo cáo thủ công.';
@@ -567,7 +581,7 @@ export const CreateReportScreen = () => {
 
               {/* Images */}
               <BodySmall color={colors.textSecondary}>
-                Ảnh {formData.alertType === 'Pest' ? '(Khuyến nghị - AI sẽ giúp nhận diện sâu bệnh)' : '(Tùy chọn)'}
+                Ảnh {formData.alertType === 'Pest' ? '(Khuyến nghị - AI sẽ giúp nhận diện sâu bệnh và gợi ý xử lý)' : '(Tùy chọn)'}
               </BodySmall>
               <Spacer size="xs" />
               <Button 
@@ -594,6 +608,21 @@ export const CreateReportScreen = () => {
                       </Body>
                     </View>
                   </View>
+                  {!!fullAnalysisResult?.recommendation?.aiRecommendation && (
+                    <>
+                      <Spacer size="md" />
+                      <View style={styles.aiRecommendationContainer}>
+                        <BodySemibold style={styles.aiRecommendationTitle}>
+                          Gợi ý xử lý từ AI
+                        </BodySemibold>
+                        <Spacer size="xs" />
+                        <BodySmall style={styles.aiRecommendationText}>
+                          {fullAnalysisResult.recommendation.aiRecommendation.rawResponse ||
+                            fullAnalysisResult.recommendation.aiRecommendation.assessment}
+                        </BodySmall>
+                      </View>
+                    </>
+                  )}
                   <Spacer size="md" />
                   <View style={styles.pestsListContainer}>
                     <BodySemibold style={styles.pestListTitle}>Sâu bệnh đã phát hiện:</BodySemibold>
@@ -1069,6 +1098,25 @@ const styles = StyleSheet.create({
   detectionSubtitle: {
     fontSize: getFontSize(15),
     lineHeight: moderateScale(20),
+  },
+  aiRecommendationContainer: {
+    marginTop: getSpacing(spacing.xs),
+    backgroundColor: colors.white,
+    borderRadius: moderateScale(borderRadius.md),
+    padding: getSpacing(spacing.md),
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+  },
+  aiRecommendationTitle: {
+    fontSize: getFontSize(15),
+    fontWeight: '600',
+    color: greenTheme.primary,
+  },
+  aiRecommendationText: {
+    marginTop: getSpacing(spacing.xs),
+    fontSize: getFontSize(14),
+    lineHeight: moderateScale(20),
+    color: colors.textPrimary,
   },
   legendContainer: {
     backgroundColor: colors.white,

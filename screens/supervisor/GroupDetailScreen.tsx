@@ -101,7 +101,7 @@ export const GroupDetailScreen = () => {
       <SafeAreaView style={styles.container} edges={['top']}>
         <Container>
           <Spacer size="md" />
-          <H3>{params.groupName || 'Group Details'}</H3>
+          <H3>{params.groupName || 'Chi tiết Nhóm'}</H3>
           <Spacer size="xl" />
           <View style={styles.centered}>
             <ActivityIndicator size="large" color={greenTheme.primary} />
@@ -116,9 +116,9 @@ export const GroupDetailScreen = () => {
       <SafeAreaView style={styles.container} edges={['top']}>
         <Container>
           <Spacer size="md" />
-          <H3>Group Not Found</H3>
+          <H3>Không tìm thấy Nhóm</H3>
           <Spacer size="md" />
-          <Body style={styles.emptyText}>Unable to load group details</Body>
+          <Body style={styles.emptyText}>Không thể tải chi tiết nhóm</Body>
         </Container>
       </SafeAreaView>
     );
@@ -135,14 +135,14 @@ export const GroupDetailScreen = () => {
 
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={greenTheme.primary} />
-            <BodySemibold style={styles.backText}>Back</BodySemibold>
+            <BodySemibold style={styles.backText}>Quay lại</BodySemibold>
           </TouchableOpacity>
           <Spacer size="sm" />
 
           {/* Header */}
-          <H3>{groupDetail.clusterName || params.groupName || 'Group Details'}</H3>
+          <H3>{groupDetail.clusterName || params.groupName || 'Chi tiết Nhóm'}</H3>
           <BodySmall style={styles.subtitle}>
-            {params.seasonName || 'Season Details'} • {groupDetail.totalArea} ha
+            {params.seasonName || 'Chi tiết Mùa vụ'} • {groupDetail.totalArea} ha
           </BodySmall>
 
           <Spacer size="lg" />
@@ -150,11 +150,11 @@ export const GroupDetailScreen = () => {
           {/* Group Info Card */}
           <Card style={styles.infoCard}>
             <View style={styles.infoRow}>
-              <BodySmall style={styles.infoLabel}>Rice Variety:</BodySmall>
+              <BodySmall style={styles.infoLabel}>Giống lúa:</BodySmall>
               <BodySmall>{groupDetail.riceVarietyName || 'N/A'}</BodySmall>
             </View>
             <View style={styles.infoRow}>
-              <BodySmall style={styles.infoLabel}>Planting Date:</BodySmall>
+              <BodySmall style={styles.infoLabel}>Ngày trồng:</BodySmall>
               <BodySmall>
                 {groupDetail.plantingDate
                   ? new Date(groupDetail.plantingDate).toLocaleDateString()
@@ -162,7 +162,7 @@ export const GroupDetailScreen = () => {
               </BodySmall>
             </View>
             <View style={styles.infoRow}>
-              <BodySmall style={styles.infoLabel}>Status:</BodySmall>
+              <BodySmall style={styles.infoLabel}>Trạng thái:</BodySmall>
               <Badge variant={groupDetail.status === 'Active' ? 'success' : 'neutral'} size="sm">
                 {groupDetail.status}
               </Badge>
@@ -173,7 +173,7 @@ export const GroupDetailScreen = () => {
 
           {/* Production Plans Section */}
           <View style={styles.sectionHeader}>
-            <H4>Production Plan</H4>
+            <H4>Kế hoạch Sản xuất</H4>
           </View>
 
           <Spacer size="sm" />
@@ -182,9 +182,9 @@ export const GroupDetailScreen = () => {
             <Card style={styles.emptyCard}>
               <Ionicons name="document-text-outline" size={48} color={colors.lightGray} />
               <Spacer size="sm" />
-              <BodySmall style={styles.emptyText}>No production plans yet</BodySmall>
+              <BodySmall style={styles.emptyText}>Chưa có kế hoạch sản xuất</BodySmall>
               <BodySmall style={styles.emptySubtext}>
-                Create a plan from the web application
+                Tạo kế hoạch từ ứng dụng web
               </BodySmall>
             </Card>
           ) : (
@@ -204,10 +204,10 @@ export const GroupDetailScreen = () => {
                     </View>
                     <Spacer size="xs" />
                     <BodySmall style={styles.planDetail}>
-                      Area: {plan.totalArea} ha
+                      Diện tích: {plan.totalArea} ha
                     </BodySmall>
                     <BodySmall style={styles.planDetail}>
-                      Planting Date:{' '}
+                      Ngày trồng:{' '}
                       {plan.basePlantingDate
                         ? new Date(plan.basePlantingDate).toLocaleDateString()
                         : 'N/A'}
@@ -222,7 +222,7 @@ export const GroupDetailScreen = () => {
 
           {/* Plots Section */}
           <View style={styles.sectionHeader}>
-            <H4>Plots ({plots.length})</H4>
+            <H4>Thửa ({plots.length})</H4>
           </View>
 
           <Spacer size="sm" />
@@ -231,7 +231,7 @@ export const GroupDetailScreen = () => {
             <Card style={styles.emptyCard}>
               <Ionicons name="map-outline" size={48} color={colors.lightGray} />
               <Spacer size="sm" />
-              <BodySmall style={styles.emptyText}>No plots assigned</BodySmall>
+              <BodySmall style={styles.emptyText}>Chưa có thửa nào được gán</BodySmall>
             </Card>
           ) : (
             <View style={styles.plotsContainer}>
@@ -254,8 +254,8 @@ export const GroupDetailScreen = () => {
                       </Badge>
                     </View>
                     <Spacer size="xs" />
-                    <BodySmall style={styles.plotDetail}>Area: {plot.area} ha</BodySmall>
-                    <BodySmall style={styles.plotDetail}>Soil: {plot.soilType}</BodySmall>
+                    <BodySmall style={styles.plotDetail}>Diện tích: {plot.area} ha</BodySmall>
+                    <BodySmall style={styles.plotDetail}>Loại đất: {plot.soilType}</BodySmall>
                   </Card>
                 </TouchableOpacity>
               ))}

@@ -390,16 +390,10 @@ export const ProfileScreen = () => {
         <Spacer size="md" />
         
         {/* Logout Button */}
-        {isSupervisor && (
-        <Button onPress={handleLogout} variant="outline" loading={logout.isPending} fullWidth>
-          Logout
-        </Button>
-        )} 
-        {(isUavVendor || isFarmer) && (
+       
         <Button onPress={handleLogout} variant="outline" loading={logout.isPending} fullWidth>
           Đăng xuất
         </Button>
-        )}
 
 
         <Spacer size="xl" />

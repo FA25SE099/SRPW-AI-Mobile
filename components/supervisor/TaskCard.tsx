@@ -47,35 +47,35 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           onFocus(task);
         }}
         activeOpacity={0.7}
-      >
-        <View style={styles.header}>
-          <View style={styles.info}>
-            <BodySemibold>
-              Plot {task.soThua}/{task.soTo}
-            </BodySemibold>
-            <BodySmall color={colors.textSecondary}>
-              {task.farmerName || 'Unknown Farmer'}
-            </BodySmall>
-          </View>
-          <View
-            style={[
-              styles.priorityBadge,
-              {
-                borderColor: getPriorityColor(task.priority),
-                borderWidth: 1,
-                backgroundColor: 'transparent',
-              },
-            ]}
-          >
-            <BodySmall style={{ color: getPriorityColor(task.priority) }}>
-              {getPriorityText(task.priority)}
-            </BodySmall>
-          </View>
+    >
+      <View style={styles.header}>
+        <View style={styles.info}>
+          <BodySemibold>
+            Plot {task.soThua}/{task.soTo}
+          </BodySemibold>
+          <BodySmall color={colors.textSecondary}>
+            {task.farmerName || 'Unknown Farmer'}
+          </BodySmall>
         </View>
+        <View
+          style={[
+            styles.priorityBadge,
+            {
+              borderColor: getPriorityColor(task.priority),
+              borderWidth: 1,
+              backgroundColor: 'transparent',
+            },
+          ]}
+        >
+          <BodySmall style={{ color: getPriorityColor(task.priority) }}>
+            {getPriorityText(task.priority)}
+          </BodySmall>
+        </View>
+      </View>
 
-        <BodySmall color={colors.textSecondary}>
-          {dayjs(task.assignedAt).format('MMM DD, YYYY')}
-        </BodySmall>
+      <BodySmall color={colors.textSecondary}>
+        {dayjs(task.assignedAt).format('MMM DD, YYYY')}
+      </BodySmall>
       </TouchableOpacity>
 
       {!isSelected ? (
@@ -87,11 +87,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           }}
           style={styles.startButton}
         >
-          <BodySmall color={colors.white}>Start Drawing</BodySmall>
+          <BodySmall color={colors.white}>Bắt đầu Vẽ</BodySmall>
         </Button>
       ) : (
         <View style={styles.selectedIndicator}>
-          <BodySmall color={colors.primary}>→ Drawing in progress...</BodySmall>
+          <BodySmall color={colors.primary}>→ Đang vẽ...</BodySmall>
         </View>
       )}
     </View>

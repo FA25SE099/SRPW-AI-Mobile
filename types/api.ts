@@ -818,6 +818,62 @@ export type PestDetectionResponse = {
   imageInfo: PestDetectionImageInfo;
 };
 
+// Full AI analysis types for /rice/full-analysis
+export type FullAnalysisMask = {
+  points: number[][];
+};
+
+export type FullAnalysisDetectedPest = {
+  id: number;
+  classId: number;
+  pestName: string;
+  confidence: number;
+  confidenceLevel: 'Low' | 'Medium' | 'High';
+  location: PestDetectionLocation;
+  mask: FullAnalysisMask[];
+};
+
+export type FullAnalysisDetection = {
+  hasPest: boolean;
+  totalDetections: number;
+  detectedPests: FullAnalysisDetectedPest[];
+  imageInfo: PestDetectionImageInfo;
+};
+
+export type FullAnalysisDetectedPestsSummary = {
+  pestName: string;
+  confidence: number;
+  detectionCount: number;
+  confidenceLevel: 'Low' | 'Medium' | 'High' | string;
+};
+
+export type FullAnalysisAiRecommendation = {
+  assessment: string;
+  treatmentRecommendation: string;
+  preventiveMeasures: string;
+  additionalInsights: string;
+  rawResponse: string;
+};
+
+export type FullAnalysisRecommendation = {
+  success: boolean;
+  severity: 'Low' | 'Medium' | 'High' | 'Critical' | string;
+  detectedPestsSummary: FullAnalysisDetectedPestsSummary[];
+  recommendedProtocols: any[];
+  aiRecommendation: FullAnalysisAiRecommendation | null;
+  estimatedCost: any;
+  timeline: any;
+  warnings: string[];
+};
+
+export type FullAnalysisResponseItem = {
+  fileName: string;
+  detection: FullAnalysisDetection;
+  recommendation: FullAnalysisRecommendation;
+};
+
+export type FullAnalysisResponse = FullAnalysisResponseItem[];
+
 // Standard Plan Types
 export type StandardPlan = {
   id: string;

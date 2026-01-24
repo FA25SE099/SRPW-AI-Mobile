@@ -77,7 +77,7 @@ export const DrawingControls: React.FC<DrawingControlsProps> = ({
 
       {drawnPolygon.length < 3 ? (
         <BodySmall color={colors.textSecondary} style={styles.instructionText}>
-          Tap map to add points (min 3)
+          Nhấn vào bản đồ để thêm điểm (tối thiểu 3)
         </BodySmall>
       ) : (
         <>
@@ -87,7 +87,7 @@ export const DrawingControls: React.FC<DrawingControlsProps> = ({
               <View style={styles.validationRow}>
                 <ActivityIndicator size="small" color={colors.primary} />
                 <BodySmall color={colors.textSecondary} style={styles.validationText}>
-                  Validating polygon...
+                  Đang xác thực đa giác...
                 </BodySmall>
               </View>
             ) : validationResult ? (
@@ -98,25 +98,25 @@ export const DrawingControls: React.FC<DrawingControlsProps> = ({
                     color={getValidationStatusColor()}
                     style={styles.validationStatus}
                   >
-                    {validationResult.isValid ? 'Valid' : 'Invalid Area'}
+                    {validationResult.isValid ? 'Hợp lệ' : 'Diện tích Không hợp lệ'}
                   </BodySemibold>
                 </View>
                 
                 <View style={styles.validationDetails}>
                   <View style={styles.validationDetailRow}>
-                    <BodySmall color={colors.textSecondary}>Drawn:</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Đã vẽ:</BodySmall>
                     <BodySmall color={colors.textPrimary}>
                       {validationResult.drawnAreaHa.toFixed(3)} ha
                     </BodySmall>
                   </View>
                   <View style={styles.validationDetailRow}>
-                    <BodySmall color={colors.textSecondary}>Expected:</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Dự kiến:</BodySmall>
                     <BodySmall color={colors.textPrimary}>
                       {validationResult.plotAreaHa.toFixed(3)} ha
                     </BodySmall>
                   </View>
                   <View style={styles.validationDetailRow}>
-                    <BodySmall color={colors.textSecondary}>Difference:</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Chênh lệch:</BodySmall>
                     <BodySmall color={getValidationStatusColor()}>
                       {validationResult.differencePercent.toFixed(1)}%
                     </BodySmall>
@@ -136,7 +136,7 @@ export const DrawingControls: React.FC<DrawingControlsProps> = ({
               <View style={styles.validationRow}>
                 <Body style={styles.validationIcon}>⚪</Body>
                 <BodySmall color={colors.textSecondary} style={styles.validationText}>
-                  Waiting for validation...
+                  Đang chờ xác thực...
                 </BodySmall>
               </View>
             )}
@@ -151,7 +151,7 @@ export const DrawingControls: React.FC<DrawingControlsProps> = ({
             disabled={isPending}
             style={[styles.actionButton, styles.undoButton]}
           >
-            <BodySmall color={colors.textPrimary}>Undo</BodySmall>
+            <BodySmall color={colors.textPrimary}>Hoàn tác</BodySmall>
           </TouchableOpacity>
         )}
         {drawnPolygon.length >= 3 && (
@@ -168,7 +168,7 @@ export const DrawingControls: React.FC<DrawingControlsProps> = ({
             style={styles.saveButton}
           >
             <BodySmall color={colors.white}>
-              Save
+              Lưu
             </BodySmall>
           </Button>
         )}
@@ -177,7 +177,7 @@ export const DrawingControls: React.FC<DrawingControlsProps> = ({
       {/* Show message when save is disabled */}
       {drawnPolygon.length >= 3 && validationResult && !validationResult.isValid && (
         <BodySmall color={colors.error} style={styles.disabledMessage}>
-          ⚠️ Validation must pass to save. Please redraw polygon.
+          ⚠️ Xác thực phải đạt để lưu. Vui lòng vẽ lại đa giác.
         </BodySmall>
       )}
     </Card>

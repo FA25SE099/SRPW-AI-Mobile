@@ -84,11 +84,11 @@ export const FarmLogsScreen = () => {
         <Spacer size="md" />
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={greenTheme.primary} />
-          <BodySemibold style={styles.backText}>Back</BodySemibold>
+          <BodySemibold style={styles.backText}>Quay lại</BodySemibold>
         </TouchableOpacity>
         <Spacer size="md" />
-        <H3>Farm Logs</H3>
-        <BodySmall style={styles.subtitle}>{params.plotName || 'Plot Details'}</BodySmall>
+        <H3>Nhật ký Nông trại</H3>
+        <BodySmall style={styles.subtitle}>{params.plotName || 'Chi tiết Thửa'}</BodySmall>
         <Spacer size="lg" />
 
         <ScrollView showsVerticalScrollIndicator={false}>
@@ -96,7 +96,7 @@ export const FarmLogsScreen = () => {
             <View style={styles.emptyState}>
               <Ionicons name="document-text-outline" size={48} color={colors.textSecondary} />
               <Spacer size="md" />
-              <Body style={styles.emptyText}>No farm logs recorded yet</Body>
+              <Body style={styles.emptyText}>Chưa có nhật ký nông trại nào được ghi lại</Body>
             </View>
           ) : (
             logs.map((log) => (
@@ -113,7 +113,7 @@ export const FarmLogsScreen = () => {
                 
                 {log.workDescription && (
                   <>
-                    <BodySmall style={styles.label}>Description</BodySmall>
+                    <BodySmall style={styles.label}>Mô tả</BodySmall>
                     <Body style={styles.content}>{log.workDescription}</Body>
                     <Spacer size="sm" />
                   </>
@@ -121,7 +121,7 @@ export const FarmLogsScreen = () => {
 
                 {log.materialsUsed && log.materialsUsed.length > 0 && (
                   <>
-                    <BodySmall style={styles.label}>Materials Used</BodySmall>
+                    <BodySmall style={styles.label}>Vật tư Đã sử dụng</BodySmall>
                     {log.materialsUsed.map((m, idx) => (
                       <View key={idx} style={styles.materialRow}>
                         <BodySmall>• {m.materialName}</BodySmall>

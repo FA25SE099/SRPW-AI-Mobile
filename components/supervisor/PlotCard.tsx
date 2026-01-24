@@ -69,14 +69,14 @@ export const PlotCard: React.FC<PlotCardProps> = ({ plot, isFocused, isEditing, 
       </BodySmall>
       <View style={styles.footer}>
         <BodySmall color={colors.success} style={styles.completedBadge}>
-          ✓ Polygon available
+          ✓ Đa giác có sẵn
         </BodySmall>
         <TouchableOpacity
           onPress={() => onEdit(plot)}
           style={styles.editButton}
         >
           <BodySmall color={colors.primary} style={styles.editButtonText}>
-            ✏️ Edit
+            ✏️ Chỉnh sửa
           </BodySmall>
         </TouchableOpacity>
       </View>
@@ -87,13 +87,13 @@ export const PlotCard: React.FC<PlotCardProps> = ({ plot, isFocused, isEditing, 
         >
           <Ionicons name="location" size={16} color={colors.primary} />
           <BodySmall color={colors.primary} style={styles.viewOnMapText}>
-            View on Map
+            Xem trên Bản đồ
           </BodySmall>
         </TouchableOpacity>
       </View>
       {isEditing && (
         <BodySmall color={colors.warning || '#FF9500'} style={styles.editingLabel}>
-          → Editing in progress...
+          → Đang chỉnh sửa...
         </BodySmall>
       )}
     </View>

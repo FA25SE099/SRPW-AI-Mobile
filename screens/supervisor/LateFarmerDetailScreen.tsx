@@ -88,7 +88,7 @@ export const LateFarmerDetailScreen = () => {
         {params.type === 'farmer' && (
           <>
             <View style={styles.recordRow}>
-              <BodySmall style={styles.label}>Plot:</BodySmall>
+              <BodySmall style={styles.label}>Thửa:</BodySmall>
               <BodySmall>
                 {item.soThua && item.soTo
                   ? `Thửa ${item.soThua}, Tờ ${item.soTo}`
@@ -102,7 +102,7 @@ export const LateFarmerDetailScreen = () => {
         {params.type === 'plot' && (
           <>
             <View style={styles.recordRow}>
-              <BodySmall style={styles.label}>Farmer:</BodySmall>
+              <BodySmall style={styles.label}>Nông dân:</BodySmall>
               <BodySmall>{item.farmerName}</BodySmall>
             </View>
             <Spacer size="xs" />
@@ -110,28 +110,28 @@ export const LateFarmerDetailScreen = () => {
         )}
 
         <View style={styles.recordRow}>
-          <BodySmall style={styles.label}>Season:</BodySmall>
+          <BodySmall style={styles.label}>Mùa vụ:</BodySmall>
           <BodySmall>{item.seasonName}</BodySmall>
         </View>
 
         <Spacer size="xs" />
 
         <View style={styles.recordRow}>
-          <BodySmall style={styles.label}>Cluster:</BodySmall>
+          <BodySmall style={styles.label}>Cụm:</BodySmall>
           <BodySmall>{item.clusterName}</BodySmall>
         </View>
 
         <Spacer size="xs" />
 
         <View style={styles.recordRow}>
-          <BodySmall style={styles.label}>Recorded:</BodySmall>
+          <BodySmall style={styles.label}>Đã ghi:</BodySmall>
           <BodySmall>{formatDate(item.recordedAt)}</BodySmall>
         </View>
 
         {item.notes && (
           <>
             <Spacer size="sm" />
-            <BodySmall style={styles.label}>Notes:</BodySmall>
+            <BodySmall style={styles.label}>Ghi chú:</BodySmall>
             <BodySmall style={styles.notes}>{item.notes}</BodySmall>
           </>
         )}
@@ -139,7 +139,7 @@ export const LateFarmerDetailScreen = () => {
         <Spacer size="sm" />
         <View style={styles.viewDetailButton}>
           <BodySmall style={{ color: colors.primary, fontWeight: '600' }}>
-            View Cultivation Plan
+            Xem Kế hoạch Canh tác
           </BodySmall>
           <Ionicons name="arrow-forward" size={16} color={colors.primary} />
         </View>
@@ -154,7 +154,7 @@ export const LateFarmerDetailScreen = () => {
           <Spacer size="md" />
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={colors.dark} />
-            <BodySemibold style={styles.backText}>Back</BodySemibold>
+            <BodySemibold style={styles.backText}>Quay lại</BodySemibold>
           </TouchableOpacity>
           <Spacer size="sm" />
           <H3>{params.name}</H3>
@@ -174,7 +174,7 @@ export const LateFarmerDetailScreen = () => {
           <Spacer size="md" />
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={colors.dark} />
-            <BodySemibold style={styles.backText}>Back</BodySemibold>
+            <BodySemibold style={styles.backText}>Quay lại</BodySemibold>
           </TouchableOpacity>
           <Spacer size="sm" />
           <H3>{params.name}</H3>
@@ -182,9 +182,9 @@ export const LateFarmerDetailScreen = () => {
           <Card style={styles.errorCard}>
             <Ionicons name="cloud-offline-outline" size={48} color={colors.warning} />
             <Spacer size="md" />
-            <Body style={styles.errorText}>Failed to load late records</Body>
+            <Body style={styles.errorText}>Không thể tải bản ghi muộn</Body>
             <BodySmall style={styles.errorSubtext}>
-              The API endpoint may not be available yet.
+              API endpoint có thể chưa khả dụng.
             </BodySmall>
           </Card>
         </Container>
@@ -198,7 +198,7 @@ export const LateFarmerDetailScreen = () => {
     <View>
       <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
         <Ionicons name="arrow-back" size={24} color={colors.dark} />
-        <BodySemibold style={styles.backText}>Back</BodySemibold>
+        <BodySemibold style={styles.backText}>Quay lại</BodySemibold>
       </TouchableOpacity>
 
       <Spacer size="sm" />
@@ -208,8 +208,8 @@ export const LateFarmerDetailScreen = () => {
       <Card style={styles.infoCard}>
         <BodySmall style={styles.infoText}>
           {params.type === 'farmer'
-            ? 'View late task records for this farmer. Tap any record to see the full cultivation plan.'
-            : 'View late task records for this plot. Tap any record to see the full cultivation plan.'}
+            ? 'Xem bản ghi công việc muộn cho nông dân này. Nhấn vào bất kỳ bản ghi nào để xem kế hoạch canh tác đầy đủ.'
+            : 'Xem bản ghi công việc muộn cho thửa này. Nhấn vào bất kỳ bản ghi nào để xem kế hoạch canh tác đầy đủ.'}
         </BodySmall>
       </Card>
 
@@ -229,9 +229,9 @@ export const LateFarmerDetailScreen = () => {
           <Card style={styles.emptyCard}>
             <Ionicons name="checkmark-circle-outline" size={48} color={colors.success} />
             <Spacer size="md" />
-            <Body style={styles.emptyText}>No late records found</Body>
+            <Body style={styles.emptyText}>Không tìm thấy bản ghi muộn</Body>
             <BodySmall style={styles.emptySubtext}>
-              All tasks are being completed on time!
+              Tất cả công việc đang được hoàn thành đúng hạn!
             </BodySmall>
           </Card>
         }

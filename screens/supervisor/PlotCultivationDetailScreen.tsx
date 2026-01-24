@@ -163,10 +163,10 @@ export const PlotCultivationDetailScreen = () => {
           <Spacer size="md" />
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={colors.dark} />
-            <BodySemibold style={styles.backText}>Back</BodySemibold>
+            <BodySemibold style={styles.backText}>Quay lại</BodySemibold>
           </TouchableOpacity>
           <Spacer size="md" />
-          <H3>{params.plotName || 'Plot Cultivation'}</H3>
+          <H3>{params.plotName || 'Canh tác Thửa'}</H3>
           <Spacer size="xl" />
           <View style={styles.centered}>
             <ActivityIndicator size="large" color={greenTheme.primary} />
@@ -183,18 +183,18 @@ export const PlotCultivationDetailScreen = () => {
           <Spacer size="md" />
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={colors.dark} />
-            <BodySemibold style={styles.backText}>Back</BodySemibold>
+            <BodySemibold style={styles.backText}>Quay lại</BodySemibold>
           </TouchableOpacity>
           <Spacer size="md" />
-          <H3>{params.plotName || 'Plot Cultivation'}</H3>
+          <H3>{params.plotName || 'Canh tác Thửa'}</H3>
           <Spacer size="xl" />
           <Card style={styles.errorCard}>
             <Ionicons name="alert-circle-outline" size={48} color={colors.error} />
             <Spacer size="md" />
-            <Body style={styles.errorText}>Failed to load cultivation plan</Body>
+            <Body style={styles.errorText}>Không thể tải kế hoạch canh tác</Body>
             <Spacer size="sm" />
             <TouchableOpacity onPress={() => refetch()}>
-              <BodySemibold style={{ color: greenTheme.primary }}>Retry</BodySemibold>
+              <BodySemibold style={{ color: greenTheme.primary }}>Thử lại</BodySemibold>
             </TouchableOpacity>
           </Card>
         </Container>
@@ -209,15 +209,15 @@ export const PlotCultivationDetailScreen = () => {
           <Spacer size="md" />
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={colors.dark} />
-            <BodySemibold style={styles.backText}>Back</BodySemibold>
+            <BodySemibold style={styles.backText}>Quay lại</BodySemibold>
           </TouchableOpacity>
           <Spacer size="md" />
-          <H3>{params.plotName || 'Plot Cultivation'}</H3>
+          <H3>{params.plotName || 'Canh tác Thửa'}</H3>
           <Spacer size="xl" />
           <Card style={styles.emptyCard}>
             <Ionicons name="file-tray-outline" size={48} color={colors.textSecondary} />
             <Spacer size="md" />
-            <Body style={styles.emptyText}>No cultivation plan found</Body>
+            <Body style={styles.emptyText}>Không tìm thấy kế hoạch canh tác</Body>
           </Card>
         </Container>
       </SafeAreaView>
@@ -232,12 +232,12 @@ export const PlotCultivationDetailScreen = () => {
 
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={greenTheme.primary} />
-            <BodySemibold style={styles.backText}>Back</BodySemibold>
+            <BodySemibold style={styles.backText}>Quay lại</BodySemibold>
           </TouchableOpacity>
           <Spacer size="sm" />
 
           {/* Header */}
-          <H3>{cultivationPlan.plotName || params.plotName || 'Plot Cultivation'}</H3>
+          <H3>{cultivationPlan.plotName || params.plotName || 'Canh tác Thửa'}</H3>
           
           {/* Version Selector */}
           <TouchableOpacity 
@@ -247,14 +247,14 @@ export const PlotCultivationDetailScreen = () => {
             <Ionicons name="time-outline" size={16} color={colors.primary} />
             <BodySmall style={{ color: colors.primary }}>
               {selectedVersionId 
-                ? `Version: ${versions.find(v => v.id === selectedVersionId)?.versionName || 'Unknown'}`
-                : 'Latest Version (Active)'}
+                ? `Phiên bản: ${versions.find(v => v.id === selectedVersionId)?.versionName || 'Không xác định'}`
+                : 'Phiên bản Mới nhất (Đang hoạt động)'}
             </BodySmall>
             <Ionicons name="chevron-down" size={16} color={colors.primary} />
           </TouchableOpacity>
           
           {selectedVersionId && (
-            <BodySmall style={styles.versionWarning}>Viewing historical version</BodySmall>
+            <BodySmall style={styles.versionWarning}>Đang xem phiên bản lịch sử</BodySmall>
           )}
 
           <Spacer size="lg" />
@@ -264,14 +264,14 @@ export const PlotCultivationDetailScreen = () => {
             <Card style={styles.overviewCard}>
               <Ionicons name="map-outline" size={32} color={greenTheme.primary} />
               <Spacer size="xs" />
-              <BodySmall style={styles.overviewLabel}>Area</BodySmall>
+              <BodySmall style={styles.overviewLabel}>Diện tích</BodySmall>
               <BodySemibold>{cultivationPlan.plotArea.toFixed(2)} ha</BodySemibold>
             </Card>
 
             <Card style={styles.overviewCard}>
               <Ionicons name="leaf-outline" size={32} color={greenTheme.success} />
               <Spacer size="xs" />
-              <BodySmall style={styles.overviewLabel}>Variety</BodySmall>
+              <BodySmall style={styles.overviewLabel}>Giống</BodySmall>
               <BodySemibold style={styles.overviewValueSmall}>
                 {cultivationPlan.riceVarietyName}
               </BodySemibold>
@@ -280,14 +280,14 @@ export const PlotCultivationDetailScreen = () => {
             <Card style={styles.overviewCard}>
               <Ionicons name="calendar-outline" size={32} color={colors.warning} />
               <Spacer size="xs" />
-              <BodySmall style={styles.overviewLabel}>Season</BodySmall>
+              <BodySmall style={styles.overviewLabel}>Mùa vụ</BodySmall>
               <BodySemibold>{cultivationPlan.seasonName}</BodySemibold>
             </Card>
 
             <Card style={styles.overviewCard}>
               <Ionicons name="trending-up-outline" size={32} color={greenTheme.primary} />
               <Spacer size="xs" />
-              <BodySmall style={styles.overviewLabel}>Status</BodySmall>
+              <BodySmall style={styles.overviewLabel}>Trạng thái</BodySmall>
               <Badge
                 style={{ alignSelf: 'center', backgroundColor: getStatusColor(cultivationPlan.status) + '20' }}
                 textStyle={{ color: getStatusColor(cultivationPlan.status), fontWeight: '600' }}
@@ -301,16 +301,16 @@ export const PlotCultivationDetailScreen = () => {
 
           {/* Production Plan Info */}
           <Card>
-            <BodySmall style={styles.label}>Production Plan</BodySmall>
+            <BodySmall style={styles.label}>Kế hoạch Sản xuất</BodySmall>
             <BodySemibold>{cultivationPlan.productionPlanName}</BodySemibold>
             <Spacer size="sm" />
-            <BodySmall style={styles.label}>Planting Date</BodySmall>
+            <BodySmall style={styles.label}>Ngày trồng</BodySmall>
             <Body>{formatDate(cultivationPlan.plantingDate)}</Body>
             {cultivationPlan.expectedYield && (
               <>
                 <Spacer size="sm" />
-                <BodySmall style={styles.label}>Expected Yield</BodySmall>
-                <Body>{cultivationPlan.expectedYield.toFixed(2)} tons</Body>
+                <BodySmall style={styles.label}>Sản lượng Dự kiến</BodySmall>
+                <Body>{cultivationPlan.expectedYield.toFixed(2)} tấn</Body>
               </>
             )}
           </Card>
@@ -319,32 +319,32 @@ export const PlotCultivationDetailScreen = () => {
 
           {/* Task Progress */}
           <Card>
-            <H4>Task Progress</H4>
+            <H4>Tiến độ Công việc</H4>
             <Spacer size="md" />
             <View style={styles.progressGrid}>
               <View style={styles.progressItem}>
                 <BodySemibold style={styles.progressValue}>
                   {cultivationPlan.progress.totalTasks}
                 </BodySemibold>
-                <BodySmall style={styles.progressLabel}>Total</BodySmall>
+                <BodySmall style={styles.progressLabel}>Tổng</BodySmall>
               </View>
               <View style={styles.progressItem}>
                 <BodySemibold style={[styles.progressValue, { color: greenTheme.success }]}>
                   {cultivationPlan.progress.completedTasks}
                 </BodySemibold>
-                <BodySmall style={styles.progressLabel}>Completed</BodySmall>
+                <BodySmall style={styles.progressLabel}>Hoàn thành</BodySmall>
               </View>
               <View style={styles.progressItem}>
                 <BodySemibold style={[styles.progressValue, { color: greenTheme.primary }]}>
                   {cultivationPlan.progress.inProgressTasks}
                 </BodySemibold>
-                <BodySmall style={styles.progressLabel}>In Progress</BodySmall>
+                <BodySmall style={styles.progressLabel}>Đang làm</BodySmall>
               </View>
               <View style={styles.progressItem}>
                 <BodySemibold style={[styles.progressValue, { color: colors.textSecondary }]}>
                   {cultivationPlan.progress.pendingTasks}
                 </BodySemibold>
-                <BodySmall style={styles.progressLabel}>Pending</BodySmall>
+                <BodySmall style={styles.progressLabel}>Chờ</BodySmall>
               </View>
             </View>
           </Card>
@@ -352,7 +352,7 @@ export const PlotCultivationDetailScreen = () => {
           <Spacer size="lg" />
 
           {/* Stages and Tasks */}
-          <H4>Cultivation Stages & Tasks</H4>
+          <H4>Giai đoạn & Công việc Canh tác</H4>
           <Spacer size="md" />
 
           {cultivationPlan.stages.map((stage) => (
@@ -374,7 +374,7 @@ export const PlotCultivationDetailScreen = () => {
                     style={{ backgroundColor: greenTheme.primary + '20' }}
                     textStyle={{ color: greenTheme.primary, fontWeight: '600' }}
                   >
-                    {stage.tasks.length} tasks
+                    {stage.tasks.length} công việc
                   </Badge>
                 </TouchableOpacity>
 
@@ -427,17 +427,17 @@ export const PlotCultivationDetailScreen = () => {
           onPress={() => setShowVersionPicker(false)}
         >
           <View style={styles.modalContent}>
-            <H4 style={styles.modalTitle}>Select Plan Version</H4>
+            <H4 style={styles.modalTitle}>Chọn Phiên bản Kế hoạch</H4>
             <TouchableOpacity 
               style={styles.versionItem}
               onPress={() => { setSelectedVersionId(null); setShowVersionPicker(false); }}
             >
-              <Body>Latest Version</Body>
+              <Body>Phiên bản Mới nhất</Body>
               {!selectedVersionId && <Ionicons name="checkmark" size={20} color={colors.primary} />}
             </TouchableOpacity>
             {versions.map((v) => (
               <TouchableOpacity key={v.id} style={styles.versionItem} onPress={() => { setSelectedVersionId(v.id); setShowVersionPicker(false); }}>
-                <Body>v{v.versionName} {v.isActive ? '(Active)' : ''}</Body>
+                <Body>v{v.versionName} {v.isActive ? '(Đang hoạt động)' : ''}</Body>
                 {selectedVersionId === v.id && <Ionicons name="checkmark" size={20} color={colors.primary} />}
               </TouchableOpacity>
             ))}
@@ -533,12 +533,12 @@ const TaskItem = ({
       
       // Check for success based on response structure or HTTP success
       if (result && (result.succeeded === true || result.succeeded !== false)) {
-        Alert.alert('Success', result.message || 'Late farmer record created successfully');
+        Alert.alert('Thành công', result.message || 'Đã tạo bản ghi nông dân muộn thành công');
       } else {
-        Alert.alert('Error', result.message || 'Failed to create late farmer record');
+        Alert.alert('Lỗi', result.message || 'Không thể tạo bản ghi nông dân muộn');
       }
     } catch (error: any) {
-      Alert.alert('Error', error?.message || 'Failed to create late farmer record');
+      Alert.alert('Lỗi', error?.message || 'Không thể tạo bản ghi nông dân muộn');
     } finally {
       setCreatingLateRecord(false);
     }
@@ -570,7 +570,7 @@ const TaskItem = ({
           
           {task.taskDescription && (
             <>
-              <BodySmall style={styles.label}>Description</BodySmall>
+              <BodySmall style={styles.label}>Mô tả</BodySmall>
               <Body>{task.taskDescription}</Body>
               <Spacer size="sm" />
             </>
@@ -579,13 +579,13 @@ const TaskItem = ({
           <View style={styles.taskDates}>
             {task.plannedStartDate && (
               <View style={styles.dateItem}>
-                <BodySmall style={styles.dateLabel}>Planned Start:</BodySmall>
+                <BodySmall style={styles.dateLabel}>Bắt đầu Dự kiến:</BodySmall>
                 <BodySmall>{formatDate(task.plannedStartDate)}</BodySmall>
               </View>
             )}
             {task.plannedEndDate && (
               <View style={styles.dateItem}>
-                <BodySmall style={styles.dateLabel}>Planned End:</BodySmall>
+                <BodySmall style={styles.dateLabel}>Kết thúc Dự kiến:</BodySmall>
                 <BodySmall>{formatDate(task.plannedEndDate)}</BodySmall>
               </View>
             )}
@@ -594,7 +594,7 @@ const TaskItem = ({
           {task.materials.length > 0 && (
             <>
               <Spacer size="sm" />
-              <BodySmall style={styles.label}>Materials</BodySmall>
+              <BodySmall style={styles.label}>Vật tư</BodySmall>
               {task.materials.map((material) => (
                 <View key={material.materialId} style={styles.materialItem}>
                   <Body style={styles.materialName}>{material.materialName}</Body>
@@ -609,7 +609,7 @@ const TaskItem = ({
           {/* Farm Logs Section */}
           <Spacer size="sm" />
           <View style={styles.logsSection}>
-            <BodySmall style={styles.label}>Farm Logs</BodySmall>
+            <BodySmall style={styles.label}>Nhật ký Nông trại</BodySmall>
             {loadingLogs ? (
               <ActivityIndicator size="small" color={colors.primary} />
             ) : logs.length > 0 ? (
@@ -634,14 +634,14 @@ const TaskItem = ({
                       onPress={() => onViewImages(log.photoUrls)}
                     >
                       <Ionicons name="images-outline" size={14} color={colors.primary} />
-                      <BodySmall style={{color: colors.primary}}>View {log.photoUrls.length} Photos</BodySmall>
+                      <BodySmall style={{color: colors.primary}}>Xem {log.photoUrls.length} Ảnh</BodySmall>
                     </TouchableOpacity>
                   )}
                 </View>
               ))
             ) : (
               <BodySmall style={{color: colors.textTertiary, fontStyle: 'italic'}}>
-                No logs recorded yet.
+                Chưa có nhật ký nào được ghi lại.
               </BodySmall>
             )}
           </View>
@@ -663,7 +663,7 @@ const TaskItem = ({
                 ) : (
                   <>
                     <Ionicons name="alert-circle-outline" size={18} color={colors.white} />
-                    <BodySmall style={styles.reportLateButtonText}>Report Late Farmer</BodySmall>
+                    <BodySmall style={styles.reportLateButtonText}>Báo cáo Nông dân Muộn</BodySmall>
                   </>
                 )}
               </TouchableOpacity>
@@ -686,15 +686,15 @@ const TaskItem = ({
         >
           <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
             <View style={styles.notesModalContent}>
-              <H4 style={styles.modalTitle}>Report Late Farmer</H4>
+              <H4 style={styles.modalTitle}>Báo cáo Nông dân Muộn</H4>
               <BodySmall style={{ marginBottom: spacing.sm, color: colors.textSecondary }}>
-                Enter notes for this lateness record:
+                Nhập ghi chú cho bản ghi muộn này:
               </BodySmall>
               <TextInput
                 style={styles.notesInput}
                 value={lateNotes}
                 onChangeText={setLateNotes}
-                placeholder="Enter notes..."
+                placeholder="Nhập ghi chú..."
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
@@ -704,13 +704,13 @@ const TaskItem = ({
                   style={[styles.modalButton, styles.cancelButton]}
                   onPress={() => setShowNotesModal(false)}
                 >
-                  <Body style={{ color: colors.textPrimary }}>Cancel</Body>
+                  <Body style={{ color: colors.textPrimary }}>Hủy</Body>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={[styles.modalButton, styles.submitButton]}
                   onPress={handleSubmitLateRecord}
                 >
-                  <Body style={{ color: colors.white }}>Submit</Body>
+                  <Body style={{ color: colors.white }}>Gửi</Body>
                 </TouchableOpacity>
               </View>
             </View>

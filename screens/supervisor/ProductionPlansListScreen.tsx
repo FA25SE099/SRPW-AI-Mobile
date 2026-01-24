@@ -143,7 +143,7 @@ export const ProductionPlansListScreen = () => {
             </View>
             <View style={styles.groupDetailItem}>
               <Ionicons name="map" size={14} color={colors.textSecondary} />
-              <BodySmall style={styles.groupDetailValue}>{group.plots.length} plots</BodySmall>
+              <BodySmall style={styles.groupDetailValue}>{group.plots.length} thửa</BodySmall>
             </View>
             {group.riceVarietyName && (
               <View style={styles.groupDetailItem}>
@@ -158,16 +158,16 @@ export const ProductionPlansListScreen = () => {
           {/* Production Plans Summary */}
           <View style={styles.plansSummary}>
             <Badge variant={group.productionPlansCount > 0 ? 'primary' : 'neutral'} size="sm">
-              {group.productionPlansCount} {group.productionPlansCount === 1 ? 'plan' : 'plans'}
+              {group.productionPlansCount} {group.productionPlansCount === 1 ? 'kế hoạch' : 'kế hoạch'}
             </Badge>
             {group.activePlansCount > 0 && (
               <Badge variant="success" size="sm">
-                {group.activePlansCount} active
+                {group.activePlansCount} đang hoạt động
               </Badge>
             )}
             {group.draftPlansCount > 0 && (
               <Badge variant="neutral" size="sm">
-                {group.draftPlansCount} draft
+                {group.draftPlansCount} bản nháp
               </Badge>
             )}
           </View>
@@ -181,7 +181,7 @@ export const ProductionPlansListScreen = () => {
       <SafeAreaView style={styles.container} edges={['top']}>
         <Container>
           <Spacer size="md" />
-          <H3>My Groups</H3>
+          <H3>Các Nhóm của Tôi</H3>
           <Spacer size="xl" />
           <View style={styles.centered}>
             <ActivityIndicator size="large" color={greenTheme.primary} />
@@ -195,9 +195,9 @@ export const ProductionPlansListScreen = () => {
     <SafeAreaView style={styles.container} edges={['top']}>
       <Container>
         <Spacer size="md" />
-        <H3>Production Plans</H3>
+        <H3>Kế hoạch Sản xuất</H3>
         <BodySmall style={styles.subtitle}>
-          Manage and monitor production plans
+          Quản lý và giám sát các kế hoạch sản xuất
         </BodySmall>
         <Spacer size="lg" />
 
@@ -208,8 +208,7 @@ export const ProductionPlansListScreen = () => {
           </View>
           <View style={styles.infoText}>
             <BodySmall style={styles.infoMessage}>
-              To create a new production plan, please use the web application. Go to Group
-              Management → Select Group → Create Production Plan.
+              Để tạo kế hoạch sản xuất mới, vui lòng sử dụng ứng dụng web. Truy cập Quản lý Nhóm → Chọn Nhóm → Tạo Kế hoạch Sản xuất.
             </BodySmall>
           </View>
         </Card>
@@ -233,9 +232,9 @@ export const ProductionPlansListScreen = () => {
             <View style={styles.emptyState}>
               <Ionicons name="folder-open-outline" size={64} color={colors.lightGray} />
               <Spacer size="md" />
-              <Body style={styles.emptyText}>No groups assigned</Body>
+              <Body style={styles.emptyText}>Chưa có nhóm nào được gán</Body>
               <BodySmall style={styles.emptySubtext}>
-                Contact your administrator to get assigned to groups
+                Liên hệ quản trị viên của bạn để được gán nhóm
               </BodySmall>
             </View>
           }

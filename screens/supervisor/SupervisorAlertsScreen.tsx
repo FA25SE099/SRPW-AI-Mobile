@@ -143,9 +143,9 @@ export const SupervisorAlertsScreen = () => {
       <Container padding="lg">
         {/* Header */}
         <View style={styles.header}>
-          <H3>Alerts & Notifications</H3>
+          <H3>Cảnh báo & Thông báo</H3>
           <BodySmall color={colors.textSecondary}>
-            {filteredAlerts.length} alerts
+            {filteredAlerts.length} cảnh báo
           </BodySmall>
         </View>
 
@@ -154,7 +154,7 @@ export const SupervisorAlertsScreen = () => {
         {/* Priority Filters */}
         <View style={styles.filterSection}>
           <BodySmall color={colors.textSecondary} style={styles.filterLabel}>
-            Priority
+            Mức độ Ưu tiên
           </BodySmall>
           <Spacer size="xs" />
           <View style={styles.filterRow}>
@@ -166,7 +166,7 @@ export const SupervisorAlertsScreen = () => {
               ]}
             >
               <BodySmall color={priorityFilter === 'all' ? colors.white : colors.textDark}>
-                All
+                Tất cả
               </BodySmall>
             </TouchableOpacity>
             <TouchableOpacity

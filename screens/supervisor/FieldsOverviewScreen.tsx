@@ -278,12 +278,12 @@ export const FieldsOverviewScreen = () => {
 
   const calculatePrice = async () => {
     if (!selectedStandardPlan) {
-      Alert.alert('Error', 'Please select a standard plan');
+      Alert.alert('Lỗi', 'Vui lòng chọn kế hoạch tiêu chuẩn');
       return;
     }
 
     if (!priceReviewPlotId) {
-      Alert.alert('Error', 'Plot ID is required');
+      Alert.alert('Lỗi', 'Cần ID thửa');
       return;
     }
 
@@ -300,7 +300,7 @@ export const FieldsOverviewScreen = () => {
       const result = await calculateStandardPlanMaterialCost(request);
       setPriceResult(result);
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to calculate material cost');
+      Alert.alert('Lỗi', error.message || 'Không thể tính chi phí vật tư');
     } finally {
       setIsCalculatingPrice(false);
     }
@@ -318,9 +318,9 @@ export const FieldsOverviewScreen = () => {
       <Container padding="lg">
         {/* Header */}
         <View style={styles.header}>
-          <H3>Fields Overview</H3>
+          <H3>Tổng quan Thửa</H3>
           <BodySmall color={colors.textSecondary}>
-            {plots.length} plots
+            {plots.length} thửa
           </BodySmall>
         </View>
 
@@ -328,15 +328,15 @@ export const FieldsOverviewScreen = () => {
 
         {/* Farmer Selection */}
         <View style={styles.section}>
-          <Text style={styles.label}>Filter by Farmer</Text>
+          <Text style={styles.label}>Lọc theo Nông dân</Text>
           <TouchableOpacity
             style={styles.selectButton}
             onPress={() => setShowFarmerModal(true)}
           >
             <Text style={styles.selectButtonText}>
               {selectedFarmerData 
-                ? selectedFarmerData.fullName || selectedFarmerData.farmCode || 'Unknown Farmer'
-                : 'Select Farmer'}
+                ? selectedFarmerData.fullName || selectedFarmerData.farmCode || 'Nông dân không xác định'
+                : 'Chọn Nông dân'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -358,7 +358,7 @@ export const FieldsOverviewScreen = () => {
         <Spacer size="lg" />
 
         {/* Plots List */}
-        <H3>All Plots</H3>
+        <H3>Tất cả Thửa</H3>
         <Spacer size="md" />
         <ScrollView showsVerticalScrollIndicator={false}>
           {plots.map((plot) => (
@@ -399,11 +399,11 @@ export const FieldsOverviewScreen = () => {
 
                 <View style={styles.plotStats}>
                   <View style={styles.plotStatItem}>
-                    <BodySmall color={colors.textSecondary}>Cultivations:</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Canh tác:</BodySmall>
                     <BodySemibold>{plot.activeCultivations}</BodySemibold>
                   </View>
                   <View style={styles.plotStatItem}>
-                    <BodySmall color={colors.textSecondary}>Alerts:</BodySmall>
+                    <BodySmall color={colors.textSecondary}>Cảnh báo:</BodySmall>
                     <BodySemibold color={plot.activeAlerts > 0 ? colors.error : colors.textDark}>
                       {plot.activeAlerts}
                     </BodySemibold>
@@ -417,7 +417,7 @@ export const FieldsOverviewScreen = () => {
                   style={styles.priceReviewButton}
                   onPress={() => handlePriceReview(plot.plotId)}
                 >
-                  <Text style={styles.priceReviewButtonText}>💰 Price Review</Text>
+                  <Text style={styles.priceReviewButtonText}>💰 Xem xét Giá</Text>
                 </TouchableOpacity>
               </Card>
               <Spacer size="sm" />
@@ -434,16 +434,16 @@ export const FieldsOverviewScreen = () => {
         >
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Material Cost Review</Text>
+              <Text style={styles.modalTitle}>Xem xét Chi phí Vật tư</Text>
 
               {/* Standard Plan Selection */}
-              <Text style={styles.modalLabel}>Select Standard Plan *</Text>
+              <Text style={styles.modalLabel}>Chọn Kế hoạch Tiêu chuẩn *</Text>
               <TouchableOpacity
                 style={styles.selectButton}
                 onPress={() => setShowPlanModal(true)}
               >
                 <Text style={styles.selectButtonText}>
-                  {standardPlans?.find(p => p.id === selectedStandardPlan)?.name || '-- Select Plan --'}
+                  {standardPlans?.find(p => p.id === selectedStandardPlan)?.name || '-- Chọn Kế hoạch --'}
                 </Text>
               </TouchableOpacity>
 
@@ -456,26 +456,26 @@ export const FieldsOverviewScreen = () => {
                 {isCalculatingPrice ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.calculateButtonText}>Calculate Material Cost</Text>
+                  <Text style={styles.calculateButtonText}>Tính Chi phí Vật tư</Text>
                 )}
               </TouchableOpacity>
 
               {/* Results */}
               {priceResult && (
                 <View style={styles.priceResults}>
-                  <Text style={styles.resultsTitle}>Cost Summary</Text>
+                  <Text style={styles.resultsTitle}>Tóm tắt Chi phí</Text>
                   <View style={styles.resultRow}>
-                    <Text style={styles.resultLabel}>Area:</Text>
+                    <Text style={styles.resultLabel}>Diện tích:</Text>
                     <Text style={styles.resultValue}>{priceResult.area} ha</Text>
                   </View>
                   <View style={styles.resultRow}>
-                    <Text style={styles.resultLabel}>Cost per Ha:</Text>
+                    <Text style={styles.resultLabel}>Chi phí mỗi Ha:</Text>
                     <Text style={styles.resultValue}>
                       {formatCurrency(priceResult.totalCostPerHa)}
                     </Text>
                   </View>
                   <View style={styles.resultRow}>
-                    <Text style={[styles.resultLabel, styles.bold]}>Total Cost:</Text>
+                    <Text style={[styles.resultLabel, styles.bold]}>Tổng Chi phí:</Text>
                     <Text style={[styles.resultValue, styles.bold]}>
                       {formatCurrency(priceResult.totalCostForArea)}
                     </Text>
@@ -483,7 +483,7 @@ export const FieldsOverviewScreen = () => {
 
                   {priceResult.materialCostItems.length > 0 && (
                     <>
-                      <Text style={styles.materialsTitle}>Materials Breakdown:</Text>
+                      <Text style={styles.materialsTitle}>Chi tiết Vật tư:</Text>
                       <ScrollView style={styles.materialsList}>
                         {priceResult.materialCostItems.map((item: any, idx: number) => (
                           <View key={idx} style={styles.materialItem}>
@@ -507,7 +507,7 @@ export const FieldsOverviewScreen = () => {
                 style={styles.modalCloseButton}
                 onPress={() => setShowPriceModal(false)}
               >
-                <Text style={styles.modalCloseButtonText}>Close</Text>
+                <Text style={styles.modalCloseButtonText}>Đóng</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -522,7 +522,7 @@ export const FieldsOverviewScreen = () => {
         >
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Select Standard Plan</Text>
+              <Text style={styles.modalTitle}>Chọn Kế hoạch Tiêu chuẩn</Text>
               <FlatList
                 data={standardPlans || []}
                 keyExtractor={(item) => item.id}
@@ -547,7 +547,7 @@ export const FieldsOverviewScreen = () => {
                 style={styles.modalCloseButton}
                 onPress={() => setShowPlanModal(false)}
               >
-                <Text style={styles.modalCloseButtonText}>Cancel</Text>
+                <Text style={styles.modalCloseButtonText}>Hủy</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -562,7 +562,7 @@ export const FieldsOverviewScreen = () => {
         >
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Select Farmer</Text>
+              <Text style={styles.modalTitle}>Chọn Nông dân</Text>
               <FlatList
                 data={farmers || []}
                 keyExtractor={(item) => item.farmerId}
@@ -576,7 +576,7 @@ export const FieldsOverviewScreen = () => {
                     }}
                   >
                     <Text style={styles.planModalItemText}>
-                      {item.fullName || item.farmCode || 'Unknown Farmer'}
+                      {item.fullName || item.farmCode || 'Nông dân không xác định'}
                     </Text>
                     {item.address && (
                       <Text style={styles.planModalItemSubtext}>{item.address}</Text>
@@ -588,7 +588,7 @@ export const FieldsOverviewScreen = () => {
                 style={styles.modalCloseButton}
                 onPress={() => setShowFarmerModal(false)}
               >
-                <Text style={styles.modalCloseButtonText}>Cancel</Text>
+                <Text style={styles.modalCloseButtonText}>Hủy</Text>
               </TouchableOpacity>
             </View>
           </View>

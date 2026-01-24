@@ -23,6 +23,7 @@ import {
   BulkConfirmMaterialReceiptResponse,
   GetFarmerReportsRequest,
   GetFarmerReportsResponse,
+  FullAnalysisResponse,
 } from '@/types/api';
 
 type GetFarmerPlotsParams = {
@@ -315,6 +316,47 @@ export const detectPestInImage = async (
     return results[0];
   } catch (error: any) {
     console.error('❌ [detectPestInImage] Error:', {
+      status: error?.status || error?.response?.status,
+      statusText: error?.statusText || error?.response?.statusText,
+      data: error?.response?.data || error?.data,
+      message: error?.message,
+    });
+    throw error;
+  }
+};
+
+/**
+ * Call the full AI analysis endpoint with an image.
+ * This corresponds to:
+ * curl -X POST https://riceproduction.online/api/rice/full-analysis -F "files=@image.jpg"
+ */
+export const analyzePestImageFull = async (
+  imageFile: { uri: string; type: string; name: string },
+): Promise<FullAnalysisResponse> => {
+  const formData = new FormData();
+
+  // Backend expects 'files' as IFormFileCollection (same as /rice/check-pest)
+  formData.append('files', {
+    uri: imageFile.uri,
+    type: imageFile.type,
+    name: imageFile.name,
+  } as any);
+
+  console.log('📤 [analyzePestImageFull] Sending POST request to /rice/full-analysis');
+  console.log('📦 [analyzePestImageFull] FormData fields:', {
+    hasFile: !!imageFile.uri,
+    fileName: imageFile.name,
+    fileType: imageFile.type,
+  });
+
+  try {
+    const response = await uploadFile('/rice/full-analysis', formData);
+    console.log('✅ [analyzePestImageFull] Success');
+
+    // Endpoint returns an array of analysis results
+    return response as unknown as FullAnalysisResponse;
+  } catch (error: any) {
+    console.error('❌ [analyzePestImageFull] Error:', {
       status: error?.status || error?.response?.status,
       statusText: error?.statusText || error?.response?.statusText,
       data: error?.response?.data || error?.data,
