@@ -15,6 +15,7 @@ import {
   Platform,
   Text,
   useWindowDimensions,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -95,6 +96,7 @@ export const CreateReportScreen = () => {
     offsetY?: number;
   } | null>(null);
   const [selectedPestIndex, setSelectedPestIndex] = useState<number | null>(null);
+  const [showAiRecommendationModal, setShowAiRecommendationModal] = useState(false);
   const viewRef = useRef(null);
 
   // Fetch cultivations for the selected plot
@@ -611,16 +613,24 @@ export const CreateReportScreen = () => {
                   {!!fullAnalysisResult?.recommendation?.aiRecommendation && (
                     <>
                       <Spacer size="md" />
-                      <View style={styles.aiRecommendationContainer}>
-                        <BodySemibold style={styles.aiRecommendationTitle}>
-                          Gợi ý xử lý từ AI
-                        </BodySemibold>
-                        <Spacer size="xs" />
-                        <BodySmall style={styles.aiRecommendationText}>
-                          {fullAnalysisResult.recommendation.aiRecommendation.rawResponse ||
-                            fullAnalysisResult.recommendation.aiRecommendation.assessment}
-                        </BodySmall>
-                      </View>
+                      <TouchableOpacity
+                        style={styles.aiRecommendationButton}
+                        onPress={() => setShowAiRecommendationModal(true)}
+                        activeOpacity={0.7}
+                      >
+                        <View style={styles.aiRecommendationButtonContent}>
+                          <Ionicons name="bulb" size={24} color={greenTheme.primary} />
+                          <View style={{ flex: 1, marginLeft: getSpacing(spacing.sm) }}>
+                            <BodySemibold style={styles.aiRecommendationButtonTitle}>
+                              Xem gợi ý xử lý từ AI
+                            </BodySemibold>
+                            <BodySmall color={colors.textSecondary} style={styles.aiRecommendationButtonSubtitle}>
+                              Nhấn để xem chi tiết đánh giá và khuyến nghị
+                            </BodySmall>
+                          </View>
+                          <Ionicons name="chevron-forward" size={20} color={greenTheme.primary} />
+                        </View>
+                      </TouchableOpacity>
                     </>
                   )}
                   <Spacer size="md" />
@@ -879,6 +889,117 @@ export const CreateReportScreen = () => {
       </Container>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* AI Recommendation Modal */}
+      <Modal
+        visible={showAiRecommendationModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowAiRecommendationModal(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <View style={styles.modalHeaderLeft}>
+              <View style={styles.modalIconContainer}>
+                <Ionicons name="bulb" size={28} color={greenTheme.primary} />
+              </View>
+              <H3 style={styles.modalTitle}>Gợi ý xử lý từ AI</H3>
+            </View>
+            <TouchableOpacity
+              onPress={() => setShowAiRecommendationModal(false)}
+              style={styles.modalCloseButton}
+            >
+              <Ionicons name="close" size={28} color={colors.textPrimary} />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+            {fullAnalysisResult?.recommendation?.aiRecommendation && (
+              <View style={styles.modalCard}>
+                {/* Assessment */}
+                {fullAnalysisResult.recommendation.aiRecommendation.assessment && (
+                  <>
+                    <View style={styles.modalSectionHeader}>
+                      <Ionicons name="document-text" size={20} color={greenTheme.primary} />
+                      <BodySemibold style={styles.modalSectionTitle}>Đánh giá</BodySemibold>
+                    </View>
+                    <Spacer size="xs" />
+                    <Body style={styles.modalSectionText}>
+                      {fullAnalysisResult.recommendation.aiRecommendation.assessment}
+                    </Body>
+                    <Spacer size="lg" />
+                  </>
+                )}
+
+                {/* Treatment Recommendation */}
+                {fullAnalysisResult.recommendation.aiRecommendation.treatmentRecommendation && (
+                  <>
+                    <View style={styles.modalSectionHeader}>
+                      <Ionicons name="medical" size={20} color={greenTheme.primary} />
+                      <BodySemibold style={styles.modalSectionTitle}>Khuyến nghị điều trị</BodySemibold>
+                    </View>
+                    <Spacer size="xs" />
+                    <Body style={styles.modalSectionText}>
+                      {fullAnalysisResult.recommendation.aiRecommendation.treatmentRecommendation}
+                    </Body>
+                    <Spacer size="lg" />
+                  </>
+                )}
+
+                {/* Preventive Measures */}
+                {fullAnalysisResult.recommendation.aiRecommendation.preventiveMeasures && (
+                  <>
+                    <View style={styles.modalSectionHeader}>
+                      <Ionicons name="shield-checkmark" size={20} color={greenTheme.primary} />
+                      <BodySemibold style={styles.modalSectionTitle}>Biện pháp phòng ngừa</BodySemibold>
+                    </View>
+                    <Spacer size="xs" />
+                    <Body style={styles.modalSectionText}>
+                      {fullAnalysisResult.recommendation.aiRecommendation.preventiveMeasures}
+                    </Body>
+                    <Spacer size="lg" />
+                  </>
+                )}
+
+                {/* Additional Insights */}
+                {fullAnalysisResult.recommendation.aiRecommendation.additionalInsights && (
+                  <>
+                    <View style={styles.modalSectionHeader}>
+                      <Ionicons name="information-circle" size={20} color={greenTheme.primary} />
+                      <BodySemibold style={styles.modalSectionTitle}>Thông tin bổ sung</BodySemibold>
+                    </View>
+                    <Spacer size="xs" />
+                    <Body style={styles.modalSectionText}>
+                      {fullAnalysisResult.recommendation.aiRecommendation.additionalInsights}
+                    </Body>
+                    <Spacer size="lg" />
+                  </>
+                )}
+
+                {/* Raw Response (if other fields are empty) */}
+                {!fullAnalysisResult.recommendation.aiRecommendation.assessment &&
+                  !fullAnalysisResult.recommendation.aiRecommendation.treatmentRecommendation &&
+                  !fullAnalysisResult.recommendation.aiRecommendation.preventiveMeasures &&
+                  !fullAnalysisResult.recommendation.aiRecommendation.additionalInsights &&
+                  fullAnalysisResult.recommendation.aiRecommendation.rawResponse && (
+                    <>
+                      <View style={styles.modalSectionHeader}>
+                        <Ionicons name="document" size={20} color={greenTheme.primary} />
+                        <BodySemibold style={styles.modalSectionTitle}>Kết quả phân tích</BodySemibold>
+                      </View>
+                      <Spacer size="xs" />
+                      <Body style={styles.modalSectionText}>
+                        {fullAnalysisResult.recommendation.aiRecommendation.rawResponse}
+                      </Body>
+                    </>
+                  )}
+              </View>
+            )}
+
+            <Spacer size="xl" />
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -995,6 +1116,7 @@ const styles = StyleSheet.create({
     gap: getSpacing(spacing.xs),
   },
   annotatedImageLabel: {
+    paddingTop: getSpacing(spacing.xs),
     fontSize: getFontSize(18),
     fontWeight: '700',
     color: greenTheme.primary,
@@ -1099,24 +1221,101 @@ const styles = StyleSheet.create({
     fontSize: getFontSize(15),
     lineHeight: moderateScale(20),
   },
-  aiRecommendationContainer: {
+  aiRecommendationButton: {
     marginTop: getSpacing(spacing.xs),
     backgroundColor: colors.white,
     borderRadius: moderateScale(borderRadius.md),
-    padding: getSpacing(spacing.md),
-    borderWidth: 1,
-    borderColor: greenTheme.border,
+    borderWidth: 2,
+    borderColor: greenTheme.primaryLight,
+    ...shadows.sm,
+    elevation: 2,
   },
-  aiRecommendationTitle: {
-    fontSize: getFontSize(15),
-    fontWeight: '600',
+  aiRecommendationButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: getSpacing(spacing.md),
+  },
+  aiRecommendationButtonTitle: {
+    fontSize: getFontSize(16),
+    fontWeight: '700',
+    color: greenTheme.primary,
+    marginBottom: getSpacing(spacing.xs),
+  },
+  aiRecommendationButtonSubtitle: {
+    fontSize: getFontSize(13),
+    lineHeight: moderateScale(18),
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: greenTheme.background,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: getSpacing(spacing.lg),
+    paddingVertical: getSpacing(spacing.md),
+    backgroundColor: greenTheme.cardBackground,
+    borderBottomWidth: 1,
+    borderBottomColor: greenTheme.border,
+  },
+  modalHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  modalIconContainer: {
+    width: scale(44),
+    height: scale(44),
+    borderRadius: scale(22),
+    backgroundColor: greenTheme.primaryLighter,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: getSpacing(spacing.sm),
+  },
+  modalTitle: {
+    fontSize: getFontSize(20),
+    fontWeight: '700',
     color: greenTheme.primary,
   },
-  aiRecommendationText: {
-    marginTop: getSpacing(spacing.xs),
-    fontSize: getFontSize(14),
-    lineHeight: moderateScale(20),
+  modalCloseButton: {
+    width: scale(40),
+    height: scale(40),
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: moderateScale(borderRadius.full),
+    backgroundColor: greenTheme.primaryLighter,
+  },
+  modalContent: {
+    flex: 1,
+    padding: getSpacing(spacing.lg),
+  },
+  modalCard: {
+    backgroundColor: greenTheme.cardBackground,
+    borderRadius: moderateScale(borderRadius.lg),
+    padding: getSpacing(spacing.lg),
+    borderWidth: 1,
+    borderColor: greenTheme.border,
+    ...shadows.md,
+    elevation: 3,
+  },
+  modalSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: getSpacing(spacing.sm),
+    marginBottom: getSpacing(spacing.xs),
+  },
+  modalSectionTitle: {
+    paddingTop: getSpacing(spacing.xs),
+    fontSize: getFontSize(18),
+    fontWeight: '700',
+    color: greenTheme.primary,
+  },
+  modalSectionText: {
+    fontSize: getFontSize(15),
+    lineHeight: moderateScale(24),
     color: colors.textPrimary,
+    textAlign: 'left',
   },
   legendContainer: {
     backgroundColor: colors.white,
